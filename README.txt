@@ -1,0 +1,25 @@
+TO be able to run or test this script, Python 3 should have been installed through the Software Centre.
+
+RUNNING:
+To use the hours budgeting script, use the RUN batch file.
+This ensures you have the correct python packages installed.
+
+TESTING:
+To test, use the TEST batch file.
+
+REQUIREMENTS AND DEFINITIONS:
+DEF: "Calculated PS18 extracted hours" in the hours budgeting file, which may be so mentioned in the log files, is data which is formatted with default/black colour and are the hours calculated from the PS18 pivot table (SAP extract).
+REQ: The employee names in the budgeting file must be copied directly from the PS18 pivot table. DO NOT type in the names yourself and do not remove diacritics or hyphenation.
+REQ: The row of employee names in the budgeting file must be located between the cells containing the data exactly as displayed below in between the ---, including new lines:
+(start cell, first column)
+---
+MA Name
+Startdatum
+---
+(end cell)
+---
+Anzahl
+MA
+---
+These have been chosen due to their presence in all budgeting files.
+DEF: Planned/predicted hours are those with font colour "White, background 1, darker 35%" (Weiß, Hintergrund 1, dunkler 35%). This definition is important for the logging of compared planned to recorded hours.

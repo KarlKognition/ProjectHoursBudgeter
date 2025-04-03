@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.linting.pylintEnabled": true,
+		"python.linting.pylintPath": ".venv/Scripts/pylint.exe"
+
+	}
+}

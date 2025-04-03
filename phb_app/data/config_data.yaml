@@ -1,0 +1,44 @@
+# phb_input_locale_config_data.yaml
+countries:
+- country: Germany
+  file_type: German PS18 file
+  file_patterns: # Keep all identifiers lowercase
+    - ps18
+    - .xlsx
+  exp_sheet_name: Tabelle1
+  # cities: # Add cities as required
+  #   - Regensburg
+  #   #- Munich
+  filter_headers:
+    name: Name der P
+    proj_id: PSP-Element
+    description: Objektbezeichnung
+    hours: Menge gesamt
+    date: BuchDatum
+- country: Romania
+  file_type: Romanian timesheet
+  file_patterns: # Keep all identifiers lowercase
+    - ro
+    - timesheet
+    - .xlsx
+  exp_sheet_name: Sheet1
+  # cities: # Add cities as required
+  #   - All
+  #   #- Bucharest
+  filter_headers:
+    name: Name of employee or applicant
+    proj_id: Network
+    description: Operation Short Text
+    hours: Hours
+    date: Date
+deviations:
+  strong_dev: 0.3
+  weak_dev: 0.15
+# Contact dev for changes below
+row_anchors:
+  start_anchor: |-
+    MA Name
+    Startdatum
+  end_anchor: |-
+    Anzahl
+    MA
