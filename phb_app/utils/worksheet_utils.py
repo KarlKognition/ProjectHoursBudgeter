@@ -20,6 +20,7 @@ of worksheets in the project hours budgeting wizard.
 
 from openpyxl.worksheet.worksheet import Worksheet
 
+
 def locate_target_row_employee_names(self, sheet_obj: Worksheet) -> bool:
     '''Finds the initial range where the employee names can be located.'''
 
