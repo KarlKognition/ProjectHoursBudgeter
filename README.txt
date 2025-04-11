@@ -5,7 +5,7 @@ To use the hours budgeting script, use the RUN batch file.
 This ensures you have the correct python packages installed.
 
 TESTING:
-To test, use the TEST batch file.
+To test, use the TEST batch file. These tests have become obsolete from version 1 to version 2 of the software. Version 1 is not available in this repo.
 
 REQUIREMENTS AND DEFINITIONS:
 DEF: "Calculated PS18 extracted hours" in the hours budgeting file, which may be so mentioned in the log files, is data which is formatted with default/black colour and are the hours calculated from the PS18 pivot table (SAP extract).
