@@ -1,0 +1,3 @@
+DEVELOPING:
+cd "d:\SW Development\Python\ProjectHoursBudgeter"
+.venv\Scripts\activate
