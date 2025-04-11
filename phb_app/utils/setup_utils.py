@@ -26,6 +26,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QComboBox,
+    QWidget,
     QWizardPage,
     QPushButton,
     QFileDialog,
@@ -44,12 +45,11 @@ import phb_app.utils.func_utils as futils
 from phb_app.protocols_callables.content import (
     Instructions,
     IOControls,
-    OutputControls,
     ErrorControls
 )
 from phb_app.data.phb_dataclasses import (
     WorkbookManager,
-    IOTableStartHeader,
+    BaseTableHeaders,
     InputTableHeaders,
     OutputTableHeaders,
     ButtonNames,
@@ -71,111 +71,80 @@ from phb_app.protocols_callables.content import (
     ConfigureRow,
     AddWorkbook
 )
-def choose_setup(page: QWizardPage) -> SetupWidgets:
-    '''Returns a widget setup function specific to the page.'''
-    def setup_widgets(instructions: Instructions, input_controls: IOControls, output_controls: OutputControls) -> None:
-        '''Init all widgets.'''
 
-        ## Input table
-        # Start with 0 rows and so many columns as per headers
-        self.input_table = QTableWidget(
-            0,
-            len(IOTableStartHeader) + len(InputTableHeaders)
-        )
-        # Allow multiple row selections in the table
-        self.input_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.input_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
-        # Table headers
-        self.input_table.setHorizontalHeaderLabels(
-            IOTableStartHeader.cap_members_list() + InputTableHeaders.cap_members_list())
-        # Header alignment
-        self.input_table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
-        # Adjust the width of each column
-        self.input_table.setColumnWidth(IOTableStartHeader.FILENAME.value, 250)
-        self.input_table.setColumnWidth(InputTableHeaders.COUNTRY.value, 150)
-        self.input_table.setColumnWidth(InputTableHeaders.WORKSHEET.value, 100)
+def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.SelectionMode) -> QTableWidget:
+    '''Create a table widget with the given headers and selection mode.'''
+    table = QTableWidget(0, len(table_headers))
+    table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+    table.setSelectionMode(selection_mode)
+    table.setHorizontalHeaderLabels(table_headers.cap_members_list())
+    table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+    return table
 
-        ## Output table
-        # Start with 0 rows and so many columns as per headers
-        self.output_table = QTableWidget(
-            0,
-            len(IOTableStartHeader) + len(OutputTableHeaders)
-        )
-        # Allow row selection
-        self.output_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        # Table headers
-        self.output_table.setHorizontalHeaderLabels(
-            IOTableStartHeader.cap_members_list() + OutputTableHeaders.cap_members_list())
-        # Header alignment
-        self.output_table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
-        # Adjust the width of each column
-        self.output_table.setColumnWidth(IOTableStartHeader.FILENAME.value, 250)
-        self.output_table.setColumnWidth(OutputTableHeaders.WORKSHEET.value, 150)
-        self.output_table.setColumnWidth(OutputTableHeaders.MONTH.value, 60)
-        self.output_table.setColumnWidth(OutputTableHeaders.YEAR.value, 60)
+def setup_table_with_buttons(table: QTableWidget, buttons: list[QPushButton], col_widths: dict[BaseTableHeaders, int]) -> QWidget:
+    '''Set up the table with the given buttons and column widths.'''
+    container = QWidget()
+    layout = QVBoxLayout()
+    layout.addWidget(table)
 
-        ## File control buttons
-        # Add input file button
-        self.add_input_file_button = QPushButton(ButtonNames.ADD.value, self)
-        # Remove input file button
-        self.remove_input_file_button = QPushButton(ButtonNames.REMOVE.value, self)
-        # Add output file button
-        self.add_output_file_button = QPushButton(ButtonNames.ADD.value, self)
-        # Remove output file button
-        self.remove_output_file_button = QPushButton(ButtonNames.REMOVE.value, self)
-    return setup_widgets
+    buttons_layout = QHBoxLayout()
+    for button in buttons:
+        buttons_layout.addWidget(button)
+    layout.addLayout(buttons_layout)
+    container.setLayout(layout)
+    return container
 
-    def setup_layout(self, input_controls: IOControls, output_controls: OutputControls, error_controls: ErrorControls) -> None:
-        '''Init layout.'''
+def setup_layout(instructions: Instructions, input_controls: IOControls, output_controls: OutputControls, error_controls: ErrorControls) -> None:
+    '''Init layout.'''
 
-        ## Error labels
-        # Vertical layout of errors
-        error_controls.error_panel.setLayout(QVBoxLayout())
-        ## Layout types
-        # Main layout
-        page_layout = QVBoxLayout()
-        selection_container = QHBoxLayout() # All stuff input/putput
-        # Input layout
-        input_container = QTableWidget()
-        input_container.setMaximumWidth(485)
-        input_panel = QVBoxLayout()
-        input_button_layout = QHBoxLayout()
-        # Output layout
-        output_container = QTableWidget()
-        output_container.setMaximumWidth(485)
-        output_panel = QVBoxLayout()
-        output_button_layout = QHBoxLayout()
+    ## Error labels
+    # Vertical layout of errors
+    error_controls.error_panel.setLayout(QVBoxLayout())
+    ## Layout types
+    # Main layout
+    page_layout = QVBoxLayout()
+    selection_container = QHBoxLayout() # All stuff input/putput
+    # Input layout
+    input_container = QTableWidget()
+    input_container.setMaximumWidth(485)
+    input_panel = QVBoxLayout()
+    input_button_layout = QHBoxLayout()
+    # Output layout
+    output_container = QTableWidget()
+    output_container.setMaximumWidth(485)
+    output_panel = QVBoxLayout()
+    output_button_layout = QHBoxLayout()
 
-        ## Add widgets
-        # To input button layout
-        input_button_layout.addWidget(self.add_input_file_button)
-        input_button_layout.addWidget(self.remove_input_file_button)
-        # To input layout
-        input_panel.addWidget(self.input_instructions_label)
-        input_panel.addWidget(self.input_table)
-        # To output button layout
-        output_button_layout.addWidget(self.add_output_file_button)
-        output_button_layout.addWidget(self.remove_output_file_button)
-        # To outputs layout
-        output_panel.addWidget(self.output_instructions_label)
-        output_panel.addWidget(self.output_table)
+    ## Add widgets
+    # To input button layout
+    input_button_layout.addWidget(add_input_file_button)
+    input_button_layout.addWidget(remove_input_file_button)
+    # To input layout
+    input_panel.addWidget(input_instructions_label)
+    input_panel.addWidget(input_table)
+    # To output button layout
+    output_button_layout.addWidget(add_output_file_button)
+    output_button_layout.addWidget(remove_output_file_button)
+    # To outputs layout
+    output_panel.addWidget(output_instructions_label)
+    output_panel.addWidget(output_table)
 
-        ## Add layouts heirarchically
-        input_panel.addLayout(input_button_layout)
-        input_container.setLayout(input_panel)
-        output_panel.addLayout(output_button_layout)
-        output_container.setLayout(output_panel)
+    ## Add layouts heirarchically
+    input_panel.addLayout(input_button_layout)
+    input_container.setLayout(input_panel)
+    output_panel.addLayout(output_button_layout)
+    output_container.setLayout(output_panel)
 
-        ## Containers
-        # Add to selection container
-        selection_container.addWidget(input_container)
-        selection_container.addWidget(output_container)
-        # Main container
-        page_layout.addLayout(selection_container)
-        page_layout.addWidget(self.error_panel)
+    ## Containers
+    # Add to selection container
+    selection_container.addWidget(input_container)
+    selection_container.addWidget(output_container)
+    # Main container
+    page_layout.addLayout(selection_container)
+    page_layout.addWidget(error_panel)
 
-        ## Display
-        self.setLayout(page_layout)
+    ## Display
+    setLayout(page_layout)
 
 def setup_main_button_connections(self):
     '''Connect buttons to their respective actions.'''

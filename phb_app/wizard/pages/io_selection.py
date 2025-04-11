@@ -30,10 +30,11 @@ from PyQt6.QtWidgets import (
 # First party libraries
 from phb_app.protocols_callables.content import (
     IOControls,
-    OutputControls,
     ErrorControls
 )
 from phb_app.wizard.constants.ui_strings import (
+    IO_TITLE,
+    IO_SUBTITLE,
     INPUT_INSTRUCTION_TEXT,
     OUTPUT_INSTRUCTION_TEXT
 )
@@ -45,8 +46,9 @@ from phb_app.protocols_callables.content import (
 import phb_app.utils.setup_utils as setup
 from phb_app.data.phb_dataclasses import (
     WorkbookManager,
-    CountryData,
+    InputTableHeaders,
     OutputTableHeaders,
+    ButtonNames,
     SpecialStrings,
     OutputFile,
     QPropName,
@@ -61,67 +63,68 @@ class IOSelectionPage(QWizardPage):
     from its file name is not desired. One or more project numbers must be selected for
     the output file.'''
 
-    def __init__(self):
+    INPUT_COLUMN_WIDTHS = {
+        InputTableHeaders.FILENAME: 250,
+        InputTableHeaders.COUNTRY: 150,
+        InputTableHeaders.WORKSHEET: 100,
+    }
+    OUTPUT_COLUMN_WIDTHS = {
+        OutputTableHeaders.FILENAME: 250,
+        OutputTableHeaders.WORKSHEET: 150,
+        OutputTableHeaders.MONTH: 60,
+        OutputTableHeaders.YEAR: 60,
+    }
+
+    def __init__(self, country_data):
         super().__init__()
 
         # List of file paths for workbook object creation and deletion
         self.managed_workbooks = WorkbookManager()
         ## Init actions
-        self.setTitle("Input/Output Files")
-        self.setSubTitle(
-            "Manage the input timesheets and output project hours budgeting file. "
-            "NOTE: The selected date of the output file is the row in which the hours will be written "
-            "but also will affect whether hours are accumulated at all from the input files."
+        self.setTitle(IO_TITLE)
+        self.setSubTitle(IO_SUBTITLE)
+        self.input_controls = IOControls(
+            buttons=QPushButton(...),
+            table=QTableWidget(),
+            label=QLabel(...),
+            col_widths=self.INPUT_COLUMN_WIDTHS
         )
-        self.country_data = CountryData()
-        self.io_controls = IOControls(
-            add_input_button=QPushButton(...),
-            remove_input_button=QPushButton(...),
-            input_table=QTableWidget(),
-            input_label=QLabel(...)
-        )
-        self.output_controls = OutputControls(
-            output_table=QTableWidget(),
-            output_label=QLabel(...)
+        self.output_controls = IOControls(
+            buttons=QPushButton(...),
+            table=QTableWidget(),
+            label=QLabel(...),
+            col_widths=self.OUTPUT_COLUMN_WIDTHS
         )
 
         self.error_controls = ErrorControls(
             error_panel=QWidget()
         )
 
-        ## Instructions labels
-        # Input
+        ## Instruction labels
         instr = setup.Instructions()
         instr.input_label = QLabel(INPUT_INSTRUCTION_TEXT)
-        # Output
         instr.output_label = QLabel(OUTPUT_INSTRUCTION_TEXT)
-
-        setup_widgets = setup.choose_setup(self)
-        setup_widgets(
-            instructions=instr,
-            input_controls=self.io_controls,
-            output_controls=self.output_controls
-        )
+        input_table = setup.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection)
+        output_table = setup.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection)
+        
+        ## Buttons
+        add_input_file_button = QPushButton(ButtonNames.ADD.value, self)
+        remove_input_file_button = QPushButton(ButtonNames.REMOVE.value, self)
+        add_output_file_button = QPushButton(ButtonNames.ADD.value, self)
+        remove_output_file_button = QPushButton(ButtonNames.REMOVE.value, self)
 
         layout = setup.setup_layout(
-            input_controls=self.io_controls,
+            input_controls=self.input_controls,
             output_controls=self.output_controls,
             error_controls=self.error_controls
         )
         self.setLayout(layout)
 
         setup.setup_main_button_connections(
-            input_controls=self.io_controls,
+            input_controls=self.input_controls,
             output_controls=self.output_controls,
             managed_workbooks=self.managed_workbooks
         )
-
-
-    #######################
-    ### Setup functions ###
-    #######################
-
-    
 
     ##################################
     ### QWizard function overrides ###

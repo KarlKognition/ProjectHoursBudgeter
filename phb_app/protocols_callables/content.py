@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring
-# pylint: disable=C0301
+# pylint: disable=line-too-long
+# pylint: disable=too-few-public-methods
 '''
 Module Name
 ---------
@@ -14,6 +15,7 @@ Description
 -----------
 Provides typesetting signatures.
 '''
+
 from dataclasses import (
     dataclass,
     field
@@ -23,7 +25,8 @@ from typing import (
     TypeAlias,
     Protocol,
     Optional,
-    runtime_checkable
+    runtime_checkable,
+    TYPE_CHECKING
 )
 from PyQt6.QtWidgets import (
     QVBoxLayout,
@@ -37,6 +40,9 @@ from phb_app.data.phb_dataclasses import (
 )
 from phb_app.logging.error_manager import ErrorManager
 
+if TYPE_CHECKING:
+    from phb_app.data.phb_dataclasses import BaseTableHeaders
+
 @dataclass
 class Instructions:
     input_label: Optional[QLabel] = None
@@ -44,15 +50,10 @@ class Instructions:
 
 @dataclass
 class IOControls:
-    add_input_button: QPushButton
-    remove_input_button: QPushButton
-    input_table: QTableWidget
-    input_label: QLabel
-
-@dataclass
-class OutputControls:
-    output_table: QTableWidget
-    output_label: QLabel
+    buttons: list[QPushButton]
+    table: QTableWidget
+    label: QLabel
+    col_widths: dict["BaseTableHeaders", int]
 
 @dataclass
 class ErrorControls:
@@ -62,8 +63,8 @@ class ErrorControls:
     def __post_init__(self) -> None:
         self.error_manager = ErrorManager(self.error_panel)
 
-SetupWidgets: TypeAlias = Callable[[Instructions, IOControls, OutputControls], None]
-SetupLayout: TypeAlias = Callable[[IOControls, OutputControls, ErrorControls], QVBoxLayout]
+SetupWidgets: TypeAlias = Callable[[IOControls], None]
+SetupLayout: TypeAlias = Callable[[list[IOControls], ErrorControls], QVBoxLayout]
 SetupMainButtonConnections: TypeAlias = Callable[[IOControls, WorkbookManager], None]
 
 @runtime_checkable

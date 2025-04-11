@@ -68,6 +68,9 @@ class BaseTableHeaders(Enum):
         '''Returns a list of all member values.'''
 
         return [member.value for member in cls]
+    
+    def __str__(self):
+        return self.name.replace('_', ' ').title()
 
 class WizardPageIDs(BaseTableHeaders):
     '''Enumerated pages in order of appearance.'''
@@ -98,21 +101,18 @@ class QPropName(Enum):
     OUTPUT_W_FORMULAE = "output_with_formulae"
     OUTPUT_WO_FORMULAE = "output_without_formulae"
 
-class IOTableStartHeader(BaseTableHeaders):
-    '''First header of input and output tables.'''
-
-    FILENAME = 0
-
 class InputTableHeaders(BaseTableHeaders):
     '''Input table headers in IOSelection.'''
 
-    COUNTRY = 1
+    FILENAME = 0
+    COUNTRY = auto()
     WORKSHEET = auto()
 
 class OutputTableHeaders(BaseTableHeaders):
     '''Output table headers in IOSelection.'''
 
-    WORKSHEET = 1
+    FILENAME = 0
+    WORKSHEET = auto()
     MONTH = auto()
     YEAR = auto()
 

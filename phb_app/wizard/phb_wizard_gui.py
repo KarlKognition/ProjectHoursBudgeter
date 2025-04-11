@@ -29,20 +29,22 @@ from phb_app.data.phb_dataclasses import (
     WorkbookManager
 )
 import phb_app.utils.hours_utils as hutils
+from phb_app.wizard.constants.ui_strings import GUI_TITLE
+
 
 ########################
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 
-    def __init__(self):
+    def __init__(self, country_data):
         super().__init__()
 
-        self.init_main_window()
+        self.init_main_window(country_data)
 
-    def init_main_window(self):
+    def init_main_window(self, country_data):
         '''Init main window.'''
 
-        self.setWindowTitle("Project Hours Budgeting Wizard")
+        self.setWindowTitle(GUI_TITLE)
         self.setGeometry(0, 0, 1000, 600)
         # Centre the main window
         self.move(QGuiApplication.primaryScreen().availableGeometry().center()
@@ -50,7 +52,7 @@ class PHBWizard(QWizard):
 
         # Created wizard pages
         self.addPage(ExplanationPage())
-        self.addPage(IOSelectionPage())
+        self.addPage(IOSelectionPage(country_data))
         self.addPage(ProjectSelectionPage())
         self.addPage(EmployeeSelectionPage())
         self.addPage(SummaryPage())
