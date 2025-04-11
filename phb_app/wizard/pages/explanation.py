@@ -56,7 +56,7 @@ class ExplanationPage(QWizardPage):
         intro_message = QLabel("This wizard allows the user to budget the hours of many "
                          "employees of a project at once.\n"
                          "There are three steps:\n\n"
-                         "1: Select the input files (German PS18 SAP extracts "
+                         "1: Select the input files (SAP extracts "
                          "or external timesheets) and the output budgeting file.\n\n"
                          "2: Select the employees of the project.\n\n"
                          "3: Review the process, checking/deleting the log file or "
