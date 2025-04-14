@@ -21,51 +21,35 @@ from dataclasses import (
     field
 )
 from typing import (
-    Callable,
-    TypeAlias,
     Protocol,
     Optional,
     runtime_checkable,
     TYPE_CHECKING
 )
 from PyQt6.QtWidgets import (
-    QVBoxLayout,
     QWidget,
     QTableWidget,
     QPushButton,
     QLabel
 )
-from phb_app.data.phb_dataclasses import (
-    WorkbookManager
-)
-from phb_app.logging.error_manager import ErrorManager
 
 if TYPE_CHECKING:
-    from phb_app.data.phb_dataclasses import BaseTableHeaders
+    from phb_app.data.phb_dataclasses import (
+        IOTable,
+        BaseTableHeaders
+    )
 
-@dataclass
-class Instructions:
-    input_label: Optional[QLabel] = None
-    output_label: Optional[QLabel] = None
+type InstructionLabels = list[QLabel]
+type ColWidths = dict["BaseTableHeaders", int]
+type ButtonsList = list[QPushButton]
 
 @dataclass
 class IOControls:
-    buttons: list[QPushButton]
-    table: QTableWidget
+    role: "IOTable"
     label: QLabel
-    col_widths: dict["BaseTableHeaders", int]
-
-@dataclass
-class ErrorControls:
+    table: QTableWidget
+    buttons: ButtonsList
     error_panel: QWidget
-    error_manager: Optional[ErrorManager] = field(init=False, default=None)
-
-    def __post_init__(self) -> None:
-        self.error_manager = ErrorManager(self.error_panel)
-
-SetupWidgets: TypeAlias = Callable[[IOControls], None]
-SetupLayout: TypeAlias = Callable[[list[IOControls], ErrorControls], QVBoxLayout]
-SetupMainButtonConnections: TypeAlias = Callable[[IOControls, WorkbookManager], None]
 
 @runtime_checkable
 class ConfigureRow(Protocol):

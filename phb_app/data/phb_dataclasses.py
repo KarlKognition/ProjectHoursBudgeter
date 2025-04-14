@@ -34,7 +34,7 @@ import phb_app.utils.func_utils as futils
 #### Localised Months dictionary  ####
 ######################################
 
-MONTHS = {
+MONATE_KURZ_DE = {
   "Jan": 1,
   "Feb": 2,
   "Mrz": 3,
@@ -116,7 +116,7 @@ class OutputTableHeaders(BaseTableHeaders):
     MONTH = auto()
     YEAR = auto()
 
-class SpecialStrings(Enum):
+class SpecialStrings(BaseTableHeaders):
     '''Enum for selecting worksheets.'''
 
     SELECT_WORKSHEET = "<select worksheet>"
@@ -127,14 +127,14 @@ class SpecialStrings(Enum):
     MISSING = "Missing"
     DEFAULT_PADDING = "5" # Must be cast to int
 
-class OutputFile(Enum):
+class OutputFile(BaseTableHeaders):
     '''Enum for original and copy output files.
     The original has formulae preserved (data_only = False).'''
 
     FIRST_ENTRY = 0
     SECOND_ENTRY = auto()
 
-class ButtonNames(Enum):
+class ButtonNames(BaseTableHeaders):
     '''Enum of names to display on buttons.'''
 
     ADD = "Add"
@@ -197,7 +197,7 @@ class LogTableHeaders(BaseTableHeaders):
 #### Coutries Enum ####
 #######################
 
-class CountriesEnum(Enum):
+class CountriesEnum(BaseTableHeaders):
     '''Enum of countries.'''
 
     GERMANY = "Germany"
@@ -207,7 +207,7 @@ class CountriesEnum(Enum):
 #### Yaml Enum ####
 ###################
 
-class YamlEnum(Enum):
+class YamlEnum(BaseTableHeaders):
     '''Enum of top level yaml config entries.'''
 
     COUNTRIES = "countries"
@@ -567,7 +567,7 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         '''Sets the budgeting date with the row it is located in the worksheet.'''
 
         # Convert dates to integers and put in a tuple
-        month_year = (MONTHS.get(selected_month), int(selected_year))
+        month_year = (MONATE_KURZ_DE.get(selected_month), int(selected_year))
         budgeting_dates = futils.get_budgeting_dates(file_path, sheet_name)
         for tup in budgeting_dates:
             if tup[:2] == month_year:

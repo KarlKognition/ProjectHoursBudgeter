@@ -18,9 +18,9 @@ from PyQt6.QtWidgets import QWidget, QLabel
 
 class ErrorManager:
     '''Manages the errors using QWizard QLabels.'''
-    def __init__(self, error_panel: QWidget) -> None:
+    def __init__(self) -> None:
         # UI container for error messages
-        self.error_panel = error_panel
+        self.error_panel: dict[str, QWidget] = {}
         self.errors: dict[tuple[str, str], dict[str, QLabel]] = {}
 
     def add_error(self,

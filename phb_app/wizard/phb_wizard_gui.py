@@ -36,12 +36,12 @@ from phb_app.wizard.constants.ui_strings import GUI_TITLE
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 
-    def __init__(self, country_data):
+    def __init__(self, country_data, error_manager, workbook_manager):
         super().__init__()
 
-        self.init_main_window(country_data)
+        self.init_main_window(country_data, error_manager, workbook_manager)
 
-    def init_main_window(self, country_data):
+    def init_main_window(self, country_data, error_manager, workbook_manager):
         '''Init main window.'''
 
         self.setWindowTitle(GUI_TITLE)
@@ -52,7 +52,7 @@ class PHBWizard(QWizard):
 
         # Created wizard pages
         self.addPage(ExplanationPage())
-        self.addPage(IOSelectionPage(country_data))
+        self.addPage(IOSelectionPage(country_data, error_manager, workbook_manager))
         self.addPage(ProjectSelectionPage())
         self.addPage(EmployeeSelectionPage())
         self.addPage(SummaryPage())

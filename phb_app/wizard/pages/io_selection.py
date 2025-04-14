@@ -21,6 +21,7 @@ Constructs and manages the Input-Output selection page.
 # Third party libaries
 from PyQt6.QtWidgets import (
     QWizardPage,
+    QHBoxLayout,
     QWidget,
     QComboBox,
     QPushButton,
@@ -28,20 +29,15 @@ from PyQt6.QtWidgets import (
     QLabel
 )
 # First party libraries
-from phb_app.protocols_callables.content import (
-    IOControls,
-    ErrorControls
+from phb_app.protocols_callables.customs import (
+    IOControls
 )
+from phb_app.logging.error_manager import ErrorManager
 from phb_app.wizard.constants.ui_strings import (
     IO_TITLE,
     IO_SUBTITLE,
     INPUT_INSTRUCTION_TEXT,
     OUTPUT_INSTRUCTION_TEXT
-)
-from phb_app.protocols_callables.content import (
-    SetupWidgets,
-    SetupLayout,
-    SetupMainButtonConnections
 )
 import phb_app.utils.setup_utils as setup
 from phb_app.data.phb_dataclasses import (
@@ -52,6 +48,7 @@ from phb_app.data.phb_dataclasses import (
     SpecialStrings,
     OutputFile,
     QPropName,
+    IOTable
 )
 
 ##################################
@@ -75,56 +72,28 @@ class IOSelectionPage(QWizardPage):
         OutputTableHeaders.YEAR: 60,
     }
 
-    def __init__(self, country_data):
+    def __init__(self, country_data, error_manager: ErrorManager, managed_workbooks: WorkbookManager) -> None:
         super().__init__()
 
-        # List of file paths for workbook object creation and deletion
-        self.managed_workbooks = WorkbookManager()
-        ## Init actions
+        error_manager.error_panel[IOTable.INPUT] = QWidget()
+        error_manager.error_panel[IOTable.OUTPUT] = QWidget()
         self.setTitle(IO_TITLE)
         self.setSubTitle(IO_SUBTITLE)
-        self.input_controls = IOControls(
-            buttons=QPushButton(...),
-            table=QTableWidget(),
-            label=QLabel(...),
-            col_widths=self.INPUT_COLUMN_WIDTHS
+        self.input_panel = IOControls(
+            role=IOTable.INPUT,
+            label=QLabel(INPUT_INSTRUCTION_TEXT),
+            table=setup.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, self.INPUT_COLUMN_WIDTHS),
+            buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
+            error_panel=error_manager.error_panel[IOTable.INPUT]
         )
-        self.output_controls = IOControls(
-            buttons=QPushButton(...),
-            table=QTableWidget(),
-            label=QLabel(...),
-            col_widths=self.OUTPUT_COLUMN_WIDTHS
+        self.output_panel = IOControls(
+            role=IOTable.OUTPUT,
+            label=QLabel(OUTPUT_INSTRUCTION_TEXT),
+            table=setup.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, self.OUTPUT_COLUMN_WIDTHS),
+            buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
+            error_panel=error_manager.error_panel[IOTable.OUTPUT]
         )
-
-        self.error_controls = ErrorControls(
-            error_panel=QWidget()
-        )
-
-        ## Instruction labels
-        instr = setup.Instructions()
-        instr.input_label = QLabel(INPUT_INSTRUCTION_TEXT)
-        instr.output_label = QLabel(OUTPUT_INSTRUCTION_TEXT)
-        input_table = setup.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection)
-        output_table = setup.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection)
-        
-        ## Buttons
-        add_input_file_button = QPushButton(ButtonNames.ADD.value, self)
-        remove_input_file_button = QPushButton(ButtonNames.REMOVE.value, self)
-        add_output_file_button = QPushButton(ButtonNames.ADD.value, self)
-        remove_output_file_button = QPushButton(ButtonNames.REMOVE.value, self)
-
-        layout = setup.setup_layout(
-            input_controls=self.input_controls,
-            output_controls=self.output_controls,
-            error_controls=self.error_controls
-        )
-        self.setLayout(layout)
-
-        setup.setup_main_button_connections(
-            input_controls=self.input_controls,
-            output_controls=self.output_controls,
-            managed_workbooks=self.managed_workbooks
-        )
+        setup.join_panels(self, layout=QHBoxLayout(), containers=(setup.create_interaction_panel(self.input_panel), setup.create_interaction_panel(self.output_panel)))
 
     ##################################
     ### QWizard function overrides ###

@@ -24,40 +24,31 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QWizardPage,
+    QBoxLayout,
     QHBoxLayout,
     QComboBox,
     QWidget,
-    QWizardPage,
-    QPushButton,
     QFileDialog,
     QVBoxLayout,
     QTableWidget,
     QTableWidgetItem
 )
 # First party libraries
-from phb_app.protocols_callables.content import (
-    SetupWidgets,
-    SetupLayout,
-    SetupMainButtonConnections
-)
-from phb_app.logging.error_manager import ErrorManager
 import phb_app.utils.func_utils as futils
-from phb_app.protocols_callables.content import (
-    Instructions,
-    IOControls,
-    ErrorControls
+from phb_app.protocols_callables.customs import (
+    IOControls
 )
 from phb_app.data.phb_dataclasses import (
     WorkbookManager,
     BaseTableHeaders,
     InputTableHeaders,
     OutputTableHeaders,
-    ButtonNames,
     IOTable,
     ManagedInputWorkbook,
     SpecialStrings,
     CountriesEnum,
-    MONTHS
+    MONATE_KURZ_DE
 )
 from phb_app.logging.exceptions import (
     FileAlreadySelected,
@@ -67,84 +58,45 @@ from phb_app.logging.exceptions import (
     MissingEmployeeRow,
     BudgetingDatesNotFound
 )
-from phb_app.protocols_callables.content import (
+from phb_app.protocols_callables.customs import (
     ConfigureRow,
-    AddWorkbook
+    AddWorkbook,
+    ColWidths,
+    IOControls
 )
 
-def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.SelectionMode) -> QTableWidget:
+def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: ColWidths) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
     table = QTableWidget(0, len(table_headers))
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     table.setSelectionMode(selection_mode)
     table.setHorizontalHeaderLabels(table_headers.cap_members_list())
     table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+    for header, width in col_widths.items():
+        table.setColumnWidth(header.value, width)
     return table
 
-def setup_table_with_buttons(table: QTableWidget, buttons: list[QPushButton], col_widths: dict[BaseTableHeaders, int]) -> QWidget:
+def create_interaction_panel(io_controls: IOControls) -> QWidget:
     '''Set up the table with the given buttons and column widths.'''
     container = QWidget()
     layout = QVBoxLayout()
-    layout.addWidget(table)
+    layout.addWidget(io_controls.label)
+    layout.addWidget(io_controls.table)
 
     buttons_layout = QHBoxLayout()
-    for button in buttons:
+    for button in io_controls.buttons:
         buttons_layout.addWidget(button)
     layout.addLayout(buttons_layout)
+    layout.addWidget(io_controls.error_panel)
     container.setLayout(layout)
     return container
 
-def setup_layout(instructions: Instructions, input_controls: IOControls, output_controls: OutputControls, error_controls: ErrorControls) -> None:
-    '''Init layout.'''
+def join_panels(page: QWizardPage, layout: QBoxLayout, **containers: QWidget) -> None:
+    '''Create the final layout for the page.'''
+    for container in containers:
+        layout.addWidget(container)
+    page.setLayout(layout)
 
-    ## Error labels
-    # Vertical layout of errors
-    error_controls.error_panel.setLayout(QVBoxLayout())
-    ## Layout types
-    # Main layout
-    page_layout = QVBoxLayout()
-    selection_container = QHBoxLayout() # All stuff input/putput
-    # Input layout
-    input_container = QTableWidget()
-    input_container.setMaximumWidth(485)
-    input_panel = QVBoxLayout()
-    input_button_layout = QHBoxLayout()
-    # Output layout
-    output_container = QTableWidget()
-    output_container.setMaximumWidth(485)
-    output_panel = QVBoxLayout()
-    output_button_layout = QHBoxLayout()
-
-    ## Add widgets
-    # To input button layout
-    input_button_layout.addWidget(add_input_file_button)
-    input_button_layout.addWidget(remove_input_file_button)
-    # To input layout
-    input_panel.addWidget(input_instructions_label)
-    input_panel.addWidget(input_table)
-    # To output button layout
-    output_button_layout.addWidget(add_output_file_button)
-    output_button_layout.addWidget(remove_output_file_button)
-    # To outputs layout
-    output_panel.addWidget(output_instructions_label)
-    output_panel.addWidget(output_table)
-
-    ## Add layouts heirarchically
-    input_panel.addLayout(input_button_layout)
-    input_container.setLayout(input_panel)
-    output_panel.addLayout(output_button_layout)
-    output_container.setLayout(output_panel)
-
-    ## Containers
-    # Add to selection container
-    selection_container.addWidget(input_container)
-    selection_container.addWidget(output_container)
-    # Main container
-    page_layout.addLayout(selection_container)
-    page_layout.addWidget(error_panel)
-
-    ## Display
-    setLayout(page_layout)
 
 def setup_main_button_connections(self):
     '''Connect buttons to their respective actions.'''
@@ -383,7 +335,7 @@ def configure_output_row(self,
     current_year_plus_two = (datetime.now() + relativedelta(years=+2)).year
     # Default values
     default_year = str(date_minus_one_month.year)
-    default_month = futils.german_abbr_month(date_minus_one_month.month, MONTHS)
+    default_month = futils.german_abbr_month(date_minus_one_month.month, MONATE_KURZ_DE)
     # Year
     year_dropdown = QComboBox()
     # Add the range of years
@@ -394,7 +346,7 @@ def configure_output_row(self,
     # Month
     month_dropdown = QComboBox()
     # Use months defined in the PHB data class module
-    month_dropdown.addItems(list(MONTHS.keys()))
+    month_dropdown.addItems(list(MONATE_KURZ_DE.keys()))
     month_dropdown.setCurrentText(default_month)
     table.setCellWidget(row_position, OutputTableHeaders.MONTH.value, month_dropdown)
     ## Dropdown action connections
@@ -405,26 +357,26 @@ def configure_output_row(self,
     # Connect the month selection
     month_dropdown.currentIndexChanged.connect(handle_selections)
 
-def remove_selected_file(self, table: QTableWidget, wb_manager: WorkbookManager) -> None:
+def remove_selected_file(page: QWizardPage, panel: IOControls, wb_manager: WorkbookManager) -> None:
     '''Remove the currently selected file(s) from the table.'''
 
     # Selected rows
-    selected_items = table.selectionModel().selectedRows()
+    selected_items = panel.table.selectionModel().selectedRows()
     # Search for selected rows in reverse so that the row numbering
     # doesn't change with each deletion.
     for row in sorted(
         [item.row() for item in selected_items],
         reverse=True
     ):
-        file_name = table.item(row, IOTableStartHeader.FILENAME.value).text()
+        file_name = panel.table.item(row, InputTableHeaders.FILENAME).text()
         # Remove the workbook
         wb_manager.remove_workbook(file_name)
         # Remove selected rows
-        table.removeRow(row)
+        panel.table.removeRow(row)
         # Check the file role
-        file_role = self.check_file_role(table)
+        file_role = panl.role
         # Remove any associated error
-        self.error_manager.remove_error(
+        panel.error_manager.remove_error(
             file_name,
             file_role
             )
@@ -443,11 +395,11 @@ def remove_highlighting(self, item: QTableWidgetItem) -> None:
     item.setBackground(Qt.GlobalColor.white)
     item.setForeground(Qt.GlobalColor.black)
 
-def check_file_role(self, table: QTableWidget) -> str:
-    '''Checks and returns whether the file is an inout or output.'''
-    if table is self.input_table:
-        return IOTable.INPUT.value
-    return IOTable.OUTPUT.value
+def check_file_role(self, panel: IOControls) -> str:
+    '''Checks and returns whether the file is an input or output.'''
+    if panel.role == IOTable.INPUT:
+        return IOTable.INPUT
+    return IOTable.OUTPUT
 
 def update_country_details_in_table(self, workbook_entry: ManagedInputWorkbook) -> None:
     '''Update country details.'''
