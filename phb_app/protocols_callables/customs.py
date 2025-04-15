@@ -16,10 +16,6 @@ Description
 Provides typesetting signatures.
 '''
 
-from dataclasses import (
-    dataclass,
-    field
-)
 from typing import (
     Protocol,
     Optional,
@@ -27,29 +23,16 @@ from typing import (
     TYPE_CHECKING
 )
 from PyQt6.QtWidgets import (
-    QWidget,
     QTableWidget,
     QPushButton,
     QLabel
 )
 
 if TYPE_CHECKING:
-    from phb_app.data.phb_dataclasses import (
-        IOTable,
-        BaseTableHeaders
-    )
+    from phb_app.data.phb_dataclasses import BaseTableHeaders
 
 type InstructionLabels = list[QLabel]
-type ColWidths = dict["BaseTableHeaders", int]
-type ButtonsList = list[QPushButton]
 
-@dataclass
-class IOControls:
-    role: "IOTable"
-    label: QLabel
-    table: QTableWidget
-    buttons: ButtonsList
-    error_panel: QWidget
 
 @runtime_checkable
 class ConfigureRow(Protocol):

@@ -16,8 +16,6 @@ Description
 -----------
 Constructs and manages the Input-Output selection page.
 '''
-
-
 # Third party libaries
 from PyQt6.QtWidgets import (
     QWizardPage,
@@ -34,10 +32,10 @@ from phb_app.protocols_callables.customs import (
 )
 from phb_app.logging.error_manager import ErrorManager
 from phb_app.wizard.constants.ui_strings import (
-    IO_TITLE,
-    IO_SUBTITLE,
-    INPUT_INSTRUCTION_TEXT,
-    OUTPUT_INSTRUCTION_TEXT
+    IO_FILE_TITLE,
+    IO_FILE_SUBTITLE,
+    I_FILE_INSTRUCTION_TEXT,
+    O_FILE_INSTRUCTION_TEXT
 )
 import phb_app.utils.setup_utils as setup
 from phb_app.data.phb_dataclasses import (
@@ -48,10 +46,9 @@ from phb_app.data.phb_dataclasses import (
     SpecialStrings,
     OutputFile,
     QPropName,
-    IOTable
+    IORole
 )
-
-##################################
+#################################################################################
 class IOSelectionPage(QWizardPage):
     '''Page for the selection of input and output files.
     Input files require the selection of worksheet containing the data and the file's origin.
@@ -60,40 +57,27 @@ class IOSelectionPage(QWizardPage):
     from its file name is not desired. One or more project numbers must be selected for
     the output file.'''
 
-    INPUT_COLUMN_WIDTHS = {
-        InputTableHeaders.FILENAME: 250,
-        InputTableHeaders.COUNTRY: 150,
-        InputTableHeaders.WORKSHEET: 100,
-    }
-    OUTPUT_COLUMN_WIDTHS = {
-        OutputTableHeaders.FILENAME: 250,
-        OutputTableHeaders.WORKSHEET: 150,
-        OutputTableHeaders.MONTH: 60,
-        OutputTableHeaders.YEAR: 60,
-    }
-
     def __init__(self, country_data, error_manager: ErrorManager, managed_workbooks: WorkbookManager) -> None:
         super().__init__()
-
-        error_manager.error_panel[IOTable.INPUT] = QWidget()
-        error_manager.error_panel[IOTable.OUTPUT] = QWidget()
-        self.setTitle(IO_TITLE)
-        self.setSubTitle(IO_SUBTITLE)
+        error_manager.error_panels[IORole.INPUT_FILE] = QWidget()
+        error_manager.error_panels[IORole.OUTPUT_FILE] = QWidget()
+        self.setTitle(IO_FILE_TITLE)
+        self.setSubTitle(IO_FILE_SUBTITLE)
         self.input_panel = IOControls(
-            role=IOTable.INPUT,
-            label=QLabel(INPUT_INSTRUCTION_TEXT),
+            role=IORole.INPUT_FILE,
+            label=QLabel(I_FILE_INSTRUCTION_TEXT),
             table=setup.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, self.INPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panel[IOTable.INPUT]
+            error_panel=error_manager.error_panels[IORole.INPUT_FILE]
         )
         self.output_panel = IOControls(
-            role=IOTable.OUTPUT,
-            label=QLabel(OUTPUT_INSTRUCTION_TEXT),
+            role=IORole.OUTPUT_FILE,
+            label=QLabel(O_FILE_INSTRUCTION_TEXT),
             table=setup.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, self.OUTPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panel[IOTable.OUTPUT]
+            error_panel=error_manager.error_panels[IORole.OUTPUT_FILE]
         )
-        setup.join_panels(self, layout=QHBoxLayout(), containers=(setup.create_interaction_panel(self.input_panel), setup.create_interaction_panel(self.output_panel)))
+        setup.set_page(setup.create_interaction_panel(self.input_panel), setup.create_interaction_panel(self.output_panel), page=self, layout=QHBoxLayout())
 
     ##################################
     ### QWizard function overrides ###

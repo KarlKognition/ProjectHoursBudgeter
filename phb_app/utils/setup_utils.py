@@ -16,7 +16,6 @@ Description
 -----------
 All functions necessary for setting up the wizard pages.
 '''
-
 ## Imports
 # Standard libraries
 from os import path
@@ -36,18 +35,16 @@ from PyQt6.QtWidgets import (
 )
 # First party libraries
 import phb_app.utils.func_utils as futils
-from phb_app.protocols_callables.customs import (
-    IOControls
-)
 from phb_app.data.phb_dataclasses import (
     WorkbookManager,
     BaseTableHeaders,
     InputTableHeaders,
     OutputTableHeaders,
-    IOTable,
     ManagedInputWorkbook,
     SpecialStrings,
     CountriesEnum,
+    IOControls,
+    ColWidths,
     MONATE_KURZ_DE
 )
 from phb_app.logging.exceptions import (
@@ -60,9 +57,7 @@ from phb_app.logging.exceptions import (
 )
 from phb_app.protocols_callables.customs import (
     ConfigureRow,
-    AddWorkbook,
-    ColWidths,
-    IOControls
+    AddWorkbook
 )
 
 def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: ColWidths) -> QTableWidget:
@@ -76,71 +71,54 @@ def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.S
         table.setColumnWidth(header.value, width)
     return table
 
-def create_interaction_panel(io_controls: IOControls) -> QWidget:
+def create_interaction_panel(panel: IOControls) -> QWidget:
     '''Set up the table with the given buttons and column widths.'''
     container = QWidget()
     layout = QVBoxLayout()
-    layout.addWidget(io_controls.label)
-    layout.addWidget(io_controls.table)
-
+    layout.addWidget(panel.label)
+    layout.addWidget(panel.table)
     buttons_layout = QHBoxLayout()
-    for button in io_controls.buttons:
+    for button in panel.buttons:
         buttons_layout.addWidget(button)
     layout.addLayout(buttons_layout)
-    layout.addWidget(io_controls.error_panel)
+    layout.addWidget(panel.error_panel)
     container.setLayout(layout)
     return container
 
-def join_panels(page: QWizardPage, layout: QBoxLayout, **containers: QWidget) -> None:
+def set_page(*containers: QWidget, page: QWizardPage, layout: QBoxLayout) -> None:
     '''Create the final layout for the page.'''
     for container in containers:
         layout.addWidget(container)
     page.setLayout(layout)
 
+def connect_buttons(page: QWizardPage, panel: IOControls, managed_workbooks: WorkbookManager) -> None:
+    '''Connect buttons to their respective actions dynamically.'''
 
-def setup_main_button_connections(self):
-    '''Connect buttons to their respective actions.'''
+    # Define a function dispatch table
+    def add_action():
+        add_file_dialog(QFileDialog.FileMode.ExistingFiles, panel.table, managed_workbooks)
 
-    ## Connect functions
-    # Add input files
-    self.add_input_file_button.clicked.connect(
-        lambda: self.add_file_dialog(
-            QFileDialog.FileMode.ExistingFiles,
-            self.input_table,
-            self.managed_workbooks
-        )
-    )
-    # Add output file
-    self.add_output_file_button.clicked.connect(
-        lambda: self.add_file_dialog(
-            QFileDialog.FileMode.ExistingFile,
-            self.output_table,
-            self.managed_workbooks
-        )
-    )
+    def remove_action():
+        remove_selected_file(page, panel, managed_workbooks)
 
-    ## Remove files
-    #Input files
-    self.remove_input_file_button.clicked.connect(
-        lambda: self.remove_selected_file(
-            self.input_table,
-            self.managed_workbooks
-        )
-    )
-    # Output file
-    self.remove_output_file_button.clicked.connect(
-        lambda: self.remove_selected_file(
-            self.output_table,
-            self.managed_workbooks
-        )
-    )
+    action_dispatch = {
+        "add_button": add_action,
+        "remove_button": remove_action,
+        "select_all_button": panel.table.selectAll,
+        "deselect_all_button": panel.table.clearSelection
+    }
+
+    # Iterate over buttons and connect them dynamically
+    for button in panel.buttons:
+        action = action_dispatch.get(button.objectName())
+        if action:
+            button.clicked.connect(action)
 
 ############################
 ### Supporting functions ###
 ############################
 
-def add_file_dialog(self,
-                    file_mode: QFileDialog.FileMode,
+def add_file_dialog(file_mode: QFileDialog.FileMode,
                     target_table: QTableWidget,
                     wb_manager: WorkbookManager
                     ) -> None:
@@ -373,15 +351,10 @@ def remove_selected_file(page: QWizardPage, panel: IOControls, wb_manager: Workb
         wb_manager.remove_workbook(file_name)
         # Remove selected rows
         panel.table.removeRow(row)
-        # Check the file role
-        file_role = panl.role
         # Remove any associated error
-        panel.error_manager.remove_error(
-            file_name,
-            file_role
-            )
+        panel.error_manager.remove_error(file_name, panel.role)
         # Update UI
-        self.completeChanged.emit()
+        page.completeChanged.emit()
 
 def highlight_bad_item(self, item: QTableWidgetItem) -> None:
     '''Highlight table items causing errors.'''
@@ -394,12 +367,6 @@ def remove_highlighting(self, item: QTableWidgetItem) -> None:
 
     item.setBackground(Qt.GlobalColor.white)
     item.setForeground(Qt.GlobalColor.black)
-
-def check_file_role(self, panel: IOControls) -> str:
-    '''Checks and returns whether the file is an input or output.'''
-    if panel.role == IOTable.INPUT:
-        return IOTable.INPUT
-    return IOTable.OUTPUT
 
 def update_country_details_in_table(self, workbook_entry: ManagedInputWorkbook) -> None:
     '''Update country details.'''

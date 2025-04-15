@@ -20,6 +20,12 @@ from abc import ABC, abstractmethod
 from typing import Optional, Iterator
 from dataclasses import dataclass, field
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QWidget,
+    QTableWidget,
+    QLabel,
+    QPushButton
+)
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import openpyxl.utils as xlutils
@@ -56,21 +62,20 @@ MONATE_KURZ_DE = {
 class BaseTableHeaders(Enum):
     '''Base enum class with overridden string dunder method
     and general class method.'''
-
     @classmethod
     def cap_members_list(cls) -> list:
         '''Return a list of capitalised enum members.'''
-
         return [name.replace('_', ' ').title() for name in cls.__members__]
 
     @classmethod
     def list_all_values(cls) -> list[int | str]:
         '''Returns a list of all member values.'''
-
         return [member.value for member in cls]
     
     def __str__(self):
         return self.name.replace('_', ' ').title()
+
+type ColWidths = dict[BaseTableHeaders, int]
 
 class WizardPageIDs(BaseTableHeaders):
     '''Enumerated pages in order of appearance.'''
@@ -85,11 +90,14 @@ class WizardPageIDs(BaseTableHeaders):
 #### IO Selection Enum ####
 ##########################
 
-class IOTable(Enum):
+class IORole(Enum):
     '''Input or output.'''
 
-    INPUT = "input"
-    OUTPUT = "output"
+    INPUT_FILE = "input_file"
+    OUTPUT_FILE = "output_file"
+    EMPLOYEE_TABLE = "employee_table"
+    PROJECT_TABLE = "project_table"
+    SUMMARY_TABLE = "summary_table"
 
 class QPropName(Enum):
     '''QWizard property names.'''
@@ -214,6 +222,22 @@ class YamlEnum(BaseTableHeaders):
     DEVIATIONS = "deviations"
     ROW_ANCHORS = "row_anchors"
 
+#######################
+#### Column widths ####
+#######################
+
+INPUT_COLUMN_WIDTHS = {
+    InputTableHeaders.FILENAME: 250,
+    InputTableHeaders.COUNTRY: 150,
+    InputTableHeaders.WORKSHEET: 100
+
+}
+OUTPUT_COLUMN_WIDTHS = {
+    OutputTableHeaders.FILENAME: 250,
+    OutputTableHeaders.WORKSHEET: 150,
+    OutputTableHeaders.MONTH: 60,
+    OutputTableHeaders.YEAR: 60
+}
 
 ############################################
 #### To be replaced with a yaml handler ####
@@ -235,7 +259,6 @@ NON_NAMES = [
 
 class YamlHandler(ABC):
     '''Abstract class for deserialising yaml files.'''
-
     CONFIG_PATH = path.join(path.dirname(__file__), "config_data.yaml")
 
     def __init__(self):
@@ -247,12 +270,10 @@ class YamlHandler(ABC):
     def _process_yaml(self,
                       yaml_data: dict) -> None:
         '''Abstract method. Processes the data of the yaml file.'''
-
         raise NotImplementedError # To override
 
     def _load_yaml_data(self) -> None:
         '''Template for loading yaml data.'''
-
         try:
             with open(self.CONFIG_PATH, 'r', encoding=SpecialStrings.UTF_8.value) as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
@@ -270,7 +291,6 @@ class YamlHandler(ABC):
 class FilterHeaders:
     '''Data class for worksheet header strings used for filtering.
     These data are received from LocaleData.'''
-
     name: str
     proj_id: str # Project number
     description: str # Project's short description
@@ -280,7 +300,6 @@ class FilterHeaders:
 @dataclass
 class FilePatternData:
     '''Parent data class for establishing the Excel file's naming.'''
-
     # German or external input timesheets or output budget file
     file_type: str
     # Regular expresion to filter for file in open file dialog.
@@ -289,7 +308,6 @@ class FilePatternData:
 @dataclass
 class InputLocaleData(FilePatternData):
     '''Child data class for establishing the Excel file's locale details.'''
-
     country: str # Country name
     exp_sheet_name: str # Expected worksheet name
     filter_headers: FilterHeaders = field(default_factory=dict)
@@ -299,13 +317,11 @@ class InputLocaleData(FilePatternData):
 
     def __post_init__(self):
         '''Init the filter headers from the data received from the country data dataclass.'''
-
         self.filter_headers = FilterHeaders(**self.filter_headers)
 
 @dataclass
 class CountryData(YamlHandler):
     '''Data class using the LocaleData data class to deserialise the yaml config file.'''
-
     countries: list[InputLocaleData] = field(default_factory=list)
 
     def __post_init__(self):
@@ -314,13 +330,11 @@ class CountryData(YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-
         country_data = yaml_data.get(YamlEnum.COUNTRIES.value, [])
         self.countries = [InputLocaleData(**locale_data) for locale_data in country_data]
 
     def get_locale_by_country(self, country: str) -> InputLocaleData:
         '''Returns the locale as per given country name.'''
-
         return next((locale for locale in self.countries if locale.country == country), None)
 
 ####################################
@@ -339,7 +353,6 @@ class HoursDeviation(YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-
         self.__dict__.update(yaml_data.get(YamlEnum.DEVIATIONS.value, {}))
 
 #################################
@@ -364,39 +377,33 @@ class EmployeeRowAnchors(YamlHandler):
 @dataclass(eq=False) # Set to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRange:
     '''Data class for the range within which the employee names are located.'''
-
     start_cell: str = ""
     end_cell: str = ""
 
     @property
     def start_col_idx(self) -> int:
         '''Get the column integer of the start cell.'''
-
         return xlutils.coordinate_to_tuple(self.start_cell)[1]
 
     @property
     def end_col_idx(self) -> int:
         '''Get the column integer of the end cell.'''
-
         return xlutils.coordinate_to_tuple(self.end_cell)[1]
 
     @property
     def start_row_idx(self) -> int:
         '''Get the row integer of the start cell.'''
-
         return xlutils.coordinate_to_tuple(self.start_cell)[0]
 
     @property
     def end_row_idx(self) -> int:
         '''Get the row integer of the end cell.'''
-
         return xlutils.coordinate_to_tuple(self.end_cell)[0]
 
 @dataclass
 class EmployeeHours:
     '''Data class for managing the predicted and accumulated hours
     per employee.'''
-
     predicted_hours: Optional[float|int] = None
     pre_hours_colour: Optional[Qt.GlobalColor] = Qt.GlobalColor.black
     accumulated_hours: Optional[float|int] = None
@@ -407,7 +414,6 @@ class EmployeeHours:
 
     def set_deviation(self) -> None:
         '''Sets the deviation by percentage between predicted and accumulated hours.'''
-
         pre_hrs = self.predicted_hours
         acc_hrs = self.accumulated_hours
         if not isinstance(acc_hrs, (float, int)):
@@ -418,10 +424,7 @@ class EmployeeHours:
             # Use only absolute values to ensure correct calculation of 1 - frac
             pre_hrs = abs(pre_hrs)
             acc_hrs = abs(acc_hrs)
-            frac = (
-                min(acc_hrs, pre_hrs)/
-                max(acc_hrs, pre_hrs)
-            )
+            frac = (min(acc_hrs, pre_hrs) / max(acc_hrs, pre_hrs))
             if 1 - frac >= self.thresholds.strong_dev:
                 self.deviation = "Warning! Strong deviation!"
             elif 1 - frac >= self.thresholds.weak_dev:
@@ -434,7 +437,6 @@ class Employee:
     '''Data class for managing employee name location and related hours
     in the given worksheet. Projects where the employee registered hours
     will be saved here.'''
-
     name: str
     found_projects: dict[int|str, list[str]] = field(default_factory=dict)
     hours: EmployeeHours = field(default_factory=EmployeeHours)
@@ -444,7 +446,6 @@ class Employee:
 class SelectedDate:
     '''Data class for the located date for which hours will be recorded per employee
     in the budgeting file.'''
-
     month: Optional[int]
     year: Optional[int]
     row: Optional[int]
@@ -456,14 +457,12 @@ class SelectedDate:
 @dataclass
 class SelectedSheet:
     '''Data class for worksheet names.'''
-
     sheet_name: str
     sheet_object: Worksheet
 
 @dataclass
 class ManagedWorksheet:
     '''Parent data class for worksheet data.'''
-
     selected_sheet: Optional[SelectedSheet] = None
     sheet_names: list[str] = field(default_factory=list)
 
@@ -471,7 +470,6 @@ class ManagedWorksheet:
 @dataclass
 class ManagedInputWorksheet(ManagedWorksheet):
     '''Child data class for input worksheet data.'''
-
     # The project number is not provided at init/postinit
     # key: project ID (network number [int] or PSP element [str]),
     # value: list of short project desciptions
@@ -483,7 +481,6 @@ class ManagedInputWorksheet(ManagedWorksheet):
     def index_headers(self) -> None:
         '''Retrieves the table headers from the given worksheet
         and maps them to their column indices.'''
-
         # sheet object [1] is row one, where the headers are
         for idx, cell in enumerate(self.selected_sheet.sheet_object[1]):
             if isinstance(cell.value, str):
@@ -492,13 +489,11 @@ class ManagedInputWorksheet(ManagedWorksheet):
     def yield_from_project_id_and_desc(self) -> Iterator[tuple[str, list[str]]]:
         '''Yields from the project ID and description,
         one at a time in a tuple.'''
-
         yield from self.selectable_project_ids.items()
 
     def set_selectable_project_ids(self, proj_id: str, proj_desc: str, name: str) -> None:
         '''Extracts all project IDs in the selected worksheet and saves the 
         data in the selectable project IDs dictionary.'''
-
         # Get the worksheet object
         sheet_object = self.selected_sheet.sheet_object
         # Get the project ID column index
@@ -527,7 +522,6 @@ class ManagedInputWorksheet(ManagedWorksheet):
 @dataclass
 class ManagedOutputWorksheet(ManagedWorksheet):
     '''Child data class for output worksheet data.'''
-
     # Replaced through IOSelection
     selected_date: SelectedDate = field(default_factory=SelectedDate)
     employee_row_anchors: EmployeeRowAnchors = field(default_factory=EmployeeRowAnchors)
@@ -538,34 +532,20 @@ class ManagedOutputWorksheet(ManagedWorksheet):
 
     def set_sheet_names(self, sheet_names) -> None:
         '''Set sheet names.'''
-
         self.sheet_names = sheet_names
 
     def set_selected_sheet(self, sheet_name: str, sheet_object: Worksheet) -> None:
         '''Set selected sheet.'''
-
         # Save the worksheet data
-        self.selected_sheet = SelectedSheet(
-            sheet_name,
-            sheet_object
-            )
+        self.selected_sheet = SelectedSheet(sheet_name, sheet_object)
         self.selected_sheet.sheet_name = sheet_name
         self.selected_sheet.sheet_object = sheet_object
         # Check whether the employees are located in the worksheet
         self.employee_range = EmployeeRange()
-        futils.locate_employee_range(
-            self.selected_sheet.sheet_object,
-            self.employee_range,
-            self.employee_row_anchors
-        )
+        futils.locate_employee_range(self.selected_sheet.sheet_object, self.employee_range,self.employee_row_anchors)
 
-    def set_budgeting_date(self,
-                           file_path: str,
-                           sheet_name: str,
-                           selected_month: str,
-                           selected_year: str) -> None:
+    def set_budgeting_date(self, file_path: str, sheet_name: str, selected_month: str, selected_year: str) -> None:
         '''Sets the budgeting date with the row it is located in the worksheet.'''
-
         # Convert dates to integers and put in a tuple
         month_year = (MONATE_KURZ_DE.get(selected_month), int(selected_year))
         budgeting_dates = futils.get_budgeting_dates(file_path, sheet_name)
@@ -585,13 +565,11 @@ class ManagedOutputWorksheet(ManagedWorksheet):
 
     def set_selected_employees(self, coord_name: list[tuple[str, str]]) -> None:
         '''Save the coordinate in the worksheet with the selected employee.'''
-
         for coord, name in coord_name:
             self.selected_employees[coord] = Employee(name)
 
     def set_predicted_hours(self, coord_hours: dict[str, float|int]) -> None:
         '''Sets the attribute with the predicted hours found in the worksheet.'''
-
         for coord, hours in coord_hours.items():
             employee = self.selected_employees.get(coord)
             if employee:
@@ -603,7 +581,6 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         '''Set the color formatting of the employee's predicted hours.
         Predicted hours may be coloured as the user wishes but recorded
         hours must be set to black (default, theme or RGB).'''
-
         for emp in self.yield_from_selected_employee():
             if emp.hours.hours_coord:
                 # Check each employee's predicted hours colour
@@ -630,12 +607,10 @@ class ManagedOutputWorksheet(ManagedWorksheet):
 
     def clear_predicted_hours(self) -> None:
         '''Clears the recorded employee names and respective hours.'''
-
         self.selected_employees.clear()
 
     def yield_from_selected_employee(self) -> Iterator[Employee]:
         '''Yields from the selected employee.'''
-
         yield from self.selected_employees.values()
 
 #############################
@@ -645,7 +620,6 @@ class ManagedOutputWorksheet(ManagedWorksheet):
 @dataclass
 class ManagedWorkbook:
     '''Parent data class for workbook data.'''
-
     file_path: str # Mandatory parameter
     file_name: Optional[str] = None
     data_only: bool = False # By default keep the formulae in the workbook
@@ -656,7 +630,6 @@ class ManagedWorkbook:
 
     def __eq__(self, other):
         '''Compare data objects by file names and data_only.'''
-
         if isinstance(other, ManagedWorkbook):
             return self.file_name == other.file_name and self.data_only == other.data_only
         return False
@@ -664,7 +637,6 @@ class ManagedWorkbook:
 @dataclass
 class ManagedOutputWorkbook(ManagedWorkbook):
     '''Child data class for output workbook data (budget).'''
-
     managed_sheet_object: Optional[ManagedOutputWorksheet] = None
 
     def __post_init__(self):
@@ -673,13 +645,11 @@ class ManagedOutputWorkbook(ManagedWorkbook):
 
     def init_output_worksheet(self) -> None:
         '''Init output worksheet.'''
-
         self.managed_sheet_object = ManagedOutputWorksheet()
         self.managed_sheet_object.set_sheet_names(self.workbook_object.sheetnames)
 
     def save_output_workbook(self) -> None:
         '''Saves the workbook with its given file path.'''
-
         self.workbook_object.save(self.file_path)
 
 @dataclass
@@ -687,7 +657,6 @@ class ManagedInputWorkbook(ManagedWorkbook):
     '''Child data class for input workbook data (timesheets).
     The data is provided from a deep copy made from the Location
     Manager's retrieved data.'''
-
     locale_data: Optional[InputLocaleData] = None
     managed_sheet_object: Optional[ManagedInputWorksheet] = None
 
@@ -697,7 +666,6 @@ class ManagedInputWorkbook(ManagedWorkbook):
 
     def set_locale_data(self, country_data: CountryData, country_name: str) -> None:
         '''Sets the locale data.'''
-        
         # A deep copy is not required because the data object will not change
         self.locale_data = next(
             (locale for locale in country_data.countries
@@ -706,7 +674,6 @@ class ManagedInputWorkbook(ManagedWorkbook):
 
     def init_input_worksheet(self):
         '''Init input worksheet.'''
-
         if len(self.workbook_object.sheetnames) <= 1:
             sheet_name = self.workbook_object.sheetnames[0]
         else:
@@ -725,10 +692,8 @@ class WorkbookManager:
 
     workbooks: list[ManagedInputWorkbook | ManagedOutputWorkbook] = field(default_factory=list)
 
-    def try_add_workbook(self,
-                         workbook: ManagedInputWorkbook | ManagedOutputWorkbook) -> None:
+    def try_add_workbook(self, workbook: ManagedInputWorkbook | ManagedOutputWorkbook) -> None:
         '''Try to add the workbook to tracking.'''
-
         retrieved_wb = self.get_workbook_by_name(workbook.file_name)
         if retrieved_wb != workbook:
             self.workbooks.append(workbook)
@@ -737,44 +702,49 @@ class WorkbookManager:
 
     def add_input_workbook(self, file_path: str) -> None:
         '''Add input workbooks by filename.'''
-
         workbook = ManagedInputWorkbook(file_path)
         self.try_add_workbook(workbook)
 
     def add_output_workbook(self, file_path: str, data_only: bool = False) -> None:
         '''Add input workbooks by filename.'''
-
         workbook = ManagedOutputWorkbook(file_path=file_path, data_only=data_only)
         self.try_add_workbook(workbook)
 
-    def get_workbook_by_name(self,
-                     file_name: str,
-    ) -> ManagedInputWorkbook | ManagedOutputWorkbook | None:
+    def get_workbook_by_name(self, file_name: str) -> ManagedInputWorkbook | ManagedOutputWorkbook | None:
         '''Retrieves the first workbook in the list by file name.'''
-
         return next((wb for wb in self.workbooks
                      if file_name == wb.file_name),
                      None)
 
-    def yield_workbooks_by_type(self,
-                     wb_class: ManagedInputWorkbook | ManagedOutputWorkbook,
-    ) -> Iterator[ManagedInputWorkbook | ManagedOutputWorkbook]:
+    def yield_workbooks_by_type(self, wb_class: ManagedInputWorkbook | ManagedOutputWorkbook) -> Iterator[ManagedInputWorkbook | ManagedOutputWorkbook]:
         '''Returns a generator of workbooks in the list by type.'''
-
         for wb in self.workbooks:
             if isinstance(wb, wb_class):
                 yield wb
 
-    def remove_workbook(self,
-                        file_name: str) -> None:
+    def remove_workbook(self, file_name: str) -> None:
         '''Add input/output workbooks by filename.'''
-
         if file_name:
             wb = self.get_workbook_by_name(file_name)
             # Delete workbook object if it was created
             if wb:
                 self.workbooks.remove(wb)
                 del wb
+
+#######################
+#### IO management ####
+#######################
+
+type ButtonsList = list[QPushButton]
+
+@dataclass
+class IOControls:
+    '''Data class for managing the IO controls.'''
+    role: IORole
+    label: QLabel
+    table: QTableWidget
+    buttons: ButtonsList
+    error_panel: QWidget
 
 ########################
 #### Log management ####
@@ -783,7 +753,6 @@ class WorkbookManager:
 @dataclass
 class FileMetaData:
     '''Encapsulates all necessary log data.'''
-
     log_file_path: str
     selected_date: datetime
     input_workbooks: list[str]
@@ -793,6 +762,5 @@ class FileMetaData:
 @dataclass
 class TableStructure:
     '''Encapsulates table-related metadata.'''
-
     headers: list[str]
     col_widths: list[int]

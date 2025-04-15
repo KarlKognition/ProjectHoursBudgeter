@@ -20,7 +20,7 @@ class ErrorManager:
     '''Manages the errors using QWizard QLabels.'''
     def __init__(self) -> None:
         # UI container for error messages
-        self.error_panel: dict[str, QWidget] = {}
+        self.error_panels: dict[str, QWidget] = {}
         self.errors: dict[tuple[str, str], dict[str, QLabel]] = {}
 
     def add_error(self,
@@ -39,7 +39,7 @@ class ErrorManager:
         # Red styled error
         self.style_error_message(label)
         # Put the label in the UI
-        self.error_panel.layout().addWidget(label)
+        self.error_panels.layout().addWidget(label)
         # Track the label
         self.errors[key][str(error)] = label
 
@@ -52,7 +52,7 @@ class ErrorManager:
         if key in self.errors:
             for label in self.errors[key].values():
                 # Remove the message and file name from tracking
-                self.error_panel.layout().removeWidget(label)
+                self.error_panels.layout().removeWidget(label)
                 # Remove the associated label
                 label.deleteLater()
             # If no error for this role, remove entry
