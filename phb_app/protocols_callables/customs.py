@@ -22,16 +22,7 @@ from typing import (
     runtime_checkable,
     TYPE_CHECKING
 )
-from PyQt6.QtWidgets import (
-    QTableWidget,
-    QPushButton,
-    QLabel
-)
-
-if TYPE_CHECKING:
-    from phb_app.data.phb_dataclasses import BaseTableHeaders
-
-type InstructionLabels = list[QLabel]
+from PyQt6.QtWidgets import QTableWidget
 
 
 @runtime_checkable
