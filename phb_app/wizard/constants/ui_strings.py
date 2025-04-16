@@ -28,6 +28,9 @@ O_FILE_INSTRUCTION_TEXT = (
     "Select the project hours budgeting file as the target output file."
 )
 
+ADD_FILE = "Add File"
+EXCEL_FILE = "Excel files (*.xlsx)"
+
 #################################
 ### Project Selection Strings ###
 #################################

@@ -40,6 +40,7 @@ from phb_app.data.phb_dataclasses import (
     BaseTableHeaders,
     InputTableHeaders,
     OutputTableHeaders,
+    IORole,
     ManagedInputWorkbook,
     SpecialStrings,
     CountriesEnum,
@@ -58,6 +59,10 @@ from phb_app.logging.exceptions import (
 from phb_app.protocols_callables.customs import (
     ConfigureRow,
     AddWorkbook
+)
+from phb_app.wizard.constants.ui_strings import (
+    ADD_FILE,
+    EXCEL_FILE
 )
 
 def create_table(table_headers: BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: ColWidths) -> QTableWidget:
@@ -96,7 +101,7 @@ def connect_buttons(page: QWizardPage, panel: IOControls, managed_workbooks: Wor
 
     # Define a function dispatch table
     def add_action():
-        add_file_dialog(QFileDialog.FileMode.ExistingFiles, panel.table, managed_workbooks)
+        add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, panel, managed_workbooks)
 
     def remove_action():
         remove_selected_file(page, panel, managed_workbooks)
@@ -114,99 +119,67 @@ def connect_buttons(page: QWizardPage, panel: IOControls, managed_workbooks: Wor
         if action:
             button.clicked.connect(action)
 
-############################
-### Supporting functions ###
-############################
-
-def add_file_dialog(file_mode: QFileDialog.FileMode,
-                    target_table: QTableWidget,
-                    wb_manager: WorkbookManager
-                    ) -> None:
-    '''Add files to either the input or output selection tables.'''
-
-    ## Set up file dialog box
-    file_dialog = QFileDialog(self)
-    file_dialog.setWindowTitle("Add File")
-    # Only search for Excel files
-    file_dialog.setNameFilter("Excel files (*.xlsx)")
-    # Allow multiple file selection
+def setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFileDialog:
+    '''Set up and return a file dialog.'''
+    file_dialog = QFileDialog(page)
+    file_dialog.setWindowTitle(ADD_FILE)
+    file_dialog.setNameFilter(EXCEL_FILE)
     file_dialog.setFileMode(file_mode)
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
-    # Select files if add button clicked
+    return file_dialog
+
+def handle_file_selection(panel: IOControls, selected_files: list[str], page: QWizardPage, wb_manager: WorkbookManager) -> None:
+    '''Handle file selection and populate the appropriate table.'''
+    if panel.role == IORole.INPUT_FILE:
+        populate_table(page, panel, selected_files, wb_manager.add_input_workbook, configure_input_row)
+    elif panel.role == IORole.OUTPUT_FILE:
+        populate_table(page, panel, selected_files, wb_manager.add_output_workbook, configure_output_row)
+
+def add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, panel: IOControls, wb_manager: WorkbookManager) -> None:
+    '''Add files to either the input or output selection tables.'''
+    file_dialog = setup_file_dialog(page, file_mode)
     if file_dialog.exec():
-        if target_table == self.input_table:
-            selected_files = file_dialog.selectedFiles()
-            # Add row in input table
-            self.populate_table(
-                target_table,
-                selected_files,
-                wb_manager.add_input_workbook, # -> add_workbook
-                self.configure_input_row
-            )
-        elif target_table == self.output_table:
-            selected_file = file_dialog.selectedFiles()
-            # Add row in output table
-            self.populate_table(
-                target_table,
-                selected_file,
-                wb_manager.add_output_workbook, # -> add_workbook
-                self.configure_output_row
-            )
+        selected_files = file_dialog.selectedFiles()
+        handle_file_selection(panel, selected_files, page, wb_manager)
 
-def populate_table(self,
-                    table: QTableWidget,
-                    files: list[str] | str,
-                    add_workbook: AddWorkbook,
-                    configure_row: ConfigureRow
-                    ) -> None:
+def populate_table(page: QWizardPage, panel: IOControls, files: list[str]|str, add_workbook: AddWorkbook, configure_row: ConfigureRow) -> None:
     '''Populate the table with selected file(s).'''
-
     for file_path in files:
         file_name = path.basename(file_path)
         try:
             # Check if the file is already in either table
-            file_exists = futils.is_file_already_in_table(
-                file_name,
-                IOTableStartHeader.FILENAME.value,
-                self.input_table,
-                self.output_table
-            )
+            file_exists = futils.is_file_already_in_table(file_name, InputTableHeaders.FILENAME, panel.table, self.output_table)
             # Insert row into table at the end of all existing rows
-            row_position = table.rowCount()
-            table.insertRow(row_position)
+            row_position = panel.table.rowCount()
+            panel.table.insertRow(row_position)
             # Item is uneditable.
             file_item = QTableWidgetItem(file_name)
             file_item.setFlags(file_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             # Display the file name in first column
-            table.setItem(
-                row_position,
-                IOTableStartHeader.FILENAME.value,
-                file_item
-            )
+            panel.table.setItem(row_position, InputTableHeaders.FILENAME.value, file_item)
             # If there are 2 or more rows in the output table: error
-            if table is self.output_table and table.rowCount() >= 2:
+            if panel.table == IORole.INPUT_FILE and panel.table.rowCount() >= 2:
                 # Highlight it red
-                self.highlight_bad_item(file_item)
+                highlight_bad_item(file_item)
                 raise TooManyOutputFilesSelected()
             # If file is a duplicate: error
             if file_exists:
                 # Highlight it red
-                self.highlight_bad_item(file_item)
+                highlight_bad_item(file_item)
                 raise FileAlreadySelected(file_name)
             # Delegate row configuration to the provided callable
-            if table is self.output_table:
+            if panel.table == IORole.OUTPUT_FILE:
                 # Create a tracked managed workbook without formulae
                 add_workbook(file_path, True)
                 # Create a tracked managed workbook with formulae
                 add_workbook(file_path, False)
             else:
                 add_workbook(file_path)
-            configure_row(table, row_position, file_name, file_path)
+            configure_row(panel.table, row_position, file_name, file_path)
         except Exception as e:
-            file_role = self.check_file_role(table)
-            self.error_manager.add_error(file_name, file_role, e)
+            error_manager.add_error(file_name, panel.role, e)
         # Update UI
-        self.completeChanged.emit()
+        page.completeChanged.emit()
 
 def configure_input_row(self,
                         table: QTableWidget,
