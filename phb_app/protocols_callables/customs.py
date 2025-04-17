@@ -19,8 +19,7 @@ Provides typesetting signatures.
 from typing import (
     Protocol,
     Optional,
-    runtime_checkable,
-    TYPE_CHECKING
+    runtime_checkable
 )
 from PyQt6.QtWidgets import QTableWidget
 

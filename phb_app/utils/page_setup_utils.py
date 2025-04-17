@@ -22,12 +22,14 @@ from os import path
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWizardPage,
     QBoxLayout,
     QHBoxLayout,
     QComboBox,
     QWidget,
+    QLabel,
     QFileDialog,
     QVBoxLayout,
     QTableWidget,
@@ -65,6 +67,49 @@ from phb_app.wizard.constants.ui_strings import (
     EXCEL_FILE
 )
 
+###################
+### Title Setup ###
+###################
+
+def set_titles(page: QWizardPage, title: str, subtitle: str) -> None:
+    '''Set the title and subtitle for the page.'''
+    page.setTitle(title)
+    page.setSubTitle(subtitle)
+
+def set_watermark(watermark: QLabel, directory: str, error: str) -> None:
+    '''Set watermark.'''
+    watermark_file = f"{directory}\\budget_watermark.jpg"
+    watermark_pixmap = QPixmap(watermark_file)
+    if watermark_pixmap.isNull():
+        watermark.setStyleSheet("color: red;")
+        watermark.setPixmap(QPixmap())  # Clear the pixmap
+        watermark.setText(error)
+        return
+    watermark.setPixmap(watermark_pixmap)
+    watermark.setScaledContents(False)
+
+def create_watermark_label(directory: str, error: str) -> QLabel:
+    '''Create and return the watermark label.'''
+    watermark_label = QLabel()
+    set_watermark(watermark_label, directory, error)
+    return watermark_label
+
+def create_intro_message(text: str) -> QLabel:
+    '''Create and return the introduction message label.'''
+    intro_message = QLabel(text)
+    intro_message.setWordWrap(True)
+    intro_message.setAlignment(Qt.AlignmentFlag.AlignLeft)
+    return intro_message
+
+def setup_page(page: QWizardPage, widgets: list[QWidget], layout_type: QBoxLayout, spacing: int = 6, margins: tuple[int, int, int, int] = (9, 9, 9, 9)) -> None:
+    '''Set up the layout for a page with the given widgets and layout type.
+    The default spacing and margins from Qt are set.'''
+    layout_type.setSpacing(spacing)
+    layout_type.setContentsMargins(*margins)
+    for widget in widgets:
+        layout_type.addWidget(widget)
+    page.setLayout(layout_type)
+
 #############################
 ### Table and Panel Setup ###
 #############################
@@ -93,12 +138,6 @@ def create_interaction_panel(panel: IOControls) -> QWidget:
     layout.addWidget(panel.error_panel)
     container.setLayout(layout)
     return container
-
-def set_page(*containers: QWidget, page: QWizardPage, layout: QBoxLayout) -> None:
-    '''Create the final layout for the page.'''
-    for container in containers:
-        layout.addWidget(container)
-    page.setLayout(layout)
 
 ###############
 ### Buttons ###

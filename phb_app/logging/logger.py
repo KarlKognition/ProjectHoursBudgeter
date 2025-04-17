@@ -29,7 +29,8 @@ from phb_app.data.phb_dataclasses import (
     Employee,
     LogTableHeaders,
     SpecialStrings,
-    MONATE_KURZ_DE
+    MONATE_KURZ_DE,
+    DEFAULT_PADDING
 )
 
 def get_time_stamp() -> str:
@@ -105,7 +106,7 @@ def add_spacings(header: str,
                  max_table_item_length: int) -> int:
     '''Adds spacings together.'''
 
-    return max(len(header), max_table_item_length) + int(SpecialStrings.DEFAULT_PADDING.value)
+    return max(len(header), max_table_item_length) + DEFAULT_PADDING
 
 def calculate_column_widths(table: QTableWidget,
                             headers: list[str],

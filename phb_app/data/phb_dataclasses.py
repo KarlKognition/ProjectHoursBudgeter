@@ -15,7 +15,7 @@ Provides several data classes for the Project Hours Budgeting Wizard.
 
 from os import path
 from datetime import datetime
-from enum import Enum, auto
+from enum import StrEnum, Enum, auto
 from abc import ABC, abstractmethod
 from typing import Optional, Iterator
 from dataclasses import dataclass, field
@@ -90,24 +90,20 @@ class WizardPageIDs(BaseTableHeaders):
 #### IO Selection Enum ####
 ##########################
 
-class IORole(Enum):
-    '''Input or output.'''
+class IORole(StrEnum):
+    '''Input or output roles.'''
 
-    INPUT_FILE = "input_file"
-    OUTPUT_FILE = "output_file"
-    EMPLOYEE_TABLE = "employee_table"
-    PROJECT_TABLE = "project_table"
-    SUMMARY_TABLE = "summary_table"
+    INPUT_FILE = auto()
+    OUTPUT_FILE = auto()
+    EMPLOYEE_TABLE = auto()
+    PROJECT_TABLE = auto()
+    SUMMARY_TABLE = auto()
 
-class QPropName(Enum):
+class QPropName(StrEnum):
     '''QWizard property names.'''
 
-    MANAGED_WORKBOOKS = "managed_workbooks_property"
-    SELECTED_PROJECTS = "selected_projects"
-    INPUT_W_FORMULAE = "input_with_formulae"
-    INPUT_WO_FORMULAE = "input_without_formulae"
-    OUTPUT_W_FORMULAE = "output_with_formulae"
-    OUTPUT_WO_FORMULAE = "output_without_formulae"
+    MANAGED_WORKBOOKS = "Managed Workbooks Property"
+    SELECTED_PROJECTS = "Selected Projects"
 
 class InputTableHeaders(BaseTableHeaders):
     '''Input table headers in IOSelection.'''
@@ -124,7 +120,7 @@ class OutputTableHeaders(BaseTableHeaders):
     MONTH = auto()
     YEAR = auto()
 
-class SpecialStrings(BaseTableHeaders):
+class SpecialStrings(StrEnum):
     '''Enum for selecting worksheets.'''
 
     SELECT_WORKSHEET = "<select worksheet>"
@@ -133,7 +129,6 @@ class SpecialStrings(BaseTableHeaders):
     DATA_ONLY_EXCEL = "_wizard_data_only.xlsx"
     ZERO_HOURS = "0.00"
     MISSING = "Missing"
-    DEFAULT_PADDING = "5" # Must be cast to int
 
 class OutputFile(BaseTableHeaders):
     '''Enum for original and copy output files.
@@ -142,7 +137,7 @@ class OutputFile(BaseTableHeaders):
     FIRST_ENTRY = 0
     SECOND_ENTRY = auto()
 
-class ButtonNames(BaseTableHeaders):
+class ButtonNames(StrEnum):
     '''Enum of names to display on buttons.'''
 
     ADD = "Add"
@@ -191,7 +186,7 @@ class SummaryTableHeaders(BaseTableHeaders):
 #### Log Enum ####
 ##################
 
-class LogTableHeaders(BaseTableHeaders):
+class LogTableHeaders(StrEnum):
     '''Summary table headers in summary selection.'''
 
     EMPLOYEE = "Employee"
@@ -205,7 +200,7 @@ class LogTableHeaders(BaseTableHeaders):
 #### Coutries Enum ####
 #######################
 
-class CountriesEnum(BaseTableHeaders):
+class CountriesEnum(StrEnum):
     '''Enum of countries.'''
 
     GERMANY = "Germany"
@@ -215,7 +210,7 @@ class CountriesEnum(BaseTableHeaders):
 #### Yaml Enum ####
 ###################
 
-class YamlEnum(BaseTableHeaders):
+class YamlEnum(StrEnum):
     '''Enum of top level yaml config entries.'''
 
     COUNTRIES = "countries"
@@ -238,6 +233,8 @@ OUTPUT_COLUMN_WIDTHS = {
     OutputTableHeaders.MONTH: 60,
     OutputTableHeaders.YEAR: 60
 }
+
+DEFAULT_PADDING = 5
 
 ############################################
 #### To be replaced with a yaml handler ####
@@ -330,7 +327,7 @@ class CountryData(YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-        country_data = yaml_data.get(YamlEnum.COUNTRIES.value, [])
+        country_data = yaml_data.get(YamlEnum.COUNTRIES, [])
         self.countries = [InputLocaleData(**locale_data) for locale_data in country_data]
 
     def get_locale_by_country(self, country: str) -> InputLocaleData:
@@ -353,7 +350,7 @@ class HoursDeviation(YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-        self.__dict__.update(yaml_data.get(YamlEnum.DEVIATIONS.value, {}))
+        self.__dict__.update(yaml_data.get(YamlEnum.DEVIATIONS, {}))
 
 #################################
 #### Budget Sheet management ####
@@ -372,7 +369,7 @@ class EmployeeRowAnchors(YamlHandler):
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
 
-        self.__dict__.update(yaml_data.get(YamlEnum.ROW_ANCHORS.value, {}))
+        self.__dict__.update(yaml_data.get(YamlEnum.ROW_ANCHORS, {}))
 
 @dataclass(eq=False) # Set to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRange:

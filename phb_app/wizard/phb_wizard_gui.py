@@ -23,7 +23,9 @@ from phb_app.wizard.pages.io_selection import IOSelectionPage
 from phb_app.wizard.pages.project_selection import ProjectSelectionPage
 from phb_app.wizard.pages.explanation import ExplanationPage
 from phb_app.wizard.pages.summary import SummaryPage
+from phb_app.logging.error_manager import ErrorManager
 from phb_app.data.phb_dataclasses import (
+    CountryData,
     QPropName,
     ManagedOutputWorkbook,
     WorkbookManager
@@ -36,13 +38,8 @@ from phb_app.wizard.constants.ui_strings import GUI_TITLE
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 
-    def __init__(self, country_data, error_manager, workbook_manager):
+    def __init__(self, country_data: CountryData, error_manager: ErrorManager, workbook_manager: WorkbookManager):
         super().__init__()
-
-        self.init_main_window(country_data, error_manager, workbook_manager)
-
-    def init_main_window(self, country_data, error_manager, workbook_manager):
-        '''Init main window.'''
 
         self.setWindowTitle(GUI_TITLE)
         self.setGeometry(0, 0, 1000, 600)
