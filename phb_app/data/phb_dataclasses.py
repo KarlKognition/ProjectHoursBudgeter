@@ -63,7 +63,7 @@ class BaseTableHeaders(Enum):
     '''Base enum class with overridden string dunder method
     and general class method.'''
     @classmethod
-    def cap_members_list(cls) -> list:
+    def cap_members_list(cls) -> list[str]:
         '''Return a list of capitalised enum members.'''
         return [name.replace('_', ' ').title() for name in cls.__members__]
 
@@ -71,9 +71,6 @@ class BaseTableHeaders(Enum):
     def list_all_values(cls) -> list[int | str]:
         '''Returns a list of all member values.'''
         return [member.value for member in cls]
-    
-    def __str__(self):
-        return self.name.replace('_', ' ').title()
 
 type ColWidths = dict[BaseTableHeaders, int]
 
@@ -131,8 +128,7 @@ class SpecialStrings(StrEnum):
     MISSING = "Missing"
 
 class OutputFile(BaseTableHeaders):
-    '''Enum for original and copy output files.
-    The original has formulae preserved (data_only = False).'''
+    '''Enum for table rows or columns.'''
 
     FIRST_ENTRY = 0
     SECOND_ENTRY = auto()

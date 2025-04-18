@@ -26,7 +26,7 @@ There are three steps:
 
 3: Review the process, checking/deleting the log file or restoring the budgeting file to its previous state before the writing of data.
 
-NOTE: Close all Excel files which will be used in this process!
+NOTE: Close the output Excel file which will be used in this process!
 """
 
 IMAGE_LOAD_FAIL = "Failed to load image."

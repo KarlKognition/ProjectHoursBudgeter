@@ -17,7 +17,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
 
 class ErrorManager:
-    '''Manages the errors using QWizard QLabels.'''
+    '''Singleton class which manages the errors using QWizard QLabels.'''
     def __init__(self) -> None:
         # UI container for error messages
         self.error_panels: dict[str, QWidget] = {}

@@ -21,7 +21,6 @@ from PyQt6.QtWidgets import (
     QWizardPage,
     QHBoxLayout,
     QWidget,
-    QComboBox,
     QPushButton,
     QTableWidget,
     QLabel
@@ -34,15 +33,13 @@ from phb_app.wizard.constants.ui_strings import (
     I_FILE_INSTRUCTION_TEXT,
     O_FILE_INSTRUCTION_TEXT
 )
-import phb_app.utils.page_setup_utils as setup
+import phb_app.utils.page_utils as putils
 from phb_app.data.phb_dataclasses import (
     CountryData,
     WorkbookManager,
     InputTableHeaders,
     OutputTableHeaders,
     ButtonNames,
-    SpecialStrings,
-    OutputFile,
     IORole,
     IOControls,
     INPUT_COLUMN_WIDTHS,
@@ -64,45 +61,25 @@ class IOSelectionPage(QWizardPage):
         self.managed_workbooks = managed_workbooks
         self.error_manager.error_panels[IORole.INPUT_FILE] = QWidget()
         self.error_manager.error_panels[IORole.OUTPUT_FILE] = QWidget()
-        setup.set_titles(self, IO_FILE_TITLE, IO_FILE_SUBTITLE)
+        putils.set_titles(self, IO_FILE_TITLE, IO_FILE_SUBTITLE)
         self.input_panel = IOControls(
             role=IORole.INPUT_FILE,
             label=QLabel(I_FILE_INSTRUCTION_TEXT),
-            table=setup.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, INPUT_COLUMN_WIDTHS),
+            table=putils.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, INPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
             error_panel=error_manager.error_panels[IORole.INPUT_FILE]
         )
         self.output_panel = IOControls(
             role=IORole.OUTPUT_FILE,
             label=QLabel(O_FILE_INSTRUCTION_TEXT),
-            table=setup.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, OUTPUT_COLUMN_WIDTHS),
+            table=putils.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, OUTPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(ButtonNames.ADD, self), QPushButton(ButtonNames.REMOVE, self)],
             error_panel=error_manager.error_panels[IORole.OUTPUT_FILE]
         )
-        setup.set_page(self, [setup.create_interaction_panel(self.input_panel), setup.create_interaction_panel(self.output_panel)], QHBoxLayout())
-
-    ##################################
-    ### QWizard function overrides ###
-    ##################################
-
-    # def cleanupPage(self) -> None:
-    #     '''Override the page cleanup.
-    #     Remove file duplicates when the back button is pressed.'''
+        putils.setup_page(self, [putils.create_interaction_panel(self.input_panel), putils.create_interaction_panel(self.output_panel)], QHBoxLayout())
 
     def isComplete(self) -> bool:
         '''Override the page completion.
         Check if both tables have at least one row selected
         and no error messages are displayed.'''
-
-        output_item: QComboBox = self.output_panel.table.cellWidget(
-                OutputFile.FIRST_ENTRY.value,
-                OutputTableHeaders.WORKSHEET.value
-        )
-        complete = (
-            self.input_panel.table.rowCount() >= 1 and
-            self.output_panel.table.rowCount() >= 1 and
-            output_item is not None and
-            output_item.currentText() != SpecialStrings.SELECT_WORKSHEET and
-            not self.error_manager.errors
-        )
-        return complete
+        return putils.check_completion(panels=(self.input_panel, self.output_panel))
