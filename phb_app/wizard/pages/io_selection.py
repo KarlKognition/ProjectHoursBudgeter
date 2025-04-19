@@ -77,6 +77,8 @@ class IOSelectionPage(QWizardPage):
             error_panel=error_manager.error_panels[IORole.OUTPUT_FILE]
         )
         putils.setup_page(self, [putils.create_interaction_panel(self.input_panel), putils.create_interaction_panel(self.output_panel)], QHBoxLayout())
+        putils.connect_buttons(self, self.input_panel, self.managed_workbooks, self.error_manager)
+        putils.connect_buttons(self, self.output_panel, self.managed_workbooks, self.error_manager)
 
     def isComplete(self) -> bool:
         '''Override the page completion.

@@ -46,12 +46,14 @@ from phb_app.data.phb_dataclasses import (
     OutputFile,
     IORole,
     ManagedInputWorkbook,
+    FileDialogHandler,
     SpecialStrings,
     CountriesEnum,
     IOControls,
     ColWidths,
     MONATE_KURZ_DE
 )
+from phb_app.logging.error_manager import ErrorManager
 from phb_app.logging.exceptions import (
     FileAlreadySelected,
     TooManyOutputFilesSelected,
@@ -145,21 +147,21 @@ def create_interaction_panel(panel: IOControls) -> QWidget:
 ### Buttons ###
 ###############
 
-def connect_buttons(page: QWizardPage, panel: IOControls, managed_workbooks: WorkbookManager) -> None:
+def connect_buttons(page: QWizardPage, context: FileDialogHandler) -> None:
     '''Connect buttons to their respective actions dynamically.'''
 
     # Define a function dispatch table
     def add_action():
-        add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, panel, managed_workbooks)
+        add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, context)
 
     def remove_action():
-        remove_selected_file(page, panel, managed_workbooks)
+        remove_selected_file(page, context)
 
     action_dispatch = {
         "add_button": add_action,
         "remove_button": remove_action,
-        "select_all_button": panel.table.selectAll,
-        "deselect_all_button": panel.table.clearSelection
+        "select_all_button": context.panel.table.selectAll,
+        "deselect_all_button": context.panel.table.clearSelection
     }
 
     # Iterate over buttons and connect them dynamically
@@ -181,34 +183,34 @@ def setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFi
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     return file_dialog
 
-def handle_file_selection(panel: IOControls, selected_files: list[str], page: QWizardPage, wb_manager: WorkbookManager) -> None:
+def handle_file_selection(page: QWizardPage, selected_files: list[str], context: FileDialogHandler) -> None:
     '''Handle file selection and populate the appropriate table.'''
-    if panel.role == IORole.INPUT_FILE:
-        populate_table(page, panel, selected_files, wb_manager.add_input_workbook, configure_input_row)
-    elif panel.role == IORole.OUTPUT_FILE:
-        populate_table(page, panel, selected_files, wb_manager.add_output_workbook, configure_output_row)
+    if context.panel.role == IORole.INPUT_FILE:
+        populate_table(page, context.panel, selected_files, context.workbook_manager.add_input_workbook, configure_input_row, context.error_manager)
+    elif context.panel.role == IORole.OUTPUT_FILE:
+        populate_table(page, context.panel, selected_files, context.workbook_manager.add_output_workbook, configure_output_row, context.error_manager)
 
-def add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, panel: IOControls, wb_manager: WorkbookManager) -> None:
+def add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, context: FileDialogHandler) -> None:
     '''Add files to either the input or output selection tables.'''
     file_dialog = setup_file_dialog(page, file_mode)
     if file_dialog.exec():
         selected_files = file_dialog.selectedFiles()
-        handle_file_selection(panel, selected_files, page, wb_manager)
+        handle_file_selection(page, selected_files, context)
 
-def remove_selected_file(page: QWizardPage, panel: IOControls, wb_manager: WorkbookManager) -> None:
+def remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None:
     '''Remove the currently selected file(s) from the table.'''
     # Selected rows
-    selected_items = panel.table.selectionModel().selectedRows()
+    selected_items = context.panel.table.selectionModel().selectedRows()
     # Search for selected rows in reverse so that the row numbering
     # doesn't change with each deletion.
     for row in sorted([item.row() for item in selected_items], reverse=True):
-        file_name = panel.table.item(row, InputTableHeaders.FILENAME).text()
+        file_name = context.panel.table.item(row, InputTableHeaders.FILENAME).text()
         # Remove the workbook
-        wb_manager.remove_workbook(file_name)
+        context.workbook_manager.remove_workbook(file_name)
         # Remove selected rows
-        panel.table.removeRow(row)
+        context.panel.table.removeRow(row)
         # Remove any associated error
-        panel.error_manager.remove_error(file_name, panel.role)
+        context.error_manager.remove_error(file_name, context.panel.role)
         # Update UI
         page.completeChanged.emit()
 
@@ -235,7 +237,7 @@ def insert_file_row(panel: IOControls, file_name: str) -> int:
     panel.table.setItem(row_position, InputTableHeaders.FILENAME, file_item)
     return row_position
 
-def populate_table(page: QWizardPage, panel: IOControls, files: list[str], add_workbook: AddWorkbook, configure_row: ConfigureRow) -> None:
+def populate_table(page: QWizardPage, panel: IOControls, files: list[str], add_workbook: AddWorkbook, configure_row: ConfigureRow, error_manager: ErrorManager) -> None:
     '''Populate the table with selected file(s).'''
     for file_path in files:
         file_name = path.basename(file_path)
@@ -271,7 +273,7 @@ def configure_input_row(page: QWizardPage, table: QTableWidget, row_position: in
         set_worksheet_item(table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
     except CountryIdentifiersNotInFilename as e:
         item = table.item(row_position, InputTableHeaders.FILENAME)
-        self.highlight_bad_item(item)
+        highlight_bad_item(item)
         raise e
     page.completeChanged.emit()
 
@@ -360,11 +362,6 @@ def update_country_details_in_table(self, workbook_entry: ManagedInputWorkbook) 
         # Set the local data of the workbook
         workbook_entry.set_locale_data(self.country_data, country_name)
 
-def get_workbooks(self) -> WorkbookManager:
-    '''Return list of workbooks.'''
-
-    return self.managed_workbooks
-
 ##################################
 ### QWizard function overrides ###
 ##################################
@@ -378,7 +375,7 @@ def check_completion(panels: tuple[IOControls]) -> bool:
     in_panel, out_panel = (panel for panel in panels if panel.role in {IORole.INPUT_FILE, IORole.OUTPUT_FILE})
     def io_selection_complete() -> bool:
         '''Check if both tables have at least one row selected
-        and no error messages are displayed.'''
+        and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
         output_item = get_combo_box(out_panel.table, OutputFile.FIRST_ENTRY.value, OutputTableHeaders.WORKSHEET.value)
         if (
             all(panel.table.rowCount() >= 1 for panel in (in_panel, out_panel))
@@ -389,8 +386,7 @@ def check_completion(panels: tuple[IOControls]) -> bool:
             return True
         return False
     def table_selection_complete() -> bool:
-        '''Check if the table has at least one row selected
-        and no error messages are displayed. There is only one panel in this case.'''
+        '''Check if the table has at least one row selected. There is only one panel in this case.'''
         if bool(panels[0].table.selectionModel().selectedRows()):
             return True
         return False

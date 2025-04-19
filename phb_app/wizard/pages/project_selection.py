@@ -34,6 +34,7 @@ from phb_app.data.phb_dataclasses import (
     ManagedInputWorkbook
 )
 import phb_app.utils.func_utils as futils
+import phb_app.utils.page_utils as putils
 
 class ProjectSelectionPage(QWizardPage):
     '''Page for selecting the projects in which the hours were booked.'''
@@ -207,7 +208,7 @@ class ProjectSelectionPage(QWizardPage):
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
 
-        return bool(self.projects_table.selectionModel().selectedRows())
+        return putils.check_completion(self.projects_table)
 
     def validatePage(self) -> bool:
         '''Override the page validation.

@@ -21,6 +21,7 @@ from typing import Optional, Iterator
 from dataclasses import dataclass, field
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QWizardPage,
     QWidget,
     QTableWidget,
     QLabel,
@@ -30,6 +31,7 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import openpyxl.utils as xlutils
 import yaml
+from phb_app.logging.error_manager import ErrorManager
 from phb_app.logging.exceptions import (
     BudgetingDatesNotFound,
     WorkbookAlreadyTracked
@@ -738,6 +740,13 @@ class IOControls:
     table: QTableWidget
     buttons: ButtonsList
     error_panel: QWidget
+
+@dataclass
+class FileDialogHandler:
+    '''Data class for managing the file dialog.'''
+    panel: IOControls
+    workbook_manager: WorkbookManager
+    error_manager: Optional[ErrorManager] = None
 
 ########################
 #### Log management ####

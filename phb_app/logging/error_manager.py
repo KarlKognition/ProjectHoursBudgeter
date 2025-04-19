@@ -13,19 +13,23 @@ Description
 Tracks errors for the Project Hours Budgeting Wizard.
 '''
 
+from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
+if TYPE_CHECKING:
+    from phb_app.data.phb_dataclasses import IORole
 
 class ErrorManager:
     '''Singleton class which manages the errors using QWizard QLabels.'''
     def __init__(self) -> None:
         # UI container for error messages
+        # Error panel dict {panel role: QWidget}
         self.error_panels: dict[str, QWidget] = {}
         self.errors: dict[tuple[str, str], dict[str, QLabel]] = {}
 
     def add_error(self,
                   file_name:str,
-                  file_role: str,
+                  file_role: "IORole",
                   error: Exception) -> None:
         '''Add the error per file.'''
 
@@ -39,20 +43,20 @@ class ErrorManager:
         # Red styled error
         self.style_error_message(label)
         # Put the label in the UI
-        self.error_panels.layout().addWidget(label)
+        self.error_panels[file_role].layout().addWidget(label)
         # Track the label
         self.errors[key][str(error)] = label
 
     def remove_error(self,
                      file_name: str,
-                     file_role: str) -> None:
+                     file_role: "IORole") -> None:
         '''Remove the error and label per file.'''
 
         key = (file_name, file_role)
         if key in self.errors:
             for label in self.errors[key].values():
                 # Remove the message and file name from tracking
-                self.error_panels.layout().removeWidget(label)
+                self.error_panels[file_role].layout().removeWidget(label)
                 # Remove the associated label
                 label.deleteLater()
             # If no error for this role, remove entry
