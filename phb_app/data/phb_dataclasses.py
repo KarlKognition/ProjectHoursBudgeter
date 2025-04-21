@@ -21,7 +21,6 @@ from typing import Optional, Iterator
 from dataclasses import dataclass, field
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWizardPage,
     QWidget,
     QTableWidget,
     QLabel,
@@ -36,6 +35,7 @@ from phb_app.logging.exceptions import (
     BudgetingDatesNotFound,
     WorkbookAlreadyTracked
 )
+from phb_app.protocols_callables.customs import ConfigureRow
 import phb_app.utils.func_utils as futils
 
 ######################################
@@ -617,7 +617,6 @@ class ManagedWorkbook:
     '''Parent data class for workbook data.'''
     file_path: str # Mandatory parameter
     file_name: Optional[str] = None
-    data_only: bool = False # By default keep the formulae in the workbook
     workbook_object: Optional[Workbook] = None
 
     def __post_init__(self):
@@ -626,7 +625,7 @@ class ManagedWorkbook:
     def __eq__(self, other):
         '''Compare data objects by file names and data_only.'''
         if isinstance(other, ManagedWorkbook):
-            return self.file_name == other.file_name and self.data_only == other.data_only
+            return self.file_name == other.file_name
         return False
 
 @dataclass
@@ -636,7 +635,7 @@ class ManagedOutputWorkbook(ManagedWorkbook):
 
     def __post_init__(self):
         super().__post_init__()
-        self.workbook_object = futils.try_load_workbook(self, ManagedOutputWorkbook, self.data_only)
+        self.workbook_object = futils.try_load_workbook(self, ManagedOutputWorkbook)
 
     def init_output_worksheet(self) -> None:
         '''Init output worksheet.'''
@@ -673,13 +672,13 @@ class ManagedInputWorkbook(ManagedWorkbook):
             sheet_name = self.workbook_object.sheetnames[0]
         else:
             sheet_name = self.locale_data.exp_sheet_name
-        self.managed_sheet_object = ManagedInputWorksheet(
-            SelectedSheet(
-                sheet_name,
-                self.workbook_object[sheet_name]
-            )
-        )
+        self.managed_sheet_object = ManagedInputWorksheet(SelectedSheet(sheet_name, self.workbook_object[sheet_name]))
         self.managed_sheet_object.index_headers()
+
+Mng_wb_dispatch: dict[IORole, ManagedInputWorkbook | ManagedOutputWorkbook] = {
+    IORole.INPUT_FILE: ManagedInputWorkbook,
+    IORole.OUTPUT_FILE: ManagedOutputWorkbook
+}
 
 @dataclass
 class WorkbookManager:
@@ -695,21 +694,14 @@ class WorkbookManager:
         else:
             raise WorkbookAlreadyTracked(workbook.file_name)
 
-    def add_input_workbook(self, file_path: str) -> None:
+    def add_input_workbook(self, file_path: str, role: IORole) -> None:
         '''Add input workbooks by filename.'''
-        workbook = ManagedInputWorkbook(file_path)
-        self.try_add_workbook(workbook)
-
-    def add_output_workbook(self, file_path: str, data_only: bool = False) -> None:
-        '''Add input workbooks by filename.'''
-        workbook = ManagedOutputWorkbook(file_path=file_path, data_only=data_only)
+        workbook = Mng_wb_dispatch[role](file_path=file_path)
         self.try_add_workbook(workbook)
 
     def get_workbook_by_name(self, file_name: str) -> ManagedInputWorkbook | ManagedOutputWorkbook | None:
         '''Retrieves the first workbook in the list by file name.'''
-        return next((wb for wb in self.workbooks
-                     if file_name == wb.file_name),
-                     None)
+        return next((wb for wb in self.workbooks if file_name == wb.file_name), None)
 
     def yield_workbooks_by_type(self, wb_class: ManagedInputWorkbook | ManagedOutputWorkbook) -> Iterator[ManagedInputWorkbook | ManagedOutputWorkbook]:
         '''Returns a generator of workbooks in the list by type.'''
@@ -746,6 +738,7 @@ class FileDialogHandler:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     workbook_manager: WorkbookManager
+    configure_row: ConfigureRow
     error_manager: Optional[ErrorManager] = None
 
 ########################

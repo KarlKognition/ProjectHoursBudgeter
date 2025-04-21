@@ -39,7 +39,6 @@ from PyQt6.QtWidgets import (
 # First party libraries
 import phb_app.utils.func_utils as futils
 from phb_app.data.phb_dataclasses import (
-    WorkbookManager,
     BaseTableHeaders,
     InputTableHeaders,
     OutputTableHeaders,
@@ -165,7 +164,7 @@ def connect_buttons(page: QWizardPage, context: FileDialogHandler) -> None:
     }
 
     # Iterate over buttons and connect them dynamically
-    for button in panel.buttons:
+    for button in context.panel.buttons:
         action = action_dispatch.get(button.objectName())
         if action:
             button.clicked.connect(action)
@@ -183,12 +182,12 @@ def setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFi
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     return file_dialog
 
-def handle_file_selection(page: QWizardPage, selected_files: list[str], context: FileDialogHandler) -> None:
+def handle_file_selection(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
     '''Handle file selection and populate the appropriate table.'''
     if context.panel.role == IORole.INPUT_FILE:
-        populate_table(page, context.panel, selected_files, context.workbook_manager.add_input_workbook, configure_input_row, context.error_manager)
+        populate_table(page, files, context)
     elif context.panel.role == IORole.OUTPUT_FILE:
-        populate_table(page, context.panel, selected_files, context.workbook_manager.add_output_workbook, configure_output_row, context.error_manager)
+        populate_table(page, files, context)
 
 def add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, context: FileDialogHandler) -> None:
     '''Add files to either the input or output selection tables.'''
@@ -237,18 +236,18 @@ def insert_file_row(panel: IOControls, file_name: str) -> int:
     panel.table.setItem(row_position, InputTableHeaders.FILENAME, file_item)
     return row_position
 
-def populate_table(page: QWizardPage, panel: IOControls, files: list[str], add_workbook: AddWorkbook, configure_row: ConfigureRow, error_manager: ErrorManager) -> None:
+def populate_table(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
     '''Populate the table with selected file(s).'''
     for file_path in files:
         file_name = path.basename(file_path)
         try:
             file_item = QTableWidgetItem(file_name)
-            check_file_validity(file_name, panel, file_item)
-            row_position = insert_file_row(panel, file_name)
-            add_workbook(file_path)
-            configure_row(panel.table, row_position, file_name, file_path)
+            check_file_validity(file_name, context.panel, file_item)
+            row_position = insert_file_row(context.panel, file_name)
+            context.workbook_manager.add_workbook(file_path, context.panel.role)
+            context.configure_row(context.panel.table, row_position, file_name, file_path)
         except Exception as e:
-            error_manager.add_error(file_name, panel.role, e)
+            context.error_manager.add_error(file_name, context.panel.role, e)
         page.completeChanged.emit()
 
 def set_country_item(table: QTableWidget, row_position: int, country: str) -> None:
