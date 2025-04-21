@@ -40,6 +40,7 @@ from phb_app.data.phb_dataclasses import (
     InputTableHeaders,
     OutputTableHeaders,
     ButtonNames,
+    FileDialogHandler,
     IORole,
     IOControls,
     INPUT_COLUMN_WIDTHS,
@@ -56,11 +57,9 @@ class IOSelectionPage(QWizardPage):
 
     def __init__(self, country_data: CountryData, error_manager: ErrorManager, managed_workbooks: WorkbookManager) -> None:
         super().__init__()
-        self.country_data = country_data
-        self.error_manager = error_manager
         self.managed_workbooks = managed_workbooks
-        self.error_manager.error_panels[IORole.INPUT_FILE] = QWidget()
-        self.error_manager.error_panels[IORole.OUTPUT_FILE] = QWidget()
+        error_manager.error_panels[IORole.INPUT_FILE] = QWidget()
+        error_manager.error_panels[IORole.OUTPUT_FILE] = QWidget()
         putils.set_titles(self, IO_FILE_TITLE, IO_FILE_SUBTITLE)
         self.input_panel = IOControls(
             role=IORole.INPUT_FILE,
@@ -77,8 +76,8 @@ class IOSelectionPage(QWizardPage):
             error_panel=error_manager.error_panels[IORole.OUTPUT_FILE]
         )
         putils.setup_page(self, [putils.create_interaction_panel(self.input_panel), putils.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        putils.connect_buttons(self, self.input_panel, self.managed_workbooks, self.error_manager)
-        putils.connect_buttons(self, self.output_panel, self.managed_workbooks, self.error_manager)
+        putils.connect_buttons(self, FileDialogHandler(self.input_panel, country_data, self.managed_workbooks, error_manager))
+        putils.connect_buttons(self, FileDialogHandler(self.output_panel, country_data, self.managed_workbooks, error_manager))
 
     def isComplete(self) -> bool:
         '''Override the page completion.

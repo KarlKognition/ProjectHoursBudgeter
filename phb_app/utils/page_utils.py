@@ -25,41 +25,21 @@ from dateutil.relativedelta import relativedelta
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
-    QWizardPage,
-    QBoxLayout,
-    QHBoxLayout,
-    QComboBox,
-    QWidget,
-    QLabel,
-    QFileDialog,
-    QVBoxLayout,
-    QTableWidget,
-    QTableWidgetItem
+    QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
+    QWidget, QLabel, QFileDialog, QVBoxLayout,
+    QTableWidget, QTableWidgetItem
 )
 # First party libraries
 import phb_app.utils.func_utils as futils
 from phb_app.data.phb_dataclasses import (
-    BaseTableHeaders,
-    InputTableHeaders,
-    OutputTableHeaders,
-    OutputFile,
-    IORole,
-    ManagedInputWorkbook,
-    FileDialogHandler,
-    SpecialStrings,
-    CountriesEnum,
-    IOControls,
-    ColWidths,
+    CountryData, BaseTableHeaders, InputTableHeaders, OutputTableHeaders,
+    OutputFile, IORole, ManagedInputWorkbook, FileDialogHandler,
+    SpecialStrings, CountriesEnum, IOControls, ColWidths,
     MONATE_KURZ_DE
 )
-from phb_app.logging.error_manager import ErrorManager
 from phb_app.logging.exceptions import (
-    FileAlreadySelected,
-    TooManyOutputFilesSelected,
-    CountryIdentifiersNotInFilename,
-    IncorrectWorksheetSelected,
-    MissingEmployeeRow,
-    BudgetingDatesNotFound
+    FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename, IncorrectWorksheetSelected,
+    MissingEmployeeRow, BudgetingDatesNotFound
 )
 from phb_app.protocols_callables.customs import (
     ConfigureRow,
@@ -79,7 +59,7 @@ def set_titles(page: QWizardPage, title: str, subtitle: str) -> None:
     page.setTitle(title)
     page.setSubTitle(subtitle)
 
-def set_watermark(watermark: QLabel, directory: str, error: str) -> None:
+def _set_watermark(watermark: QLabel, directory: str, error: str) -> None:
     '''Set watermark.'''
     watermark_file = f"{directory}\\budget_watermark.jpg"
     watermark_pixmap = QPixmap(watermark_file)
@@ -94,7 +74,7 @@ def set_watermark(watermark: QLabel, directory: str, error: str) -> None:
 def create_watermark_label(directory: str, error: str) -> QLabel:
     '''Create and return the watermark label.'''
     watermark_label = QLabel()
-    set_watermark(watermark_label, directory, error)
+    _set_watermark(watermark_label, directory, error)
     return watermark_label
 
 def create_intro_message(text: str) -> QLabel:
@@ -151,10 +131,10 @@ def connect_buttons(page: QWizardPage, context: FileDialogHandler) -> None:
 
     # Define a function dispatch table
     def add_action():
-        add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, context)
+        _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, context)
 
     def remove_action():
-        remove_selected_file(page, context)
+        _remove_selected_file(page, context)
 
     action_dispatch = {
         "add_button": add_action,
@@ -173,7 +153,7 @@ def connect_buttons(page: QWizardPage, context: FileDialogHandler) -> None:
 ### File Handling ###
 #####################
 
-def setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFileDialog:
+def _setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFileDialog:
     '''Set up and return a file dialog.'''
     file_dialog = QFileDialog(page)
     file_dialog.setWindowTitle(ADD_FILE)
@@ -182,21 +162,21 @@ def setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFi
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     return file_dialog
 
-def handle_file_selection(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
+def _handle_file_selection(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
     '''Handle file selection and populate the appropriate table.'''
     if context.panel.role == IORole.INPUT_FILE:
-        populate_table(page, files, context)
+        _populate_table(page, files, context)
     elif context.panel.role == IORole.OUTPUT_FILE:
-        populate_table(page, files, context)
+        _populate_table(page, files, context)
 
-def add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, context: FileDialogHandler) -> None:
+def _add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, context: FileDialogHandler) -> None:
     '''Add files to either the input or output selection tables.'''
-    file_dialog = setup_file_dialog(page, file_mode)
+    file_dialog = _setup_file_dialog(page, file_mode)
     if file_dialog.exec():
         selected_files = file_dialog.selectedFiles()
-        handle_file_selection(page, selected_files, context)
+        _handle_file_selection(page, selected_files, context)
 
-def remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None:
+def _remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None:
     '''Remove the currently selected file(s) from the table.'''
     # Selected rows
     selected_items = context.panel.table.selectionModel().selectedRows()
@@ -217,7 +197,7 @@ def remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None:
 ### Input Table Population ###
 ##############################
 
-def check_file_validity(file_name: str, panel: IOControls, file_item: QTableWidgetItem) -> None:
+def _check_file_validity(file_name: str, panel: IOControls, file_item: QTableWidgetItem) -> None:
     '''Check if the file is valid and highlight errors if necessary.'''
     file_exists = futils.is_file_already_in_table(file_name, InputTableHeaders.FILENAME, panel.table, self.output_table)
     if panel.table == IORole.INPUT_FILE and panel.table.rowCount() >= 2:
@@ -227,7 +207,7 @@ def check_file_validity(file_name: str, panel: IOControls, file_item: QTableWidg
         highlight_bad_item(file_item)
         raise FileAlreadySelected(file_name)
 
-def insert_file_row(panel: IOControls, file_name: str) -> int:
+def _insert_file_row(panel: IOControls, file_name: str) -> int:
     '''Insert a new row for the file and return the row position.'''
     row_position = panel.table.rowCount()
     panel.table.insertRow(row_position)
@@ -236,17 +216,18 @@ def insert_file_row(panel: IOControls, file_name: str) -> int:
     panel.table.setItem(row_position, InputTableHeaders.FILENAME, file_item)
     return row_position
 
-def populate_table(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
+def _populate_table(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
     '''Populate the table with selected file(s).'''
     for file_path in files:
         file_name = path.basename(file_path)
         try:
             file_item = QTableWidgetItem(file_name)
-            check_file_validity(file_name, context.panel, file_item)
-            row_position = insert_file_row(context.panel, file_name)
+            _check_file_validity(file_name, context.panel, file_item)
+            row_position = _insert_file_row(context.panel, file_name)
             context.workbook_manager.add_workbook(file_path, context.panel.role)
             context.configure_row(context.panel.table, row_position, file_name, file_path)
-        except Exception as e:
+        except (FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename,
+                IncorrectWorksheetSelected, MissingEmployeeRow, BudgetingDatesNotFound, KeyError) as e:
             context.error_manager.add_error(file_name, context.panel.role, e)
         page.completeChanged.emit()
 
@@ -262,11 +243,11 @@ def set_worksheet_item(table: QTableWidget, row_position: int, sheet_name: str) 
     worksheet_item.setFlags(worksheet_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
     table.setItem(row_position, InputTableHeaders.WORKSHEET, worksheet_item)
 
-def configure_input_row(page: QWizardPage, table: QTableWidget, row_position: int, file_name: str, file_path: str) -> None:
+def configure_input_row(table: QTableWidget, data: CountryData, row_position: int, file_name: str, file_path: str = None) -> None:
     '''Configure a row for the input table.'''
     workbook_entry = self.managed_workbooks.get_workbook_by_name(file_name)
     try:
-        update_country_details_in_table(workbook_entry)
+        update_country_details_in_table(data, workbook_entry)
         set_country_item(table, row_position, workbook_entry.locale_data.country)
         workbook_entry.init_input_worksheet()
         set_worksheet_item(table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
@@ -274,7 +255,6 @@ def configure_input_row(page: QWizardPage, table: QTableWidget, row_position: in
         item = table.item(row_position, InputTableHeaders.FILENAME)
         highlight_bad_item(item)
         raise e
-    page.completeChanged.emit()
 
 ##############################
 ### Output Table Population ###
@@ -348,18 +328,7 @@ def remove_highlighting(item: QTableWidgetItem) -> None:
     item.setBackground(Qt.GlobalColor.white)
     item.setForeground(Qt.GlobalColor.black)
 
-def update_country_details_in_table(self, workbook_entry: ManagedInputWorkbook) -> None:
-    '''Update country details.'''
 
-    # Check that the workbook is an input workbook
-    if isinstance(workbook_entry, ManagedInputWorkbook):
-        # Get country name from file name
-        country_name = futils.get_origin_from_file_name(
-            workbook_entry.file_name,
-            self.country_data,
-            CountriesEnum)
-        # Set the local data of the workbook
-        workbook_entry.set_locale_data(self.country_data, country_name)
 
 ##################################
 ### QWizard function overrides ###

@@ -23,14 +23,11 @@ from typing import (
 )
 from PyQt6.QtWidgets import QTableWidget
 
-
 @runtime_checkable
 class ConfigureRow(Protocol):
     '''Configure row signature'''
-
-    def __call__(self, table: QTableWidget, row_position: int, file_name: str, file_path: str) -> None: ...
+    def __call__(self, table: QTableWidget, row_position: int, file_name: str, file_path: Optional[str] = None) -> None: ...
 
 class AddWorkbook(Protocol):
     '''Add workbook signature'''
-
     def __call__(self, file_path: str, data_only: Optional[bool] = False) -> None: ...

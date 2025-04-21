@@ -23,6 +23,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QTableWidget,
+    QTableWidgetItem,
     QLabel,
     QPushButton
 )
@@ -32,8 +33,8 @@ import openpyxl.utils as xlutils
 import yaml
 from phb_app.logging.error_manager import ErrorManager
 from phb_app.logging.exceptions import (
-    BudgetingDatesNotFound,
-    WorkbookAlreadyTracked
+    BudgetingDatesNotFound, WorkbookAlreadyTracked,
+    CountryIdentifiersNotInFilename
 )
 from phb_app.protocols_callables.customs import ConfigureRow
 import phb_app.utils.func_utils as futils
@@ -694,7 +695,7 @@ class WorkbookManager:
         else:
             raise WorkbookAlreadyTracked(workbook.file_name)
 
-    def add_input_workbook(self, file_path: str, role: IORole) -> None:
+    def add_workbook(self, file_path: str, role: IORole) -> None:
         '''Add input workbooks by filename.'''
         workbook = Mng_wb_dispatch[role](file_path=file_path)
         self.try_add_workbook(workbook)
@@ -735,11 +736,77 @@ class IOControls:
 
 @dataclass
 class FileDialogHandler:
-    '''Data class for managing the file dialog.'''
+    '''
+    Data class for managing the file dialog.
+    '''
     panel: IOControls
+    data: CountryData
     workbook_manager: WorkbookManager
-    configure_row: ConfigureRow
+    configure_row: Optional[ConfigureRow] = None
     error_manager: Optional[ErrorManager] = None
+
+    def __post_init__(self) -> None:
+        if self.panel.role == IORole.INPUT_FILE:
+            self.configure_row = self.configure_input_row
+        elif self.panel.role == IORole.OUTPUT_FILE:
+            self.configure_row = self.configure_output_row
+
+    def configure_input_row(self, row_position: int, file_name: str) -> None:
+        '''
+        Configure the input row in the table.
+        '''
+        workbook_entry = self.workbook_manager.get_workbook_by_name(file_name)
+        try:
+            self._update_country_details_in_table(self.data, workbook_entry)
+            self._set_country_item(row_position, workbook_entry.locale_data.country)
+            workbook_entry.init_input_worksheet()
+            self._set_worksheet_item(row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
+        except CountryIdentifiersNotInFilename as e:
+            item = self.panel.table.item(row_position, InputTableHeaders.FILENAME)
+            highlight_bad_item
+            raise e
+
+    def configure_output_row(self, row_position: int, file_name: str, file_path: str) -> None:
+        '''
+        Configure the output row in the table.
+        '''
+
+    def _update_country_details_in_table(self, data: CountryData, workbook_entry: ManagedInputWorkbook) -> None:
+        '''
+        Update country details.
+        '''
+        # Check that the workbook is an input workbook
+        if isinstance(workbook_entry, ManagedInputWorkbook):
+            # Get country name from file name
+            country_name = futils.get_origin_from_file_name(workbook_entry.file_name, data, CountriesEnum)
+            # Set the local data of the workbook
+            workbook_entry.set_locale_data(data, country_name)
+
+    def _set_country_item(self, row_position: int, country: str) -> None:
+        '''
+        Set the country item in the table.
+        '''
+        country_item = QTableWidgetItem(country)
+        country_item.setFlags(country_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.panel.table.setItem(row_position, InputTableHeaders.COUNTRY, country_item)
+
+    def _set_worksheet_item(self, row_position: int, sheet_name: str) -> None:
+        '''
+        Set the worksheet item in the table.
+        '''
+        worksheet_item = QTableWidgetItem(sheet_name)
+        worksheet_item.setFlags(worksheet_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.panel.table.setItem(row_position, InputTableHeaders.WORKSHEET, worksheet_item)
+
+@dataclass
+class RowHandler:
+    '''
+    Data class for managing the row in the table.
+    '''
+    table: QTableWidget
+    row_position: int
+    file_name: str
+    file_path: str
 
 ########################
 #### Log management ####
