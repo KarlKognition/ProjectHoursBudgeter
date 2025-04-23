@@ -36,7 +36,7 @@ from phb_app.data.phb_dataclasses import (
     ManagedInputWorkbook,
     NON_NAMES
 )
-import phb_app.utils.func_utils as futils
+import phb_app.utils.func_utils as fu
 import phb_app.utils.hours_utils as hutils
 
 class EmployeeSelectionPage(QWizardPage):
@@ -239,7 +239,7 @@ class EmployeeSelectionPage(QWizardPage):
         out_wb.managed_sheet_object.set_selected_employees(selected_employees)
         ## Predicted hours per employee
         # Find hours
-        pre_hours = futils.find_predicted_hours(
+        pre_hours = fu.find_predicted_hours(
             out_wb.managed_sheet_object.selected_employees,
             out_wb.managed_sheet_object.selected_date.row,
             out_wb.file_path,

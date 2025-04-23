@@ -15,7 +15,7 @@ Provides several data classes for the Project Hours Budgeting Wizard.
 
 from os import path
 from datetime import datetime
-from enum import StrEnum, Enum, auto
+from enum import StrEnum, IntEnum, auto
 from abc import ABC, abstractmethod
 from typing import Optional, Iterator
 from dataclasses import dataclass, field
@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QTableWidget,
-    QTableWidgetItem,
+    QComboBox,
     QLabel,
     QPushButton
 )
@@ -31,13 +31,15 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import openpyxl.utils as xlutils
 import yaml
-from phb_app.logging.error_manager import ErrorManager
+import phb_app.logging.error_manager as em
 from phb_app.logging.exceptions import (
     BudgetingDatesNotFound, WorkbookAlreadyTracked,
-    CountryIdentifiersNotInFilename
+    CountryIdentifiersNotInFilename, IncorrectWorksheetSelected,
+    MissingEmployeeRow
 )
 from phb_app.protocols_callables.customs import ConfigureRow
-import phb_app.utils.func_utils as futils
+import phb_app.utils.func_utils as fu
+import phb_app.utils.page_utils as pu
 
 ######################################
 #### Localised Months dictionary  ####
@@ -62,7 +64,7 @@ MONATE_KURZ_DE = {
 #### Enum base class  ####
 ##########################
 
-class BaseTableHeaders(Enum):
+class BaseTableHeaders(IntEnum):
     '''Base enum class with overridden string dunder method
     and general class method.'''
     @classmethod
@@ -538,13 +540,13 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         self.selected_sheet.sheet_object = sheet_object
         # Check whether the employees are located in the worksheet
         self.employee_range = EmployeeRange()
-        futils.locate_employee_range(self.selected_sheet.sheet_object, self.employee_range,self.employee_row_anchors)
+        fu.locate_employee_range(self.selected_sheet.sheet_object, self.employee_range,self.employee_row_anchors)
 
     def set_budgeting_date(self, file_path: str, sheet_name: str, selected_month: str, selected_year: str) -> None:
         '''Sets the budgeting date with the row it is located in the worksheet.'''
         # Convert dates to integers and put in a tuple
         month_year = (MONATE_KURZ_DE.get(selected_month), int(selected_year))
-        budgeting_dates = futils.get_budgeting_dates(file_path, sheet_name)
+        budgeting_dates = fu.get_budgeting_dates(file_path, sheet_name)
         for tup in budgeting_dates:
             if tup[:2] == month_year:
                 month, year, row = tup
@@ -636,7 +638,7 @@ class ManagedOutputWorkbook(ManagedWorkbook):
 
     def __post_init__(self):
         super().__post_init__()
-        self.workbook_object = futils.try_load_workbook(self, ManagedOutputWorkbook)
+        self.workbook_object = fu.try_load_workbook(self, ManagedOutputWorkbook)
 
     def init_output_worksheet(self) -> None:
         '''Init output worksheet.'''
@@ -657,7 +659,7 @@ class ManagedInputWorkbook(ManagedWorkbook):
 
     def __post_init__(self):
         super().__post_init__()
-        self.workbook_object = futils.try_load_workbook(self, ManagedOutputWorkbook)
+        self.workbook_object = fu.try_load_workbook(self, ManagedOutputWorkbook)
 
     def set_locale_data(self, country_data: CountryData, country_name: str) -> None:
         '''Sets the locale data.'''
@@ -735,6 +737,13 @@ class IOControls:
     error_panel: QWidget
 
 @dataclass
+class DropdownHandler:
+    '''Data class for managing the dropdowns.'''
+    year_dropdown: QComboBox
+    month_dropdown: QComboBox
+    worksheet_dropdown: QComboBox
+
+@dataclass
 class FileDialogHandler:
     '''
     Data class for managing the file dialog.
@@ -742,8 +751,10 @@ class FileDialogHandler:
     panel: IOControls
     data: CountryData
     workbook_manager: WorkbookManager
+    file_path: Optional[str] = None
+    file_name: Optional[str] = None
     configure_row: Optional[ConfigureRow] = None
-    error_manager: Optional[ErrorManager] = None
+    error_manager: Optional[em.ErrorManager] = None
 
     def __post_init__(self) -> None:
         if self.panel.role == IORole.INPUT_FILE:
@@ -751,52 +762,33 @@ class FileDialogHandler:
         elif self.panel.role == IORole.OUTPUT_FILE:
             self.configure_row = self.configure_output_row
 
-    def configure_input_row(self, row_position: int, file_name: str) -> None:
+    def set_file_path_and_name(self, file_path: str) -> None:
+        '''Set the file path.'''
+        self.file_path = file_path
+        self.file_name = path.basename(file_path)
+
+    def configure_input_row(self, row_position: int) -> None:
         '''
         Configure the input row in the table.
         '''
-        workbook_entry = self.workbook_manager.get_workbook_by_name(file_name)
-        try:
-            self._update_country_details_in_table(self.data, workbook_entry)
-            self._set_country_item(row_position, workbook_entry.locale_data.country)
-            workbook_entry.init_input_worksheet()
-            self._set_worksheet_item(row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
-        except CountryIdentifiersNotInFilename as e:
-            item = self.panel.table.item(row_position, InputTableHeaders.FILENAME)
-            highlight_bad_item
-            raise e
+        workbook_entry = self.workbook_manager.get_workbook_by_name(self.file_name)
+        pu.update_country_details_in_table(self.data, workbook_entry)
+        pu.set_country_item(self.panel.table, row_position, workbook_entry.locale_data.country)
+        workbook_entry.init_input_worksheet()
+        pu.set_worksheet_item(self.panel.table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
 
-    def configure_output_row(self, row_position: int, file_name: str, file_path: str) -> None:
+    def configure_output_row(self, row_position: int) -> None:
         '''
         Configure the output row in the table.
         '''
-
-    def _update_country_details_in_table(self, data: CountryData, workbook_entry: ManagedInputWorkbook) -> None:
-        '''
-        Update country details.
-        '''
-        # Check that the workbook is an input workbook
-        if isinstance(workbook_entry, ManagedInputWorkbook):
-            # Get country name from file name
-            country_name = futils.get_origin_from_file_name(workbook_entry.file_name, data, CountriesEnum)
-            # Set the local data of the workbook
-            workbook_entry.set_locale_data(data, country_name)
-
-    def _set_country_item(self, row_position: int, country: str) -> None:
-        '''
-        Set the country item in the table.
-        '''
-        country_item = QTableWidgetItem(country)
-        country_item.setFlags(country_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        self.panel.table.setItem(row_position, InputTableHeaders.COUNTRY, country_item)
-
-    def _set_worksheet_item(self, row_position: int, sheet_name: str) -> None:
-        '''
-        Set the worksheet item in the table.
-        '''
-        worksheet_item = QTableWidgetItem(sheet_name)
-        worksheet_item.setFlags(worksheet_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        self.panel.table.setItem(row_position, InputTableHeaders.WORKSHEET, worksheet_item)
+        workbook_entry = pu.init_output_worksheet(self)
+        dropdowns = DropdownHandler(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(workbook_entry))
+        pu.setup_dropdowns(self.panel.table, row_position, dropdowns)
+        # Remove the error if it is still there (if retrying)
+        self.error_manager.remove_error(self.file_name, self.panel.role)
+        pu.remove_highlighting(self.panel.table.item(row_position, OutputTableHeaders.FILENAME))
+        pu.update_selected_sheet(workbook_entry, dropdowns.worksheet_dropdown.currentText())
+        pu.update_budgeting_date(workbook_entry, dropdowns.year_dropdown.currentText(), dropdowns.month_dropdown.currentText())
 
 @dataclass
 class RowHandler:

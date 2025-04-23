@@ -25,7 +25,7 @@ from phb_app.data.phb_dataclasses import (
     ManagedInputWorkbook,
     ManagedOutputWorkbook
 )
-import phb_app.utils.func_utils as futils
+import phb_app.utils.func_utils as fu
 
 def sum_hours_selected_employee(workbooks: WorkbookManager) -> None:
     '''Sum the hours of each employee by project ID if they are
@@ -92,7 +92,7 @@ def write_hours_to_output_file(output_file: ManagedOutputWorkbook) -> None:
             # If the employee is not missing in the input file
             # get the associated coordinate to write hours in
             # the output file
-            hours_coord = next(futils.yield_hours_coord(emp_coord, date_row))
+            hours_coord = next(fu.yield_hours_coord(emp_coord, date_row))
             cell = sheet[hours_coord]
             cell.value = acc_hours
             cell.font = Font(name='Arial', size=12, color='FF000000')

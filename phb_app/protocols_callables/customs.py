@@ -21,12 +21,11 @@ from typing import (
     Optional,
     runtime_checkable
 )
-from PyQt6.QtWidgets import QTableWidget
 
 @runtime_checkable
 class ConfigureRow(Protocol):
     '''Configure row signature'''
-    def __call__(self, table: QTableWidget, row_position: int, file_name: str, file_path: Optional[str] = None) -> None: ...
+    def __call__(self, row_position: int) -> None: ...
 
 class AddWorkbook(Protocol):
     '''Add workbook signature'''

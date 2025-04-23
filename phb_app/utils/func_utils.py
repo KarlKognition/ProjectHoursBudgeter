@@ -106,15 +106,14 @@ def try_load_workbook(workbook: "ManagedWorkbook", wb_type: "ManagedOutputWorkbo
     except zipfile.BadZipFile as e:
         raise WorkbookLoadError(f"Corrupted Excel file '{file_name}': {str(e)}") from e
 
-def is_file_already_in_table(file_path: str, col: int, *tables: QTableWidget) -> bool:
+def is_file_already_in_table(file_path: str, col: int, table: QTableWidget) -> bool:
     '''
-    Check if the file already exists in either input or output table
+    Check if the file already exists in the given table
     and return a respective boolean.
     '''
     return any(
         table.item(row, col)
         and table.item(row, col).text() == file_path
-        for table in tables
         for row in range(table.rowCount())
     )
 

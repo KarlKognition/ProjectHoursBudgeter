@@ -37,7 +37,7 @@ from phb_app.data.phb_dataclasses import (
     SpecialStrings,
     MONATE_KURZ_DE
 )
-import phb_app.utils.func_utils as futils
+import phb_app.utils.func_utils as fu
 import phb_app.logging.logger as logger
 
 class SummaryPage(QWizardPage):
@@ -105,7 +105,7 @@ class SummaryPage(QWizardPage):
         )
         # Selected date text
         date = self.wb_out.managed_sheet_object.selected_date
-        month = futils.german_abbr_month(date.month, MONATE_KURZ_DE)
+        month = fu.german_abbr_month(date.month, MONATE_KURZ_DE)
         selected_date_text = (
             f"<p><strong>Selected date</strong>: {month} {date.year}</p>"
         )

@@ -18,7 +18,6 @@ All functions necessary for setting up the wizard pages.
 '''
 ## Imports
 # Standard libraries
-from os import path
 from datetime import datetime
 from typing import Optional
 from dateutil.relativedelta import relativedelta
@@ -30,20 +29,17 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem
 )
 # First party libraries
-import phb_app.utils.func_utils as futils
+import phb_app.utils.func_utils as fu
 from phb_app.data.phb_dataclasses import (
     CountryData, BaseTableHeaders, InputTableHeaders, OutputTableHeaders,
-    OutputFile, IORole, ManagedInputWorkbook, FileDialogHandler,
-    SpecialStrings, CountriesEnum, IOControls, ColWidths,
-    MONATE_KURZ_DE
+    OutputFile, IORole, ManagedInputWorkbook, ManagedOutputWorkbook,
+    FileDialogHandler, SpecialStrings, CountriesEnum, IOControls, ColWidths,
+    ButtonNames, MONATE_KURZ_DE, DropdownHandler
 )
+from phb_app.logging.error_manager import ErrorManager
 from phb_app.logging.exceptions import (
     FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename, IncorrectWorksheetSelected,
     MissingEmployeeRow, BudgetingDatesNotFound
-)
-from phb_app.protocols_callables.customs import (
-    ConfigureRow,
-    AddWorkbook
 )
 from phb_app.wizard.constants.ui_strings import (
     ADD_FILE,
@@ -126,27 +122,18 @@ def create_interaction_panel(panel: IOControls) -> QWidget:
 ### Buttons ###
 ###############
 
-def connect_buttons(page: QWizardPage, context: FileDialogHandler) -> None:
+def connect_buttons(page: QWizardPage, file_handler: FileDialogHandler) -> None:
     '''Connect buttons to their respective actions dynamically.'''
 
-    # Define a function dispatch table
-    def add_action():
-        _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, context)
-
-    def remove_action():
-        _remove_selected_file(page, context)
-
     action_dispatch = {
-        "add_button": add_action,
-        "remove_button": remove_action,
-        "select_all_button": context.panel.table.selectAll,
-        "deselect_all_button": context.panel.table.clearSelection
+        ButtonNames.ADD: lambda: _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, file_handler),
+        ButtonNames.REMOVE: lambda: _remove_selected_file(page, file_handler),
+        ButtonNames.SELECT_ALL: file_handler.panel.table.selectAll,
+        ButtonNames.DESELECT_ALL: file_handler.panel.table.clearSelection
     }
-
     # Iterate over buttons and connect them dynamically
-    for button in context.panel.buttons:
-        action = action_dispatch.get(button.objectName())
-        if action:
+    for button in file_handler.panel.buttons:
+        if action := action_dispatch.get(button.text()):
             button.clicked.connect(action)
 
 #####################
@@ -162,34 +149,34 @@ def _setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QF
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     return file_dialog
 
-def _handle_file_selection(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
+def _handle_file_selection(page: QWizardPage, files: list[str], file_handler: FileDialogHandler) -> None:
     '''Handle file selection and populate the appropriate table.'''
-    if context.panel.role == IORole.INPUT_FILE:
-        _populate_table(page, files, context)
-    elif context.panel.role == IORole.OUTPUT_FILE:
-        _populate_table(page, files, context)
+    if file_handler.panel.role == IORole.INPUT_FILE:
+        _populate_table(page, files, file_handler)
+    elif file_handler.panel.role == IORole.OUTPUT_FILE:
+        _populate_table(page, files, file_handler)
 
-def _add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, context: FileDialogHandler) -> None:
+def _add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, file_handler: FileDialogHandler) -> None:
     '''Add files to either the input or output selection tables.'''
     file_dialog = _setup_file_dialog(page, file_mode)
     if file_dialog.exec():
         selected_files = file_dialog.selectedFiles()
-        _handle_file_selection(page, selected_files, context)
+        _handle_file_selection(page, selected_files, file_handler)
 
-def _remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None:
+def _remove_selected_file(page: QWizardPage, file_handler: FileDialogHandler) -> None:
     '''Remove the currently selected file(s) from the table.'''
     # Selected rows
-    selected_items = context.panel.table.selectionModel().selectedRows()
+    selected_items = file_handler.panel.table.selectionModel().selectedRows()
     # Search for selected rows in reverse so that the row numbering
     # doesn't change with each deletion.
     for row in sorted([item.row() for item in selected_items], reverse=True):
-        file_name = context.panel.table.item(row, InputTableHeaders.FILENAME).text()
+        file_name = file_handler.panel.table.item(row, InputTableHeaders.FILENAME).text()
         # Remove the workbook
-        context.workbook_manager.remove_workbook(file_name)
+        file_handler.workbook_manager.remove_workbook(file_name)
         # Remove selected rows
-        context.panel.table.removeRow(row)
+        file_handler.panel.table.removeRow(row)
         # Remove any associated error
-        context.error_manager.remove_error(file_name, context.panel.role)
+        file_handler.error_manager.remove_error(file_name, file_handler.panel.role)
         # Update UI
         page.completeChanged.emit()
 
@@ -199,8 +186,8 @@ def _remove_selected_file(page: QWizardPage, context: FileDialogHandler) -> None
 
 def _check_file_validity(file_name: str, panel: IOControls, file_item: QTableWidgetItem) -> None:
     '''Check if the file is valid and highlight errors if necessary.'''
-    file_exists = futils.is_file_already_in_table(file_name, InputTableHeaders.FILENAME, panel.table, self.output_table)
-    if panel.table == IORole.INPUT_FILE and panel.table.rowCount() >= 2:
+    file_exists = fu.is_file_already_in_table(file_name, InputTableHeaders.FILENAME, panel.table)
+    if panel.table == IORole.OUTPUT_FILE and panel.table.rowCount() >= 2:
         highlight_bad_item(file_item)
         raise TooManyOutputFilesSelected()
     if file_exists:
@@ -216,21 +203,6 @@ def _insert_file_row(panel: IOControls, file_name: str) -> int:
     panel.table.setItem(row_position, InputTableHeaders.FILENAME, file_item)
     return row_position
 
-def _populate_table(page: QWizardPage, files: list[str], context: FileDialogHandler) -> None:
-    '''Populate the table with selected file(s).'''
-    for file_path in files:
-        file_name = path.basename(file_path)
-        try:
-            file_item = QTableWidgetItem(file_name)
-            _check_file_validity(file_name, context.panel, file_item)
-            row_position = _insert_file_row(context.panel, file_name)
-            context.workbook_manager.add_workbook(file_path, context.panel.role)
-            context.configure_row(context.panel.table, row_position, file_name, file_path)
-        except (FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename,
-                IncorrectWorksheetSelected, MissingEmployeeRow, BudgetingDatesNotFound, KeyError) as e:
-            context.error_manager.add_error(file_name, context.panel.role, e)
-        page.completeChanged.emit()
-
 def set_country_item(table: QTableWidget, row_position: int, country: str) -> None:
     '''Set the country item in the table.'''
     country_item = QTableWidgetItem(country)
@@ -243,74 +215,105 @@ def set_worksheet_item(table: QTableWidget, row_position: int, sheet_name: str) 
     worksheet_item.setFlags(worksheet_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
     table.setItem(row_position, InputTableHeaders.WORKSHEET, worksheet_item)
 
-def configure_input_row(table: QTableWidget, data: CountryData, row_position: int, file_name: str, file_path: str = None) -> None:
-    '''Configure a row for the input table.'''
-    workbook_entry = self.managed_workbooks.get_workbook_by_name(file_name)
-    try:
-        update_country_details_in_table(data, workbook_entry)
-        set_country_item(table, row_position, workbook_entry.locale_data.country)
-        workbook_entry.init_input_worksheet()
-        set_worksheet_item(table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
-    except CountryIdentifiersNotInFilename as e:
-        item = table.item(row_position, InputTableHeaders.FILENAME)
-        highlight_bad_item(item)
-        raise e
+def update_country_details_in_table(data: CountryData, workbook_entry: ManagedInputWorkbook) -> None:
+    '''
+    Update country details.
+    '''
+    # Check that the workbook is an input workbook
+    if isinstance(workbook_entry, ManagedInputWorkbook):
+        # Get country name from file name
+        country_name = fu.get_origin_from_file_name(workbook_entry.file_name, data, CountriesEnum)
+        # Set the local data of the workbook
+        workbook_entry.set_locale_data(data, country_name)
 
-##############################
+###############################
 ### Output Table Population ###
-##############################
+###############################
 
-def create_dropdown(items: list[str], default: str) -> QComboBox:
+def _create_dropdown(items: list[str], default: str) -> QComboBox:
     '''Create a dropdown with the given items and default selection.'''
     dropdown = QComboBox()
+    dropdown.addItem(default)
     dropdown.addItems(items)
-    dropdown.setCurrentText(default)
+    dropdown.setCurrentIndex(0)
     return dropdown
 
-def setup_dropdowns(table: QTableWidget, row_position: int, default_year: str, default_month: str) -> tuple[QComboBox, QComboBox, QComboBox]:
-    '''Set up year, month, and worksheet dropdowns.'''
-    year_dropdown = create_dropdown([str(year) for year in range(2020, datetime.now().year + 3)], default_year)
-    month_dropdown = create_dropdown(list(MONATE_KURZ_DE.keys()), default_month)
-    table.setCellWidget(row_position, OutputTableHeaders.YEAR.value, year_dropdown)
-    table.setCellWidget(row_position, OutputTableHeaders.MONTH.value, month_dropdown)
-    return year_dropdown, month_dropdown
+def init_output_worksheet(file_handler: FileDialogHandler) -> ManagedOutputWorkbook:
+    '''Initialise and return the output worksheet.'''
+    workbook_entry = file_handler.workbook_manager.get_workbook_by_name(file_handler.file_name)
+    workbook_entry.init_output_worksheet()
+    return workbook_entry
 
-def configure_output_row(self, table: QTableWidget, row_position: int, file_name: str, file_path: str) -> None:
-    '''Configure a row for the output table.'''
-    workbook_entry_wf = self.managed_workbooks.get_workbook_by_name(file_name)
-    workbook_entry_wf.init_output_worksheet()
-    worksheet_dropdown = create_dropdown(
-        [SpecialStrings.SELECT_WORKSHEET.value] + workbook_entry_wf.managed_sheet_object.sheet_names,
-        SpecialStrings.SELECT_WORKSHEET.value
-    )
-    table.setCellWidget(row_position, OutputTableHeaders.WORKSHEET.value, worksheet_dropdown)
+def create_worksheet_dropdown(workbook_entry: ManagedOutputWorkbook) -> QComboBox:
+    '''Create a dropdown for selecting a worksheet.'''
+    return _create_dropdown(workbook_entry.managed_sheet_object.sheet_names, SpecialStrings.SELECT_WORKSHEET.value)
+
+def create_year_dropdown() -> QComboBox:
+    '''
+    Create a dropdown for selecting a year. The default year is the current year unless it is December,
+    then due to the default month being last month, the default year is set to the previous year.
+    '''
     default_year = str((datetime.now() + relativedelta(months=-1)).year)
-    default_month = futils.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, MONATE_KURZ_DE)
-    year_dropdown, month_dropdown = setup_dropdowns(table, row_position, default_year, default_month)
+    return _create_dropdown([str(year) for year in range(2020, datetime.now().year + 3)], default_year)
 
-    def handle_selections() -> None:
+def create_month_dropdown() -> QComboBox:
+    '''
+    Create a dropdown for selecting a month. The default month is set to the previous month.
+    This is the month in which hours are yet to be analysed.
+    '''
+    default_month = fu.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, MONATE_KURZ_DE)
+    return _create_dropdown(list(MONATE_KURZ_DE.keys()), default_month)
+
+def setup_dropdowns(table:QTableWidget, row_position: int, dropdowns: DropdownHandler) -> None:
+    '''Set up year, month, and worksheet dropdowns.'''
+    table.setCellWidget(row_position, OutputTableHeaders.WORKSHEET.value, dropdowns.worksheet_dropdown)
+    table.setCellWidget(row_position, OutputTableHeaders.MONTH.value, dropdowns.month_dropdown)
+    table.setCellWidget(row_position, OutputTableHeaders.YEAR.value, dropdowns.year_dropdown)
+
+def update_selected_sheet(workbook_entry: ManagedOutputWorkbook, selected_sheet: str) -> None:
+    '''Update the selected sheet in the workbook entry.'''
+    workbook_entry.managed_sheet_object.set_selected_sheet(sheet_name=selected_sheet, sheet_object=workbook_entry.workbook_object[selected_sheet])
+
+def update_budgeting_date(workbook_entry: ManagedOutputWorkbook, file_path: str, selected_sheet: str, selected_month: str, selected_year: str) -> None:
+    '''Update the budgeting date in the workbook entry.'''
+    workbook_entry.managed_sheet_object.set_budgeting_date(file_path, selected_sheet, selected_month, selected_year)
+
+def _handle_selection_error(row_position: int, file_handler: FileDialogHandler, error: Exception) -> None:
+    '''Handle errors during selection and update the UI accordingly.'''
+    col: dict[IORole, InputTableHeaders] = {
+        IORole.INPUT_FILE: InputTableHeaders.FILENAME,
+        IORole.OUTPUT_FILE: OutputTableHeaders.FILENAME
+    }
+    highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
+    file_handler.error_manager.add_error(file_handler.file_name, file_handler.panel.role, error)
+
+def connect_dropdowns(action) -> None:
+    '''Connect dropdowns to their respective handlers.'''
+
+    # worksheet_dropdown.currentIndexChanged.connect(handle_selections)
+    # year_dropdown.currentIndexChanged.connect(handle_selections)
+    # month_dropdown.currentIndexChanged.connect(handle_selections)
+
+########################
+### Table Population ###
+########################
+
+def _populate_table(page: QWizardPage, files: list[str], file_handler: FileDialogHandler) -> None:
+    '''Populate the table with selected file(s).'''
+    for file_path in files:
+        file_handler.set_file_path_and_name(file_path)
         try:
-            file_role = self.check_file_role(table)
-            self.error_manager.remove_error(file_name, file_role)
-            self.remove_highlighting(table.item(row_position, InputTableHeaders.FILENAME))
-            selected_sheet = worksheet_dropdown.currentText()
-            selected_month = month_dropdown.currentText()
-            selected_year = year_dropdown.currentText()
-            workbook_entry_wf.managed_sheet_object.set_selected_sheet(
-                sheet_name=selected_sheet,
-                sheet_object=workbook_entry_wf.workbook_object[selected_sheet]
-            )
-            workbook_entry_wf.managed_sheet_object.set_budgeting_date(
-                file_path, selected_sheet, selected_month, selected_year
-            )
-        except (IncorrectWorksheetSelected, BudgetingDatesNotFound, MissingEmployeeRow, KeyError) as e:
-            self.highlight_bad_item(table.item(row_position, InputTableHeaders.FILENAME))
-            self.error_manager.add_error(file_name, file_role, e)
+            file_item = QTableWidgetItem(file_handler.file_name)
+            _check_file_validity(file_handler.file_name, file_handler.panel, file_item)
+            row_position = _insert_file_row(file_handler.panel, file_handler.file_name)
+            file_handler.workbook_manager.add_workbook(file_path, file_handler.panel.role)
+            file_handler.configure_row(row_position)
+        except (FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename,
+                IncorrectWorksheetSelected, MissingEmployeeRow, BudgetingDatesNotFound, BudgetingDatesNotFound,
+                KeyError) as exc:
+            _handle_selection_error(row_position, file_handler, exc)
+            file_handler.error_manager.add_error(file_handler.file_name, file_handler.panel.role, exc)
         page.completeChanged.emit()
-
-    worksheet_dropdown.currentIndexChanged.connect(handle_selections)
-    year_dropdown.currentIndexChanged.connect(handle_selections)
-    month_dropdown.currentIndexChanged.connect(handle_selections)
 
 ##############################
 ### Highlighting Functions ###
