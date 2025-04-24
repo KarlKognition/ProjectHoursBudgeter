@@ -62,6 +62,7 @@ class IOSelectionPage(QWizardPage):
         error_manager.error_panels[IORole.OUTPUT_FILE] = QWidget()
         pu.set_titles(self, IO_FILE_TITLE, IO_FILE_SUBTITLE)
         self.input_panel = IOControls(
+            page=self,
             role=IORole.INPUT_FILE,
             label=QLabel(I_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, INPUT_COLUMN_WIDTHS),
@@ -69,6 +70,7 @@ class IOSelectionPage(QWizardPage):
             error_panel=error_manager.error_panels[IORole.INPUT_FILE]
         )
         self.output_panel = IOControls(
+            page=self,
             role=IORole.OUTPUT_FILE,
             label=QLabel(O_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, OUTPUT_COLUMN_WIDTHS),

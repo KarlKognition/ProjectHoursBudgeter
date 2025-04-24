@@ -25,7 +25,8 @@ from PyQt6.QtWidgets import (
     QTableWidget,
     QComboBox,
     QLabel,
-    QPushButton
+    QPushButton,
+    QWizardPage
 )
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -33,8 +34,7 @@ import openpyxl.utils as xlutils
 import yaml
 import phb_app.logging.error_manager as em
 from phb_app.logging.exceptions import (
-    BudgetingDatesNotFound, WorkbookAlreadyTracked, EmployeeRowAnchorsMisalignment,
-    MissingEmployeeRow
+    BudgetingDatesNotFound, WorkbookAlreadyTracked
 )
 from phb_app.protocols_callables.customs import ConfigureRow
 import phb_app.utils.func_utils as fu
@@ -732,6 +732,7 @@ type ButtonsList = list[QPushButton]
 @dataclass
 class IOControls:
     '''Data class for managing the IO controls.'''
+    page: QWizardPage
     role: IORole
     label: QLabel
     table: QTableWidget
@@ -767,6 +768,7 @@ class FileDialogHandler:
     panel: IOControls
     data: CountryData
     workbook_manager: WorkbookManager
+    entry: ManagedInputWorkbook | ManagedOutputWorkbook
     file_path: Optional[str] = None
     file_name: Optional[str] = None
     configure_row: Optional[ConfigureRow] = None
@@ -786,27 +788,21 @@ class FileDialogHandler:
 
     def configure_input_row(self, row_position: int) -> None:
         '''Configure the input row in the table.'''
-        workbook_entry = self.workbook_manager.get_workbook_by_name(self.file_name)
-        pu.update_country_details_in_table(self.data, workbook_entry)
-        pu.set_country_item(self.panel.table, row_position, workbook_entry.locale_data.country)
-        workbook_entry.init_input_worksheet()
-        pu.set_worksheet_item(self.panel.table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
+        self.entry = self.workbook_manager.get_workbook_by_name(self.file_name)
+        pu.update_country_details_in_table(self.data, self.entry)
+        pu.set_country_item(self.panel.table, row_position, self.entry.locale_data.country)
+        self.entry.init_input_worksheet()
+        pu.set_worksheet_item(self.panel.table, row_position, self.entry.managed_sheet_object.selected_sheet.sheet_name)
 
     def configure_output_row(self, row_position: int) -> None:
         '''Configure the output row in the table.'''
-        workbook_entry = pu.get_initialised_managed_workbook(self)
+        self.entry = pu.get_initialised_managed_workbook(self)
         dropdowns = DropdownHandler(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(workbook_entry))
         pu.setup_dropdowns(self.panel.table, row_position, dropdowns)
         def connection_wrapper() -> None:
             '''Connect functionality to the dropdowns.'''
-            # Remove the error if it is still there (if retrying)
-            pu.clear_row_error_status(self, row_position, OutputTableHeaders.FILENAME)
-            dropdowns.update_current_text()
-            try:
-                pu.update_selected_sheet(workbook_entry, dropdowns.worksheet_dropdown.currentText())
-                workbook_entry.managed_sheet_object.set_budgeting_date(self.file_path, dropdowns.current_text)
-            except (EmployeeRowAnchorsMisalignment, MissingEmployeeRow, BudgetingDatesNotFound) as exc:
-                pu.handle_selection_error(row_position, self, exc)
+            pu.handle_dropdown_selection(self, row_position, dropdowns)
+            self.panel.page.completeChanged.emit()
         dropdowns.connect_dropdowns(connection_wrapper)
 
 @dataclass

@@ -37,8 +37,9 @@ from phb_app.data.phb_dataclasses import (
     ButtonNames, MONATE_KURZ_DE, DropdownHandler
 )
 from phb_app.logging.exceptions import (
-    FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename, IncorrectWorksheetSelected,
-    WorkbookAlreadyTracked, BudgetingDatesNotFound
+    FileAlreadySelected, TooManyOutputFilesSelected, CountryIdentifiersNotInFilename,
+    IncorrectWorksheetSelected, WorkbookAlreadyTracked, BudgetingDatesNotFound,
+    EmployeeRowAnchorsMisalignment, MissingEmployeeRow
 )
 from phb_app.wizard.constants.ui_strings import (
     ADD_FILE,
@@ -265,9 +266,9 @@ def create_month_dropdown() -> QComboBox:
 
 def setup_dropdowns(table:QTableWidget, row_position: int, dropdowns: DropdownHandler) -> None:
     '''Set up year, month, and worksheet dropdowns.'''
-    table.setCellWidget(row_position, OutputTableHeaders.WORKSHEET.value, dropdowns.worksheet_dropdown)
-    table.setCellWidget(row_position, OutputTableHeaders.MONTH.value, dropdowns.month_dropdown)
-    table.setCellWidget(row_position, OutputTableHeaders.YEAR.value, dropdowns.year_dropdown)
+    table.setCellWidget(row_position, OutputTableHeaders.WORKSHEET, dropdowns.worksheet_dropdown)
+    table.setCellWidget(row_position, OutputTableHeaders.MONTH, dropdowns.month_dropdown)
+    table.setCellWidget(row_position, OutputTableHeaders.YEAR, dropdowns.year_dropdown)
 
 def update_selected_sheet(workbook_entry: ManagedOutputWorkbook, selected_sheet: str) -> None:
     '''Update the selected sheet in the workbook entry.'''
@@ -281,6 +282,17 @@ def handle_selection_error(row_position: int, file_handler: FileDialogHandler, e
     }
     highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
     file_handler.error_manager.add_error(file_handler.file_name, file_handler.panel.role, error)
+
+def handle_dropdown_selection(file_handler: FileDialogHandler, row_position: int, dropdowns: DropdownHandler) -> None:
+    '''Handle dropdown selection and update the selected sheet accordingly.'''
+    # Remove the error if it is still there (if retrying)
+    clear_row_error_status(file_handler, row_position, OutputTableHeaders.FILENAME)
+    dropdowns.update_current_text()
+    try:
+        update_selected_sheet(file_handler.entry, dropdowns.worksheet_dropdown.currentText())
+        file_handler.entry.managed_sheet_object.set_budgeting_date(file_handler.file_path, dropdowns.current_text)
+    except (EmployeeRowAnchorsMisalignment, MissingEmployeeRow, BudgetingDatesNotFound) as exc:
+        handle_selection_error(row_position, file_handler, exc)
 
 ########################
 ### Table Population ###
@@ -338,19 +350,15 @@ def check_completion(panels: tuple[IOControls]) -> bool:
         '''Check if both tables have at least one row selected
         and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
         output_item = get_combo_box(out_panel.table, OutputFile.FIRST_ENTRY.value, OutputTableHeaders.WORKSHEET.value)
-        if (
+        return (
             all(panel.table.rowCount() >= 1 for panel in (in_panel, out_panel))
             and output_item is not None
             and output_item.currentText() != SpecialStrings.SELECT_WORKSHEET
             and all(not panel.error_panel.findChildren(QLabel) for panel in (in_panel, out_panel))
-        ):
-            return True
-        return False
+        )
     def table_selection_complete() -> bool:
         '''Check if the table has at least one row selected. There is only one panel in this case.'''
-        if bool(panels[0].table.selectionModel().selectedRows()):
-            return True
-        return False
+        return bool(panels[0].table.selectionModel().selectedRows())
     if in_panel or out_panel:
         return io_selection_complete()
     return table_selection_complete()
