@@ -17,7 +17,7 @@ from os import path
 from datetime import datetime
 from enum import StrEnum, IntEnum, auto
 from abc import ABC, abstractmethod
-from typing import Optional, Iterator
+from typing import Optional, Iterator, Callable
 from dataclasses import dataclass, field
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -33,8 +33,7 @@ import openpyxl.utils as xlutils
 import yaml
 import phb_app.logging.error_manager as em
 from phb_app.logging.exceptions import (
-    BudgetingDatesNotFound, WorkbookAlreadyTracked,
-    CountryIdentifiersNotInFilename, IncorrectWorksheetSelected,
+    BudgetingDatesNotFound, WorkbookAlreadyTracked, EmployeeRowAnchorsMisalignment,
     MissingEmployeeRow
 )
 from phb_app.protocols_callables.customs import ConfigureRow
@@ -453,6 +452,13 @@ class SelectedDate:
 ##############################
 
 @dataclass
+class SelectedText:
+    '''Data class for managing the selected text in the dropdowns.'''
+    year: Optional[str] = None
+    month: Optional[str] = None
+    worksheet: Optional[str] = None
+
+@dataclass
 class SelectedSheet:
     '''Data class for worksheet names.'''
     sheet_name: str
@@ -542,21 +548,17 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         self.employee_range = EmployeeRange()
         fu.locate_employee_range(self.selected_sheet.sheet_object, self.employee_range,self.employee_row_anchors)
 
-    def set_budgeting_date(self, file_path: str, sheet_name: str, selected_month: str, selected_year: str) -> None:
+    def set_budgeting_date(self, file_path: str, dropdown_text: SelectedText) -> None:
         '''Sets the budgeting date with the row it is located in the worksheet.'''
         # Convert dates to integers and put in a tuple
-        month_year = (MONATE_KURZ_DE.get(selected_month), int(selected_year))
-        budgeting_dates = fu.get_budgeting_dates(file_path, sheet_name)
+        month_year = (MONATE_KURZ_DE.get(dropdown_text.month), int(dropdown_text.year))
+        budgeting_dates = fu.get_budgeting_dates(file_path, dropdown_text.worksheet)
         for tup in budgeting_dates:
             if tup[:2] == month_year:
                 month, year, row = tup
                 break
         else:
-            raise BudgetingDatesNotFound(
-                selected_month,
-                selected_year,
-                sheet_name,
-                path.basename(file_path))
+            raise BudgetingDatesNotFound(dropdown_text, path.basename(file_path))
         self.selected_date.month = month
         self.selected_date.year = year
         self.selected_date.row = row
@@ -742,12 +744,26 @@ class DropdownHandler:
     year_dropdown: QComboBox
     month_dropdown: QComboBox
     worksheet_dropdown: QComboBox
+    current_text: SelectedText = field(default_factory=SelectedText)
+
+    def __post_init__(self) -> None:
+        self.update_current_text()
+    
+    def update_current_text(self) -> None:
+        '''Update the current text of the dropdowns.'''
+        self.current_text.year = self.year_dropdown.currentText()
+        self.current_text.month = self.month_dropdown.currentText()
+        self.current_text.worksheet = self.worksheet_dropdown.currentText()
+
+    def connect_dropdowns(self, func: Callable) -> None:
+        '''Connect the dropdowns to the given function.'''
+        self.year_dropdown.currentTextChanged.connect(func)
+        self.month_dropdown.currentTextChanged.connect(func)
+        self.worksheet_dropdown.currentTextChanged.connect(func)
 
 @dataclass
 class FileDialogHandler:
-    '''
-    Data class for managing the file dialog.
-    '''
+    '''Data class for managing the file dialog.'''
     panel: IOControls
     data: CountryData
     workbook_manager: WorkbookManager
@@ -757,10 +773,11 @@ class FileDialogHandler:
     error_manager: Optional[em.ErrorManager] = None
 
     def __post_init__(self) -> None:
-        if self.panel.role == IORole.INPUT_FILE:
-            self.configure_row = self.configure_input_row
-        elif self.panel.role == IORole.OUTPUT_FILE:
-            self.configure_row = self.configure_output_row
+        configure_row_dispatch = {
+            IORole.INPUT_FILE: self.configure_input_row,
+            IORole.OUTPUT_FILE: self.configure_output_row
+        }
+        self.configure_row = configure_row_dispatch.get(self.panel.role)
 
     def set_file_path_and_name(self, file_path: str) -> None:
         '''Set the file path.'''
@@ -768,9 +785,7 @@ class FileDialogHandler:
         self.file_name = path.basename(file_path)
 
     def configure_input_row(self, row_position: int) -> None:
-        '''
-        Configure the input row in the table.
-        '''
+        '''Configure the input row in the table.'''
         workbook_entry = self.workbook_manager.get_workbook_by_name(self.file_name)
         pu.update_country_details_in_table(self.data, workbook_entry)
         pu.set_country_item(self.panel.table, row_position, workbook_entry.locale_data.country)
@@ -778,23 +793,25 @@ class FileDialogHandler:
         pu.set_worksheet_item(self.panel.table, row_position, workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
 
     def configure_output_row(self, row_position: int) -> None:
-        '''
-        Configure the output row in the table.
-        '''
-        workbook_entry = pu.init_output_worksheet(self)
+        '''Configure the output row in the table.'''
+        workbook_entry = pu.get_initialised_managed_workbook(self)
         dropdowns = DropdownHandler(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(workbook_entry))
         pu.setup_dropdowns(self.panel.table, row_position, dropdowns)
-        # Remove the error if it is still there (if retrying)
-        self.error_manager.remove_error(self.file_name, self.panel.role)
-        pu.remove_highlighting(self.panel.table.item(row_position, OutputTableHeaders.FILENAME))
-        pu.update_selected_sheet(workbook_entry, dropdowns.worksheet_dropdown.currentText())
-        pu.update_budgeting_date(workbook_entry, dropdowns.year_dropdown.currentText(), dropdowns.month_dropdown.currentText())
+        def connection_wrapper() -> None:
+            '''Connect functionality to the dropdowns.'''
+            # Remove the error if it is still there (if retrying)
+            pu.clear_row_error_status(self, row_position, OutputTableHeaders.FILENAME)
+            dropdowns.update_current_text()
+            try:
+                pu.update_selected_sheet(workbook_entry, dropdowns.worksheet_dropdown.currentText())
+                workbook_entry.managed_sheet_object.set_budgeting_date(self.file_path, dropdowns.current_text)
+            except (EmployeeRowAnchorsMisalignment, MissingEmployeeRow, BudgetingDatesNotFound) as exc:
+                pu.handle_selection_error(row_position, self, exc)
+        dropdowns.connect_dropdowns(connection_wrapper)
 
 @dataclass
 class RowHandler:
-    '''
-    Data class for managing the row in the table.
-    '''
+    '''Data class for managing the row in the table.'''
     table: QTableWidget
     row_position: int
     file_name: str
