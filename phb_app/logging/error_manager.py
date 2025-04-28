@@ -15,16 +15,16 @@ Tracks errors for the Project Hours Budgeting Wizard.
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
-from phb_app.data.phb_dataclasses import IORole
+import phb_app.data.common as common
 
 class ErrorManager:
     '''Singleton class which manages the errors using QWizard QLabels.'''
     def __init__(self) -> None:
         # UI container for error messages
-        self.error_panels: dict[IORole, QWidget] = {}
+        self.error_panels: dict[common.IORole, QWidget] = {}
         self.errors: dict[tuple[str, str], dict[str, QLabel]] = {}
 
-    def add_error(self, file_name:str, file_role: IORole, error: Exception) -> None:
+    def add_error(self, file_name:str, file_role: common.IORole, error: Exception) -> None:
         '''Add the error per file.'''
 
         key = (file_name, file_role)
@@ -41,7 +41,7 @@ class ErrorManager:
         # Track the label
         self.errors[key][str(error)] = label
 
-    def remove_error(self, file_name: str, file_role: IORole) -> None:
+    def remove_error(self, file_name: str, file_role: common.IORole) -> None:
         '''Remove the error and label per file.'''
 
         key = (file_name, file_role)

@@ -1,7 +1,7 @@
 '''
 Package
 -------
-Utilities
+General Function Utilities
 
 Module Name
 ---------
@@ -18,110 +18,17 @@ Provides utility functions for the management
 of employees in the project hours budgeting wizard.
 '''
 
-import zipfile
-from typing import TYPE_CHECKING, Iterator
+from os import path
+from typing import Iterator
 from datetime import datetime
 from functools import lru_cache
 import xlwings as xw
 from PyQt6.QtCore import QModelIndex
 from PyQt6.QtWidgets import QTableWidget
-from openpyxl import load_workbook
 import openpyxl.utils as xlutils
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.utils.exceptions import (
-    ReadOnlyWorkbookException,
-    InvalidFileException
-)
-from phb_app.logging.exceptions import (
-    CountryIdentifiersNotInFilename,
-    WorkbookLoadError
-)
-from phb_app.logging.exceptions import (
-    MissingEmployeeRow,
-    EmployeeRowAnchorsMisalignment
-)
-
-if TYPE_CHECKING:
-    from phb_app.data.phb_dataclasses import (
-        CountryData,
-        EmployeeRange,
-        EmployeeRowAnchors,
-        ManagedWorkbook,
-        ManagedOutputWorkbook,
-        ManagedInputWorkbook,
-        CountriesEnum,
-        ProjectIDTableHeaders,
-        Employee
-    )
-
-#####################
-### File handling ###
-#####################
-
-def get_origin_from_file_name(file_name: str, country_data: "CountryData", countries_enum: "CountriesEnum") -> str:
-    '''
-    Checks the workbook's origin. Returns the country of origin.
-    '''
-    # Pattern in all German timesheets
-    german_patterns = country_data.get_locale_by_country(countries_enum.GERMANY.value).file_patterns
-    # Pattern in all Romanian timesheets
-    romanian_patterns = country_data.get_locale_by_country(countries_enum.ROMANIA.value).file_patterns
-    if all(pattern in file_name.lower() for pattern in german_patterns):
-        return countries_enum.GERMANY.value
-    if all(pattern in file_name.lower() for pattern in romanian_patterns):
-        return countries_enum.ROMANIA.value
-    raise CountryIdentifiersNotInFilename(file_name)
-
-def is_workbook_open(file_path:str) -> bool:
-    '''Check if the file is already in use.'''
-    try:
-        with open(file_path, 'r+', encoding='utf-8'):
-            pass
-    except (OSError, IOError):
-        return True
-    return False
-
-def try_load_workbook(workbook: "ManagedWorkbook", wb_type: "ManagedOutputWorkbook"):
-    '''
-    Template for attempting to load the workbook.
-    '''
-    file_name = workbook.file_name
-    file_path = workbook.file_path
-    try:
-        if isinstance(workbook, wb_type):
-            # We only care about the output workbook being open
-            # as we will not write to the input workbook
-            with open(file_path, 'r+', encoding='utf-8'):
-                pass
-        workbook = load_workbook(file_path)
-        return workbook
-    except ReadOnlyWorkbookException as e:
-        raise WorkbookLoadError(f"Workbook '{file_name}' is read-only: {str(e)}.") from e
-    except InvalidFileException as e:
-        raise WorkbookLoadError(f"Invalid Excel file '{file_name}': {str(e)}.") from e
-    except FileNotFoundError as e:
-        raise WorkbookLoadError(f"File '{file_name}' not found.") from e
-    except PermissionError as e:
-        raise WorkbookLoadError(f"Permission denied: Close '{file_name}' if open.") from e
-    except zipfile.BadZipFile as e:
-        raise WorkbookLoadError(f"Corrupted Excel file '{file_name}': {str(e)}") from e
-
-def is_file_already_in_table(file_path: str, col: int, table: QTableWidget) -> bool:
-    '''
-    Check if the file already exists in the given table
-    and return a respective boolean.
-    '''
-    return any(
-        table.item(row, col)
-        and table.item(row, col).text() == file_path
-        for row in range(table.rowCount())
-    )
-
-def replace_in_string(string: str, old: str, new: str) -> str:
-    '''
-    Replaces the old with new in the given string.
-    '''
-    return string.replace(old, new)
+import phb_app.logging.exceptions as ex
+import phb_app.data.common as common
 
 #####################
 ### Date handling ###
@@ -168,7 +75,7 @@ def get_budgeting_dates(file_path: str, sheet_name: str) -> list[tuple[int, int,
 # Cache the function results
 # Only cache one result to minimise memory use
 @lru_cache(maxsize=1)
-def locate_employee_range(sheet_obj: Worksheet, emp_range: "EmployeeRange", anchors: "EmployeeRowAnchors") -> None:
+def locate_employee_range(sheet_obj: Worksheet, emp_range: common.EmployeeRange, anchors: common.EmployeeRowAnchors) -> None:
     '''
     Finds the row range where the employee names should be located.
     '''
@@ -188,14 +95,38 @@ def locate_employee_range(sheet_obj: Worksheet, emp_range: "EmployeeRange", anch
             emp_range.start_cell = start_anchor_temp.coordinate
             emp_range.end_cell = end_anchor_temp.coordinate
         else:
-            raise EmployeeRowAnchorsMisalignment(anchors.start_anchor, anchors.end_anchor)
+            raise ex.EmployeeRowAnchorsMisalignment(anchors.start_anchor, anchors.end_anchor)
     else:
         if not start_anchor_temp and not end_anchor_temp:
-            raise MissingEmployeeRow(anchors.start_anchor, anchors.end_anchor)
+            raise ex.MissingEmployeeRow(anchors.start_anchor, anchors.end_anchor)
         if not start_anchor_temp and end_anchor_temp:
-            raise MissingEmployeeRow(anchors.start_anchor)
+            raise ex.MissingEmployeeRow(anchors.start_anchor)
         if start_anchor_temp and not end_anchor_temp:
-            raise MissingEmployeeRow(anchors.end_anchor)
+            raise ex.MissingEmployeeRow(anchors.end_anchor)
+
+def set_selected_sheet(file_handler: common.FileDialogHandler, sheet_name: str) -> None:
+    '''Set selected sheet.'''
+    entry = file_handler.workbook_entry
+    # Save the worksheet data
+    entry.managed_sheet_object.selected_sheet = common.SelectedSheet(sheet_name, entry.workbook_object[sheet_name])
+    # Check whether the employees are located in the worksheet
+    entry.managed_sheet_object.employee_range = common.EmployeeRange()
+    locate_employee_range(entry.managed_sheet_object.selected_sheet.sheet_object, entry.managed_sheet_object.employee_range, entry.managed_sheet_object.employee_row_anchors)
+
+def set_budgeting_date(file_handler: common.FileDialogHandler, dropdown_text: common.SelectedText) -> None:
+    '''Sets the budgeting date with the row it is located in the worksheet.'''
+    # Convert dates to integers and put in a tuple
+    month_year = (common.MONATE_KURZ_DE.get(dropdown_text.month), int(dropdown_text.year))
+    budgeting_dates = get_budgeting_dates(file_handler.file_path, dropdown_text.worksheet)
+    for tup in budgeting_dates:
+        if tup[:2] == month_year:
+            month, year, row = tup
+            break
+    else:
+        raise ex.BudgetingDatesNotFound(dropdown_text, path.basename(file_handler.file_path))
+    file_handler.workbook_entry.managed_sheet_object.selected_date.month = month
+    file_handler.workbook_entry.managed_sheet_object.selected_date.year = year
+    file_handler.workbook_entry.managed_sheet_object.selected_date.row = row
 
 def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     '''
@@ -205,7 +136,7 @@ def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     # The first item ([0] -> col) in the tuple from `coordinate_from_string` is used
     yield f"{str(xlutils.cell.coordinate_from_string(coord)[0])}{str(row)}"
 
-def find_predicted_hours(emp_dict: dict[str, "Employee"], row: int, file_path: str, sheet_name: str) -> dict[str, int]:
+def find_predicted_hours(emp_dict: dict[str, common.Employee], row: int, file_path: str, sheet_name: str) -> dict[str, int]:
     '''
     Goes through all given coordinates of a worksheet, computes
     any formulae and returns the hours by employee name coordinate.
@@ -230,7 +161,7 @@ def find_predicted_hours(emp_dict: dict[str, "Employee"], row: int, file_path: s
 ### Project handling ###
 ########################
 
-def set_selected_project_ids(mngd_wb: "ManagedInputWorkbook", table: QTableWidget, rows: list[QModelIndex], headers: "ProjectIDTableHeaders") -> None:
+def set_selected_project_ids(mngd_wb: common.ManagedInputWorkbook, table: QTableWidget, rows: list[QModelIndex], headers: common.ProjectIDTableHeaders) -> None:
     '''
     Sets the selected projects IDs as references from the selectable IDs.
     '''

@@ -20,23 +20,19 @@ in the project hours budgeting wizard.
 
 from datetime import datetime
 from openpyxl.styles import Font
-from phb_app.data.phb_dataclasses import (
-    WorkbookManager,
-    ManagedInputWorkbook,
-    ManagedOutputWorkbook
-)
-import phb_app.utils.func_utils as fu
+import phb_app.data.phb_dataclasses as dc
+import phb_app.utils.general_func_utils as gu
 
-def sum_hours_selected_employee(workbooks: WorkbookManager) -> None:
+def sum_hours_selected_employee(workbooks: dc.WorkbookManager) -> None:
     '''Sum the hours of each employee by project ID if they are
     found in the given worksheets.'''
 
     # Get the first (only) managed output workbook
-    out_wb = next(workbooks.yield_workbooks_by_type(ManagedOutputWorkbook))
+    out_wb = next(workbooks.yield_workbooks_by_type(dc.ManagedOutputWorkbook))
     selected_date = out_wb.managed_sheet_object.selected_date
     # Get the selected employee objects
     sel_emps = out_wb.managed_sheet_object.selected_employees.values()
-    for in_wb in workbooks.yield_workbooks_by_type(ManagedInputWorkbook):
+    for in_wb in workbooks.yield_workbooks_by_type(dc.ManagedInputWorkbook):
         # Get the localised filter headings from the managed input workbook
         employee_name_col = in_wb.managed_sheet_object.indexed_headers.get(
             in_wb.locale_data.filter_headers.name)
@@ -80,7 +76,7 @@ def sum_hours_selected_employee(workbooks: WorkbookManager) -> None:
                 # Accumulate found hours
                 emp.hours.accumulated_hours += hours_val
 
-def write_hours_to_output_file(output_file: ManagedOutputWorkbook) -> None:
+def write_hours_to_output_file(output_file: dc.ManagedOutputWorkbook) -> None:
     '''Write recorded hours to output budgeting file.'''
 
     emp_dict = output_file.managed_sheet_object.selected_employees
@@ -92,7 +88,7 @@ def write_hours_to_output_file(output_file: ManagedOutputWorkbook) -> None:
             # If the employee is not missing in the input file
             # get the associated coordinate to write hours in
             # the output file
-            hours_coord = next(fu.yield_hours_coord(emp_coord, date_row))
+            hours_coord = next(gu.yield_hours_coord(emp_coord, date_row))
             cell = sheet[hours_coord]
             cell.value = acc_hours
             cell.font = Font(name='Arial', size=12, color='FF000000')

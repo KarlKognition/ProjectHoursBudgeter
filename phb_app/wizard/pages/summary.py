@@ -19,25 +19,12 @@ Constructs and manages the summary page.
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWizardPage,
-    QLabel,
-    QTableWidget,
-    QPushButton,
-    QVBoxLayout,
-    QTableWidgetItem
+    QWizardPage, QLabel, QTableWidget, QPushButton,
+    QVBoxLayout, QTableWidgetItem
 )
-from phb_app.data.phb_dataclasses import (
-    SummaryTableHeaders,
-    ManagedOutputWorkbook,
-    WorkbookManager,
-    QPropName,
-    ManagedInputWorkbook,
-    ButtonNames,
-    EmployeeTableHeaders,
-    SpecialStrings,
-    MONATE_KURZ_DE
-)
-import phb_app.utils.func_utils as fu
+import phb_app.data.common as common
+import phb_app.data.phb_dataclasses as dc
+import phb_app.utils.general_func_utils as gu
 import phb_app.logging.logger as logger
 
 class SummaryPage(QWizardPage):
@@ -54,13 +41,13 @@ class SummaryPage(QWizardPage):
             "where the hours were taken."
         )
         # Headers
-        self.headers = SummaryTableHeaders.cap_members_list()
-        self.wb_out: ManagedOutputWorkbook = None
+        self.headers = dc.SummaryTableHeaders.cap_members_list()
+        self.wb_out: common.ManagedOutputWorkbook = None
 
         ## Init property
         # To be populated at page init
         self.selected_projects = []
-        self.managed_workbooks: WorkbookManager
+        self.managed_workbooks: dc.WorkbookManager
 
         self.setup_widgets()
         self.setup_layout()
@@ -76,13 +63,13 @@ class SummaryPage(QWizardPage):
 
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(
-            QPropName.MANAGED_WORKBOOKS.value)
+            dc.QPropName.MANAGED_WORKBOOKS.value)
         ## Info label text
         # Input names text
         input_names = "".join(
             f"<p style='margin:0;'> {wb.file_name}</p>"
             for wb
-            in self.managed_workbooks.yield_workbooks_by_type(ManagedInputWorkbook))
+            in self.managed_workbooks.yield_workbooks_by_type(common.ManagedInputWorkbook))
         in_details_text = (
             "<table border='0'>"
                 "<tr>"
@@ -97,7 +84,7 @@ class SummaryPage(QWizardPage):
         )
         # Get the first and only output workbook
         self.wb_out = next(self.managed_workbooks.yield_workbooks_by_type(
-            ManagedOutputWorkbook))
+            common.ManagedOutputWorkbook))
         file_out_name = self.wb_out.file_name
         # Output name text
         out_details_text = (
@@ -105,7 +92,7 @@ class SummaryPage(QWizardPage):
         )
         # Selected date text
         date = self.wb_out.managed_sheet_object.selected_date
-        month = fu.german_abbr_month(date.month, MONATE_KURZ_DE)
+        month = gu.german_abbr_month(date.month, common.MONATE_KURZ_DE)
         selected_date_text = (
             f"<p><strong>Selected date</strong>: {month} {date.year}</p>"
         )
@@ -121,7 +108,7 @@ class SummaryPage(QWizardPage):
         self.summary_table.viewport().update()
         # Get selected projects from the Project Selection page
         self.selected_projects = self.wizard().property(
-            QPropName.SELECTED_PROJECTS.value)
+            dc.QPropName.SELECTED_PROJECTS.value)
 
     #######################
     ### Setup functions ###
@@ -143,24 +130,24 @@ class SummaryPage(QWizardPage):
 
         ## Projects table
         # Start with 0 rows and 2 columns
-        self.summary_table = QTableWidget(0, len(SummaryTableHeaders))
+        self.summary_table = QTableWidget(0, len(dc.SummaryTableHeaders))
         # Allow multiple row selections in the table
         self.summary_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.summary_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
         # Adjust the width of each column
-        self.summary_table.setColumnWidth(SummaryTableHeaders.EMPLOYEE.value, 250)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.PREDICTED_HOURS.value, 100)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.ACCUMULATED_HOURS.value, 120)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.DEVIATION.value, 160)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.PROJECT_ID.value, 450)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.OUTPUT_WORKSHEET.value, 150)
-        self.summary_table.setColumnWidth(SummaryTableHeaders.COORDINATE.value, 80)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.EMPLOYEE.value, 250)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.PREDICTED_HOURS.value, 100)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.ACCUMULATED_HOURS.value, 120)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.DEVIATION.value, 160)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.PROJECT_ID.value, 450)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.OUTPUT_WORKSHEET.value, 150)
+        self.summary_table.setColumnWidth(dc.SummaryTableHeaders.COORDINATE.value, 80)
 
         ## Table selection control buttons
         # Add deselect all button
-        self.select_employees_button = QPushButton(ButtonNames.SELECT_ALL.value, self)
+        self.select_employees_button = QPushButton(dc.ButtonNames.SELECT_ALL.value, self)
         # Add deselect all button
-        self.deselect_employees_button = QPushButton(ButtonNames.DESELECT_ALL.value, self)
+        self.deselect_employees_button = QPushButton(dc.ButtonNames.DESELECT_ALL.value, self)
 
     def setup_layout(self) -> None:
         '''Init layout.'''
@@ -217,26 +204,26 @@ class SummaryPage(QWizardPage):
             employee_item.setFlags(employee_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                EmployeeTableHeaders.EMPLOYEE.value,
+                dc.EmployeeTableHeaders.EMPLOYEE.value,
                 employee_item
             )
             # Add the predicted hours
             if emp.hours.predicted_hours:
                 pre_hours_text = f"{emp.hours.predicted_hours:.2f}"
             else:
-                pre_hours_text = SpecialStrings.ZERO_HOURS.value
+                pre_hours_text = common.SpecialStrings.ZERO_HOURS.value
             pre_hours_item = QTableWidgetItem(pre_hours_text)
             pre_hours_item.setForeground(emp.hours.pre_hours_colour)
             pre_hours_item.setTextAlignment(Qt.AlignmentFlag.AlignRight)
             pre_hours_item.setFlags(pre_hours_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.PREDICTED_HOURS.value,
+                dc.SummaryTableHeaders.PREDICTED_HOURS.value,
                 pre_hours_item
             )
             # Add the accumulated hours
             if emp.hours.accumulated_hours is None:
-                acc_hours_text = SpecialStrings.MISSING.value
+                acc_hours_text = common.SpecialStrings.MISSING.value
                 font_colour = Qt.GlobalColor.red
             else:
                 acc_hours_text = f"{emp.hours.accumulated_hours:.2f}"
@@ -247,7 +234,7 @@ class SummaryPage(QWizardPage):
             acc_hours_item.setFlags(acc_hours_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.ACCUMULATED_HOURS.value,
+                dc.SummaryTableHeaders.ACCUMULATED_HOURS.value,
                 acc_hours_item
             )
             # Add the hours deviation
@@ -257,7 +244,7 @@ class SummaryPage(QWizardPage):
             dev_item.setFlags(acc_hours_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.DEVIATION.value,
+                dc.SummaryTableHeaders.DEVIATION.value,
                 dev_item
             )
             # Add the related project ID
@@ -267,7 +254,7 @@ class SummaryPage(QWizardPage):
             proj_id_item.setFlags(proj_id_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.PROJECT_ID.value,
+                dc.SummaryTableHeaders.PROJECT_ID.value,
                 proj_id_item
             )
             # Resize the row according to the number of rows
@@ -280,7 +267,7 @@ class SummaryPage(QWizardPage):
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.OUTPUT_WORKSHEET.value,
+                dc.SummaryTableHeaders.OUTPUT_WORKSHEET.value,
                 desc_item
             )
             # Add Excel cell coordinate where the employee is located
@@ -292,7 +279,7 @@ class SummaryPage(QWizardPage):
             coord_item.setFlags(coord_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                SummaryTableHeaders.COORDINATE.value,
+                dc.SummaryTableHeaders.COORDINATE.value,
                 coord_item
             )
 
@@ -307,7 +294,7 @@ class SummaryPage(QWizardPage):
         self.summary_table.clear()
         self.summary_table.setRowCount(0)
         # Clear the selected employees from the first and only output workbook
-        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(ManagedOutputWorkbook))
+        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(common.ManagedOutputWorkbook))
         out_wb.managed_sheet_object.clear_predicted_hours()
 
     def isComplete(self) -> bool:
@@ -324,13 +311,13 @@ class SummaryPage(QWizardPage):
         unselected_coords = []
         for row in range(self.summary_table.rowCount()):
             if not self.summary_table.selectionModel().isRowSelected(row):
-                coord = self.summary_table.item(row, SummaryTableHeaders.COORDINATE.value).text()
+                coord = self.summary_table.item(row, dc.SummaryTableHeaders.COORDINATE.value).text()
                 unselected_coords.append(coord)
         # This would be changed to `get_worksheet_by_name` if in the future more than
         # one worksheet would be chosen for recording hours. If across several workbooks
         # too, make and use get workbook by type and name, then get worksheet by name.
         # Here: Get the first and only output workbook
-        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(ManagedOutputWorkbook))
+        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(common.ManagedOutputWorkbook))
         # Pop the unselected employees from the selected employees dictionary
         for coord in unselected_coords:
             out_wb.managed_sheet_object.selected_employees.pop(coord, None)

@@ -16,11 +16,7 @@ Description
 Provides typesetting signatures.
 '''
 
-from typing import (
-    Protocol,
-    Optional,
-    runtime_checkable
-)
+from typing import Protocol, Optional, runtime_checkable
 
 @runtime_checkable
 class ConfigureRow(Protocol):

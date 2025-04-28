@@ -19,19 +19,10 @@ from datetime import datetime
 from typing import Optional, Callable
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTableWidget
-import phb_app.utils.func_utils as fu
-from phb_app.data.phb_dataclasses import (
-    WorkbookManager,
-    ManagedInputWorkbook,
-    ManagedOutputWorkbook,
-    FileMetaData,
-    TableStructure,
-    Employee,
-    LogTableHeaders,
-    SpecialStrings,
-    MONATE_KURZ_DE,
-    DEFAULT_PADDING
-)
+# First party library imports
+import phb_app.utils.general_func_utils as gu
+import phb_app.data.common as common
+import phb_app.data.phb_dataclasses as dc
 
 def get_time_stamp() -> str:
     '''Returns a formatted current time stamp.'''
@@ -43,15 +34,15 @@ def generate_log_file_name(output_dir: str,
     '''Generates a properly formatted log file name.'''
 
     timestamp = get_time_stamp()
-    month = fu.german_abbr_month(date.month, MONATE_KURZ_DE)
+    month = gu.german_abbr_month(date.month, common.MONATE_KURZ_DE)
     return path.join(output_dir, f"log_output_for_{month}_{date.year}__{timestamp}.txt")
 
-def get_out_workbook(wb_mng: WorkbookManager) -> ManagedOutputWorkbook:
+def get_out_workbook(wb_mng: dc.WorkbookManager) -> common.ManagedOutputWorkbook:
     '''Returns the output workbook.'''
 
-    return next(wb_mng.yield_workbooks_by_type(ManagedOutputWorkbook))
+    return next(wb_mng.yield_workbooks_by_type(common.ManagedOutputWorkbook))
 
-def get_file_data(wb_mng: WorkbookManager) -> FileMetaData:
+def get_file_data(wb_mng: dc.WorkbookManager) -> dc.FileMetaData:
     '''Gets all required log information and returns it as a LogData object.'''
 
     out_wb = get_out_workbook(wb_mng)
@@ -60,8 +51,8 @@ def get_file_data(wb_mng: WorkbookManager) -> FileMetaData:
     output_dir = path.dirname(out_wb.file_path)
     selected_date = out_wb.managed_sheet_object.selected_date
     log_file_path = generate_log_file_name(output_dir, selected_date)
-    input_workbooks = [wb.file_name for wb in wb_mng.yield_workbooks_by_type(ManagedInputWorkbook)]
-    return FileMetaData(
+    input_workbooks = [wb.file_name for wb in wb_mng.yield_workbooks_by_type(common.ManagedInputWorkbook)]
+    return dc.FileMetaData(
         log_file_path=log_file_path,
         selected_date=selected_date,
         input_workbooks=input_workbooks,
@@ -70,17 +61,17 @@ def get_file_data(wb_mng: WorkbookManager) -> FileMetaData:
     )
 
 def get_table_structure(table: QTableWidget,
-                        max_proj_id_list_len: int) -> TableStructure:
+                        max_proj_id_list_len: int) -> dc.TableStructure:
     '''Gets table headers and column widths.'''
 
-    headers = LogTableHeaders.list_all_values()
+    headers = dc.LogTableHeaders.list_all_values()
     col_widths = calculate_column_widths(table, headers, max_proj_id_list_len)
-    return TableStructure(
+    return dc.TableStructure(
         headers=headers,
         col_widths=col_widths
     )
 
-def get_max_project_id_list_length(employees: list[Employee]) -> int:
+def get_max_project_id_list_length(employees: list[common.Employee]) -> int:
     '''Returns the max length of the list of project IDs from all
     selected employees. If the list is empty, a default length of 0 is returned.'''
 
@@ -106,7 +97,7 @@ def add_spacings(header: str,
                  max_table_item_length: int) -> int:
     '''Adds spacings together.'''
 
-    return max(len(header), max_table_item_length) + DEFAULT_PADDING
+    return max(len(header), max_table_item_length) + dc.DEFAULT_PADDING
 
 def calculate_column_widths(table: QTableWidget,
                             headers: list[str],
@@ -115,10 +106,10 @@ def calculate_column_widths(table: QTableWidget,
 
     col_widths = []
     for col, header in enumerate(headers):
-        log_headers = LogTableHeaders.list_all_values()
+        log_headers = dc.LogTableHeaders.list_all_values()
         if header not in log_headers:
             continue
-        if LogTableHeaders.PROJECT_ID.value in header:
+        if dc.LogTableHeaders.PROJECT_ID.value in header:
             col_width = add_spacings(header, max_proj_id_list_len)
         else:
             max_table_item_length = get_max_table_item_length(table, col)
@@ -139,19 +130,19 @@ def format_hours_wrapper(text: str) -> Callable[[Optional[float], Qt.GlobalColor
         return f"*{formatted}*" if colour == Qt.GlobalColor.red else formatted
     return format_hours
 
-def get_employee_data(wb_mng: WorkbookManager) -> list[Employee]:
+def get_employee_data(wb_mng: dc.WorkbookManager) -> list[common.Employee]:
     '''Gets employee names, project IDs and coordinates from the summary table.'''
 
     out_wb = get_out_workbook(wb_mng)
     return list(out_wb.managed_sheet_object.selected_employees.values())
 
-def format_row(employees: list[Employee],
-               table_structure: TableStructure) -> list[str]:
+def format_row(employees: list[common.Employee],
+               table_structure: dc.TableStructure) -> list[str]:
     '''Formats a single row of table data with correct spacing.'''
 
     # Create two functions which deal with "None" hours and "missing" employees
-    format_predicted_hours = format_hours_wrapper(SpecialStrings.ZERO_HOURS.value)
-    format_accumulated_hours = format_hours_wrapper(SpecialStrings.MISSING.value)
+    format_predicted_hours = format_hours_wrapper(common.SpecialStrings.ZERO_HOURS.value)
+    format_accumulated_hours = format_hours_wrapper(common.SpecialStrings.MISSING.value)
     formatted_rows = []
     # For each employee, get the name, predicted hours, accumulated hours, project IDs,
     # then put in a row value list and format the spacing of each list element using
@@ -172,14 +163,14 @@ def format_row(employees: list[Employee],
         formatted_rows.append(formatted_row)
     return formatted_rows
 
-def write_log_file(file_meta: FileMetaData,
-                   table_structure: TableStructure,
-                   employees: list[Employee]) -> None:
+def write_log_file(file_meta: dc.FileMetaData,
+                   table_structure: dc.TableStructure,
+                   employees: list[common.Employee]) -> None:
     '''Writes the formatted log to a text file.'''
 
     with open(file_meta.log_file_path, "w", encoding="utf-8") as log_file:
         datetime_now_str = get_time_stamp()
-        month = fu.german_abbr_month(file_meta.selected_date.month, MONATE_KURZ_DE)
+        month = gu.german_abbr_month(file_meta.selected_date.month, common.MONATE_KURZ_DE)
         log_file.write(f"* Selected date: {month} {file_meta.selected_date.year}; Log created: {datetime_now_str}\n\n")
         log_file.write(f"* Input workbook(s): {'\n'.join(file_meta.input_workbooks)}\n")
         log_file.write(f"* Output workbook: {file_meta.output_file_name}\n")
@@ -193,7 +184,7 @@ def write_log_file(file_meta: FileMetaData,
             log_file.write(row + "\n")
 
 def print_log(table: QTableWidget,
-              wb_mng: WorkbookManager) -> None:
+              wb_mng: dc.WorkbookManager) -> None:
     '''Coordinates the log file generation and writing.'''
 
     file_meta = get_file_data(wb_mng)

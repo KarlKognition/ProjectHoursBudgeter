@@ -3,6 +3,7 @@ String constants. English.
 '''
 
 from pathlib import Path
+from enum import StrEnum, auto
 import git
 
 ###########################
@@ -68,3 +69,61 @@ EXCEL_FILE = "Excel files (*.xlsx)"
 ########################
 ### Summary  Strings ###
 ########################
+
+### ENUMS ###
+
+class IORole(StrEnum):
+    '''Input or output roles.'''
+
+    INPUT_FILE = auto()
+    OUTPUT_FILE = auto()
+    EMPLOYEE_TABLE = auto()
+    PROJECT_TABLE = auto()
+    SUMMARY_TABLE = auto()
+
+class SpecialStrings(StrEnum):
+    '''Enum for selecting worksheets.'''
+
+    SELECT_WORKSHEET = "<select worksheet>"
+    XLSX = ".xlsx"
+    UTF_8 = "utf-8"
+    DATA_ONLY_EXCEL = "_wizard_data_only.xlsx"
+    ZERO_HOURS = "0.00"
+    MISSING = "Missing"
+
+class QPropName(StrEnum):
+    '''QWizard property names.'''
+
+    MANAGED_WORKBOOKS = "Managed Workbooks Property"
+    SELECTED_PROJECTS = "Selected Projects"
+
+class ButtonNames(StrEnum):
+    '''Enum of names to display on buttons.'''
+
+    ADD = "Add"
+    REMOVE = "Remove"
+    SELECT_ALL = "Select all"
+    DESELECT_ALL = "Deselect all"
+
+class LogTableHeaders(StrEnum):
+    '''Summary table headers in summary selection.'''
+
+    EMPLOYEE = "Employee"
+    PREDICTED_HOURS = "Predicted Hours"
+    ACCUMULATED_HOURS = "Accumulated Hours"
+    DEVIATION = "Deviation"
+    PROJECT_ID = "Project ID"
+    COORDINATE = "Coordinate"
+
+class YamlEnum(StrEnum):
+    '''Enum of top level yaml config entries.'''
+
+    COUNTRIES = "countries"
+    DEVIATIONS = "deviations"
+    ROW_ANCHORS = "row_anchors"
+
+class CountriesEnum(StrEnum):
+    '''Enum of countries.'''
+
+    GERMANY = "Germany"
+    ROMANIA = "Romania"

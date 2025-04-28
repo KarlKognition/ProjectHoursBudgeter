@@ -18,41 +18,37 @@ Constructs and manages the stages of the GUI.
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QWizard
 # First party libraries
-from phb_app.wizard.pages.employee_selection import EmployeeSelectionPage
-from phb_app.wizard.pages.io_selection import IOSelectionPage
-from phb_app.wizard.pages.project_selection import ProjectSelectionPage
-from phb_app.wizard.pages.explanation import ExplanationPage
-from phb_app.wizard.pages.summary import SummaryPage
-from phb_app.logging.error_manager import ErrorManager
-from phb_app.data.phb_dataclasses import (
-    CountryData,
-    QPropName,
-    ManagedOutputWorkbook,
-    WorkbookManager
-)
+import phb_app.wizard.pages.employee_selection as esp
+import phb_app.wizard.pages.io_selection as iosp
+import phb_app.wizard.pages.project_selection as psp
+import phb_app.wizard.pages.explanation as ep
+import phb_app.wizard.pages.summary as sp
+import phb_app.data.common as common
+import phb_app.logging.error_manager as em
+import phb_app.data.phb_dataclasses as dc
 import phb_app.utils.hours_utils as hutils
-from phb_app.wizard.constants.ui_strings import GUI_TITLE
+import phb_app.wizard.constants.ui_strings as st
 
 
 ########################
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 
-    def __init__(self, country_data: CountryData, error_manager: ErrorManager, workbook_manager: WorkbookManager):
+    def __init__(self, country_data: common.CountryData, error_manager: em.ErrorManager, workbook_manager: dc.WorkbookManager):
         super().__init__()
 
-        self.setWindowTitle(GUI_TITLE)
+        self.setWindowTitle(st.GUI_TITLE)
         self.setGeometry(0, 0, 1000, 600)
         # Centre the main window
         self.move(QGuiApplication.primaryScreen().availableGeometry().center()
                   - self.frameGeometry().center())
 
         # Created wizard pages
-        self.addPage(ExplanationPage())
-        self.addPage(IOSelectionPage(country_data, error_manager, workbook_manager))
-        self.addPage(ProjectSelectionPage())
-        self.addPage(EmployeeSelectionPage())
-        self.addPage(SummaryPage())
+        self.addPage(ep.ExplanationPage())
+        self.addPage(iosp.IOSelectionPage(country_data, error_manager, workbook_manager))
+        self.addPage(psp.ProjectSelectionPage())
+        self.addPage(esp.EmployeeSelectionPage())
+        self.addPage(sp.SummaryPage())
 
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
 
@@ -60,11 +56,11 @@ class PHBWizard(QWizard):
         '''Extend the functionality of the Finish button.'''
 
         managed_workbooks = self.property(
-            QPropName.MANAGED_WORKBOOKS.value)
-        if isinstance(managed_workbooks, WorkbookManager):
+            dc.QPropName.MANAGED_WORKBOOKS.value)
+        if isinstance(managed_workbooks, dc.WorkbookManager):
             # Get the first and only output workbook
             wb_out = next(managed_workbooks.yield_workbooks_by_type(
-                ManagedOutputWorkbook))
+                common.ManagedOutputWorkbook))
             hutils.write_hours_to_output_file(wb_out)
             wb_out.save_output_workbook()
         return super().accept()

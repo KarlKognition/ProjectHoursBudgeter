@@ -18,7 +18,7 @@ Constructs and manages the Input-Output selection page.
 '''
 
 from PyQt6.QtWidgets import QWizardPage, QHBoxLayout
-from phb_app.wizard.constants.ui_strings import INTRO_MESSAGE, INTRO_TITLE, INTRO_SUBTITLE, IMAGE_LOAD_FAIL, IMAGES_DIR
+import phb_app.wizard.constants.ui_strings as st
 import phb_app.utils.page_utils as pu
 
 class ExplanationPage(QWizardPage):
@@ -31,11 +31,11 @@ class ExplanationPage(QWizardPage):
     def init_intro_page(self):
         '''Init the introduction page.'''
         # Set titles
-        pu.set_titles(self, INTRO_TITLE, INTRO_SUBTITLE)
+        pu.set_titles(self, st.INTRO_TITLE, st.INTRO_SUBTITLE)
 
         # Create widgets
-        watermark_label = pu.create_watermark_label(IMAGES_DIR, IMAGE_LOAD_FAIL)
-        intro_message = pu.create_intro_message(INTRO_MESSAGE)
+        watermark_label = pu.create_watermark_label(st.IMAGES_DIR, st.IMAGE_LOAD_FAIL)
+        intro_message = pu.create_intro_message(st.INTRO_MESSAGE)
 
         # Set up layout
         pu.setup_page(self, [watermark_label, intro_message], QHBoxLayout(), spacing= 35, margins=(25, 25, 25, 25))
