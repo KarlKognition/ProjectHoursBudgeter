@@ -14,7 +14,7 @@ PHB Wizard text selection management.
 '''
 
 from dataclasses import dataclass, field
-from typing import Optional, Callable
+from typing import Optional, Callable, TYPE_CHECKING, Union
 from os import path
 from PyQt6.QtWidgets import (
     QWidget, QTableWidget, QComboBox, QLabel,
@@ -23,8 +23,11 @@ from PyQt6.QtWidgets import (
 import phb_app.protocols_callables.protocols as protocols
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
-import phb_app.data.workbook_management as wm
 import phb_app.logging.error_manager as em
+import phb_app.utils.page_utils as pu
+
+if TYPE_CHECKING:
+    import phb_app.data.workbook_management as wm
 
 @dataclass
 class SelectedText:
@@ -73,8 +76,8 @@ class FileDialogHandler:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     data: loc.CountryData
-    workbook_manager: wm.WorkbookManager
-    workbook_entry: wm.ManagedInputWorkbook | wm.ManagedOutputWorkbook
+    workbook_manager: "wm.WorkbookManager"
+    workbook_entry: Union["wm.ManagedInputWorkbook", "wm.ManagedOutputWorkbook"]
     file_path: Optional[str] = None
     file_name: Optional[str] = None
     configure_row: Optional[protocols.ConfigureRow] = None

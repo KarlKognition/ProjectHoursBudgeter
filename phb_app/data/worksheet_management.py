@@ -3,6 +3,7 @@ from typing import Optional, Iterator
 from openpyxl.worksheet.worksheet import Worksheet
 from PyQt6.QtCore import Qt
 import phb_app.data.selected_date as sd
+import phb_app.data.employee_management as emp
 
 @dataclass
 class SelectedSheet:
@@ -74,11 +75,11 @@ class ManagedOutputWorksheet(ManagedWorksheet):
     '''Child data class for output worksheet data.'''
     # Replaced through IOSelection
     selected_date: sd.SelectedDate = field(default_factory=sd.SelectedDate)
-    employee_row_anchors: EmployeeRowAnchors = field(default_factory=EmployeeRowAnchors)
+    employee_row_anchors: emp.EmployeeRowAnchors = field(default_factory=emp.EmployeeRowAnchors)
     # Start cell: coord, end cell: coord
-    employee_range: EmployeeRange = field(default_factory=EmployeeRange)
+    employee_range: emp.EmployeeRange = field(default_factory=emp.EmployeeRange)
     # Key: Cell coord; value: Employee object
-    selected_employees: dict[str, Employee] = field(default_factory=dict)
+    selected_employees: dict[str, emp.Employee] = field(default_factory=dict)
 
     def set_sheet_names(self, sheet_names) -> None:
         '''Set sheet names.'''
@@ -87,7 +88,7 @@ class ManagedOutputWorksheet(ManagedWorksheet):
     def set_selected_employees(self, coord_name: list[tuple[str, str]]) -> None:
         '''Save the coordinate in the worksheet with the selected employee.'''
         for coord, name in coord_name:
-            self.selected_employees[coord] = Employee(name)
+            self.selected_employees[coord] = emp.Employee(name)
 
     def set_predicted_hours(self, coord_hours: dict[str, float|int]) -> None:
         '''Sets the attribute with the predicted hours found in the worksheet.'''
@@ -130,6 +131,6 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         '''Clears the recorded employee names and respective hours.'''
         self.selected_employees.clear()
 
-    def yield_from_selected_employee(self) -> Iterator[Employee]:
+    def yield_from_selected_employee(self) -> Iterator[emp.Employee]:
         '''Yields from the selected employee.'''
         yield from self.selected_employees.values()

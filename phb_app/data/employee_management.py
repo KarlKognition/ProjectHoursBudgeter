@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt
 from openpyxl import utils as xlutils
 import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
+import phb_app.data.hours_deviation as hd
 
 @dataclass(eq=False) # Set to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRowAnchors(yh.YamlHandler):
@@ -55,7 +56,7 @@ class EmployeeHours:
     accumulated_hours: Optional[float|int] = None
     acc_hours_colour: Qt.GlobalColor = Qt.GlobalColor.black
     hours_coord: Optional[str] = None
-    thresholds: HoursDeviation = field(default_factory=HoursDeviation)
+    thresholds: hd.HoursDeviation = field(default_factory=hd.HoursDeviation)
     deviation: Optional[str] = None
 
     def set_deviation(self) -> None:

@@ -6,10 +6,6 @@ from pathlib import Path
 from enum import StrEnum, auto
 import git
 
-###########################
-### General GUI Strings ###
-###########################
-
 GUI_TITLE = "Project Hours Budgeting Wizard"
 
 INTRO_TITLE = "Introduction"
@@ -40,10 +36,6 @@ def find_git_root():
 APP_ROOT = find_git_root() / "phb_app"
 IMAGES_DIR = APP_ROOT / "images"
 
-########################
-### IO File  Strings ###
-########################
-
 IO_FILE_TITLE = "Input/Output Files"
 
 IO_FILE_SUBTITLE = """
@@ -57,20 +49,6 @@ O_FILE_INSTRUCTION_TEXT = "Select the project hours budgeting file as the target
 
 ADD_FILE = "Add File"
 EXCEL_FILE = "Excel files (*.xlsx)"
-
-#################################
-### Project Selection Strings ###
-#################################
-
-###################################
-### Employee Selection  Strings ###
-###################################
-
-########################
-### Summary  Strings ###
-########################
-
-### ENUMS ###
 
 class IORole(StrEnum):
     '''Input or output roles.'''
@@ -115,6 +93,11 @@ class LogTableHeaders(StrEnum):
     PROJECT_ID = "Project ID"
     COORDINATE = "Coordinate"
 
+    @classmethod
+    def list_all_values(cls) -> list[int | str]:
+        '''Returns a list of all member values.'''
+        return [member.value for member in cls]
+
 class YamlEnum(StrEnum):
     '''Enum of top level yaml config entries.'''
 
@@ -127,3 +110,13 @@ class CountriesEnum(StrEnum):
 
     GERMANY = "Germany"
     ROMANIA = "Romania"
+
+NON_NAMES = [
+    'MA Name\nStartdatum',
+    'GWR REG',
+    'Verhandlung',
+    'h/Mnt RUM',
+    'h/Mnt REG',
+    'h/Mnt\ngesamt',
+    'Anzahl\nMA'
+]

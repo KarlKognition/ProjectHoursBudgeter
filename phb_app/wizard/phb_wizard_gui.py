@@ -23,10 +23,11 @@ import phb_app.wizard.pages.io_selection as iosp
 import phb_app.wizard.pages.project_selection as psp
 import phb_app.wizard.pages.explanation as ep
 import phb_app.wizard.pages.summary as sp
-import phb_app.data.common as common
 import phb_app.logging.error_manager as em
-import phb_app.data.phb_dataclasses as dc
-import phb_app.utils.hours_utils as hutils
+import phb_app.data.workbook_management as wm
+import phb_app.data.header_management as hm
+import phb_app.data.location_management as loc
+import phb_app.utils.hours_utils as hu
 import phb_app.wizard.constants.ui_strings as st
 
 
@@ -34,7 +35,7 @@ import phb_app.wizard.constants.ui_strings as st
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 
-    def __init__(self, country_data: common.CountryData, error_manager: em.ErrorManager, workbook_manager: dc.WorkbookManager):
+    def __init__(self, country_data: loc.CountryData, error_manager: em.ErrorManager, workbook_manager: wm.WorkbookManager) -> None:
         super().__init__()
 
         self.setWindowTitle(st.GUI_TITLE)
@@ -52,15 +53,15 @@ class PHBWizard(QWizard):
 
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
 
-    def accept(self):
+    def accept(self) -> bool:
         '''Extend the functionality of the Finish button.'''
 
         managed_workbooks = self.property(
-            dc.QPropName.MANAGED_WORKBOOKS.value)
-        if isinstance(managed_workbooks, dc.WorkbookManager):
+            st.QPropName.MANAGED_WORKBOOKS.value)
+        if isinstance(managed_workbooks, wm.WorkbookManager):
             # Get the first and only output workbook
             wb_out = next(managed_workbooks.yield_workbooks_by_type(
-                common.ManagedOutputWorkbook))
-            hutils.write_hours_to_output_file(wb_out)
+                wm.ManagedOutputWorkbook))
+            hu.write_hours_to_output_file(wb_out)
             wb_out.save_output_workbook()
         return super().accept()

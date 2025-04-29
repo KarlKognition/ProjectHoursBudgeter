@@ -13,12 +13,6 @@ class BaseTableHeaders(IntEnum):
         '''Returns a list of all member values.'''
         return [member.value for member in cls]
 
-###########################
-#### IO Selection Enum ####
-###########################
-
-
-
 class InputTableHeaders(BaseTableHeaders):
     '''Input table headers in IOSelection.'''
 
@@ -39,10 +33,6 @@ class OutputFile(BaseTableHeaders):
 
     FIRST_ENTRY = 0
     SECOND_ENTRY = auto()
-
-#########################
-#### Project ID Enum ####
-#########################
 
 class ProjectIDTableHeaders(BaseTableHeaders):
     '''Project ID headers in project selection.'''

@@ -25,8 +25,11 @@ from PyQt6.QtWidgets import (
 import phb_app.logging.error_manager as em
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.utils.page_utils as pu
-import phb_app.data.common as common
-import phb_app.data.phb_dataclasses as dc
+import phb_app.wizard.constants.integer_enums as ie
+import phb_app.data.header_management as hm
+import phb_app.data.location_management as loc
+import phb_app.data.workbook_management as wm
+import phb_app.data.io_management as io
 #################################################################################
 class IOSelectionPage(QWizardPage):
     '''Page for the selection of input and output files.
@@ -36,31 +39,31 @@ class IOSelectionPage(QWizardPage):
     from its file name is not desired. One or more project numbers must be selected for
     the output file.'''
 
-    def __init__(self, country_data: common.CountryData, error_manager: em.ErrorManager, managed_workbooks: dc.WorkbookManager) -> None:
+    def __init__(self, country_data: loc.CountryData, error_manager: em.ErrorManager, managed_workbooks: wm.WorkbookManager) -> None:
         super().__init__()
         self.managed_workbooks = managed_workbooks
-        error_manager.error_panels[common.IORole.INPUT_FILE] = QWidget()
-        error_manager.error_panels[common.IORole.OUTPUT_FILE] = QWidget()
+        error_manager.error_panels[st.IORole.INPUT_FILE] = QWidget()
+        error_manager.error_panels[st.IORole.OUTPUT_FILE] = QWidget()
         pu.set_titles(self, st.IO_FILE_TITLE, st.IO_FILE_SUBTITLE)
-        self.input_panel = common.IOControls(
+        self.input_panel = io.IOControls(
             page=self,
-            role=common.IORole.INPUT_FILE,
+            role=st.IORole.INPUT_FILE,
             label=QLabel(st.I_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(common.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, dc.INPUT_COLUMN_WIDTHS),
-            buttons=[QPushButton(dc.ButtonNames.ADD, self), QPushButton(dc.ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panels[common.IORole.INPUT_FILE]
+            table=pu.create_table(ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
+            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
+            error_panel=error_manager.error_panels[st.IORole.INPUT_FILE]
         )
-        self.output_panel = common.IOControls(
+        self.output_panel = io.IOControls(
             page=self,
-            role=common.IORole.OUTPUT_FILE,
+            role=st.IORole.OUTPUT_FILE,
             label=QLabel(st.O_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(common.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, dc.OUTPUT_COLUMN_WIDTHS),
-            buttons=[QPushButton(dc.ButtonNames.ADD, self), QPushButton(dc.ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panels[common.IORole.OUTPUT_FILE]
+            table=pu.create_table(ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
+            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
+            error_panel=error_manager.error_panels[st.IORole.OUTPUT_FILE]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        pu.connect_buttons(self, common.FileDialogHandler(self.input_panel, country_data, self.managed_workbooks, error_manager))
-        pu.connect_buttons(self, common.FileDialogHandler(self.output_panel, country_data, self.managed_workbooks, error_manager))
+        pu.connect_buttons(self, io.FileDialogHandler(self.input_panel, country_data, self.managed_workbooks, error_manager))
+        pu.connect_buttons(self, io.FileDialogHandler(self.output_panel, country_data, self.managed_workbooks, error_manager))
 
     def isComplete(self) -> bool:
         '''Override the page completion.

@@ -18,6 +18,7 @@ Provides file handling utility functions in the project hours budgeting wizard.
 '''
 
 import zipfile
+from typing import TYPE_CHECKING
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
 from openpyxl.utils.exceptions import (
@@ -28,7 +29,9 @@ from PyQt6.QtWidgets import QTableWidget
 import phb_app.data.location_management as loc
 import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st
-import phb_app.data.workbook_management as wm
+
+if TYPE_CHECKING:
+    import phb_app.data.workbook_management as wm
 
 def get_origin_from_file_name(file_name: str, country_data: loc.CountryData, countries_enum: st.CountriesEnum) -> str:
     '''
@@ -53,7 +56,7 @@ def is_workbook_open(file_path:str) -> bool:
         return True
     return False
 
-def try_load_workbook(managed_workbook: wm.ManagedWorkbook, wb_type: wm.ManagedOutputWorkbook) -> Workbook:
+def try_load_workbook(managed_workbook: "wm.ManagedWorkbook", wb_type: "wm.ManagedOutputWorkbook") -> Workbook:
     '''
     Template for attempting to load the workbook.
     '''
@@ -87,4 +90,3 @@ def is_file_already_in_table(file_path: str, col: int, table: QTableWidget) -> b
         and table.item(row, col).text() == file_path
         for row in range(table.rowCount())
     )
-
