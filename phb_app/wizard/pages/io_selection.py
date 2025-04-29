@@ -30,7 +30,7 @@ import phb_app.data.header_management as hm
 import phb_app.data.location_management as loc
 import phb_app.data.workbook_management as wm
 import phb_app.data.io_management as io
-#################################################################################
+
 class IOSelectionPage(QWizardPage):
     '''Page for the selection of input and output files.
     Input files require the selection of worksheet containing the data and the file's origin.

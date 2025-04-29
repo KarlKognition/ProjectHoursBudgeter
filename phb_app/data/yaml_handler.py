@@ -9,7 +9,7 @@ class YamlHandler(ABC):
 
     def __init__(self):
         super().__init__()
-        self.encoding = st.SpecialStrings.UTF_8.value
+        self.encoding = st.SpecialStrings.UTF_8
         self._load_yaml_data()
     
     @abstractmethod
@@ -21,7 +21,7 @@ class YamlHandler(ABC):
     def _load_yaml_data(self) -> None:
         '''Template for loading yaml data.'''
         try:
-            with open(self.CONFIG_PATH, 'r', encoding=st.SpecialStrings.UTF_8.value) as yaml_file:
+            with open(self.CONFIG_PATH, 'r', encoding=st.SpecialStrings.UTF_8) as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
                 self._process_yaml(yaml_data)
         except FileNotFoundError as exc:

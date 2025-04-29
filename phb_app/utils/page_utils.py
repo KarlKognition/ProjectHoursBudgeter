@@ -98,7 +98,7 @@ def create_table(table_headers: ie.BaseTableHeaders, selection_mode: QTableWidge
     table.setHorizontalHeaderLabels(table_headers.cap_members_list())
     table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
     for header, width in col_widths.items():
-        table.setColumnWidth(header.value, width)
+        table.setColumnWidth(header, width)
     return table
 
 def create_interaction_panel(panel: "io.IOControls") -> QWidget:
@@ -216,12 +216,10 @@ def update_country_details_in_table(data: loc.CountryData, workbook_entry: "wm.M
     '''
     Update country details.
     '''
-    # Check that the workbook is an input workbook
-    if isinstance(workbook_entry, "wm.ManagedInputWorkbook"):
-        # Get country name from file name
-        country_name = fu.get_origin_from_file_name(workbook_entry.file_name, data, st.CountriesEnum)
-        # Set the local data of the workbook
-        workbook_entry.set_locale_data(data, country_name)
+    # Get country name from file name
+    country_name = fu.get_origin_from_file_name(workbook_entry.file_name, data, st.CountriesEnum)
+    # Set the local data of the workbook
+    workbook_entry.set_locale_data(data, country_name)
 
 ###############################
 ### Output Table Population ###
@@ -243,7 +241,7 @@ def get_initialised_managed_workbook(file_handler: "io.FileDialogHandler") -> "w
 
 def create_worksheet_dropdown(workbook_entry: "wm.ManagedOutputWorkbook") -> QComboBox:
     '''Create a dropdown for selecting a worksheet.'''
-    return _create_dropdown(workbook_entry.managed_sheet_object.sheet_names, st.SpecialStrings.SELECT_WORKSHEET.value)
+    return _create_dropdown(workbook_entry.managed_sheet_object.sheet_names, st.SpecialStrings.SELECT_WORKSHEET)
 
 def create_year_dropdown() -> QComboBox:
     '''
@@ -343,7 +341,7 @@ def check_completion(panels: tuple["io.IOControls"]) -> bool:
     def io_selection_complete() -> bool:
         '''Check if both tables have at least one row selected
         and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
-        output_item = get_combo_box(out_panel.table, ie.OutputFile.FIRST_ENTRY.value, ie.OutputTableHeaders.WORKSHEET.value)
+        output_item = get_combo_box(out_panel, ie.OutputFile.FIRST_ENTRY, ie.OutputTableHeaders.WORKSHEET)
         return (
             all(panel.table.rowCount() >= 1 for panel in (in_panel, out_panel))
             and output_item is not None

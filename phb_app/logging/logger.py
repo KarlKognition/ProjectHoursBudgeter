@@ -113,7 +113,7 @@ def calculate_column_widths(table: QTableWidget,
         log_headers = st.LogTableHeaders.list_all_values()
         if header not in log_headers:
             continue
-        if st.LogTableHeaders.PROJECT_ID.value in header:
+        if st.LogTableHeaders.PROJECT_ID in header:
             col_width = add_spacings(header, max_proj_id_list_len)
         else:
             max_table_item_length = get_max_table_item_length(table, col)
@@ -145,8 +145,8 @@ def format_row(employees: list[emp.Employee],
     '''Formats a single row of table data with correct spacing.'''
 
     # Create two functions which deal with "None" hours and "missing" employees
-    format_predicted_hours = format_hours_wrapper(st.SpecialStrings.ZERO_HOURS.value)
-    format_accumulated_hours = format_hours_wrapper(st.SpecialStrings.MISSING.value)
+    format_predicted_hours = format_hours_wrapper(st.SpecialStrings.ZERO_HOURS)
+    format_accumulated_hours = format_hours_wrapper(st.SpecialStrings.MISSING)
     formatted_rows = []
     # For each employee, get the name, predicted hours, accumulated hours, project IDs,
     # then put in a row value list and format the spacing of each list element using

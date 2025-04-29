@@ -32,8 +32,8 @@ def set_selected_project_ids(mngd_wb: "wm.ManagedInputWorkbook", table: QTableWi
     '''
     for row in rows:
         # Get the project ID and file name from each row
-        proj_id = table.item(row.row(), headers.PROJECT_ID.value).text()
-        file_name = table.item(row.row(), headers.FILENAME.value).text()
+        proj_id = table.item(row.row(), headers.PROJECT_ID).text()
+        file_name = table.item(row.row(), headers.FILENAME).text()
         if file_name == mngd_wb.file_name:
             # If the file name of the managed input workbook is correct,
             # make a reference by key from selected to selectable project IDs

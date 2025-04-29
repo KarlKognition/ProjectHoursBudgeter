@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 import phb_app.data.workbook_management as wm
 import phb_app.data.header_management as hm
-import phb_app.utils.project_utils as pu
+import phb_app.utils.employee_utils as eu
 import phb_app.utils.hours_utils as hu
 import phb_app.wizard.constants.ui_strings as st
 
@@ -54,7 +54,7 @@ class EmployeeSelectionPage(QWizardPage):
 
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(
-            st.QPropName.MANAGED_WORKBOOKS.value)
+            st.QPropName.MANAGED_WORKBOOKS)
         ## Table data
         # Table headers
         self.employees_table.setHorizontalHeaderLabels(self.headers)
@@ -84,15 +84,15 @@ class EmployeeSelectionPage(QWizardPage):
         self.employees_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.employees_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
         # Adjust the width of each column
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.EMPLOYEE.value, 450)
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.WORKSHEET.value, 150)
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.COORDINATE.value, 80)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.EMPLOYEE, 450)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.WORKSHEET, 150)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.COORDINATE, 80)
 
         ## Table selection buttons
         # Add deselect all button
-        self.select_all_employees_button = QPushButton(st.ButtonNames.SELECT_ALL.value, self)
+        self.select_all_employees_button = QPushButton(st.ButtonNames.SELECT_ALL, self)
         # Add deselect all button
-        self.deselect_all_employees_button = QPushButton(st.ButtonNames.DESELECT_ALL.value, self)
+        self.deselect_all_employees_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
 
     def setup_layout(self) -> None:
         '''Init layout.'''
@@ -158,7 +158,7 @@ class EmployeeSelectionPage(QWizardPage):
                 employee_item.setFlags(employee_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    hm.EmployeeTableHeaders.EMPLOYEE.value,
+                    hm.EmployeeTableHeaders.EMPLOYEE,
                     employee_item
                 )
                 # Add the worksheet name where the employee was found
@@ -168,7 +168,7 @@ class EmployeeSelectionPage(QWizardPage):
                 desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    hm.EmployeeTableHeaders.WORKSHEET.value,
+                    hm.EmployeeTableHeaders.WORKSHEET,
                     desc_item
                 )
                 # Add Excel cell coordinate where the employee is located
@@ -176,7 +176,7 @@ class EmployeeSelectionPage(QWizardPage):
                 coord_item.setFlags(coord_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    hm.EmployeeTableHeaders.COORDINATE.value,
+                    hm.EmployeeTableHeaders.COORDINATE,
                     coord_item
                 )
                 row_position += 1
@@ -212,10 +212,10 @@ class EmployeeSelectionPage(QWizardPage):
         selected_rows = self.employees_table.selectionModel().selectedRows()
         selected_employees = [
             (self.employees_table
-            .item(row.row(), hm.EmployeeTableHeaders.COORDINATE.value)
+            .item(row.row(), hm.EmployeeTableHeaders.COORDINATE)
             .text(),
             self.employees_table
-            .item(row.row(), hm.EmployeeTableHeaders.EMPLOYEE.value)
+            .item(row.row(), hm.EmployeeTableHeaders.EMPLOYEE)
             .text()
             )
             for row in selected_rows
@@ -228,7 +228,7 @@ class EmployeeSelectionPage(QWizardPage):
         out_wb.managed_sheet_object.set_selected_employees(selected_employees)
         ## Predicted hours per employee
         # Find hours
-        pre_hours = pu.find_predicted_hours(
+        pre_hours = eu.find_predicted_hours(
             out_wb.managed_sheet_object.selected_employees,
             out_wb.managed_sheet_object.selected_date.row,
             out_wb.file_path,

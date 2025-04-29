@@ -65,7 +65,7 @@ class SummaryPage(QWizardPage):
 
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(
-            st.QPropName.MANAGED_WORKBOOKS.value)
+            st.QPropName.MANAGED_WORKBOOKS)
         ## Info label text
         # Input names text
         input_names = "".join(
@@ -110,7 +110,7 @@ class SummaryPage(QWizardPage):
         self.summary_table.viewport().update()
         # Get selected projects from the Project Selection page
         self.selected_projects = self.wizard().property(
-            st.QPropName.SELECTED_PROJECTS.value)
+            st.QPropName.SELECTED_PROJECTS)
 
     #######################
     ### Setup functions ###
@@ -269,7 +269,7 @@ class SummaryPage(QWizardPage):
             desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                hm.SummaryTableHeaders.OUTPUT_WORKSHEET.value,
+                hm.SummaryTableHeaders.OUTPUT_WORKSHEET,
                 desc_item
             )
             # Add Excel cell coordinate where the employee is located
@@ -281,7 +281,7 @@ class SummaryPage(QWizardPage):
             coord_item.setFlags(coord_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(
                 row_position,
-                hm.SummaryTableHeaders.COORDINATE.value,
+                hm.SummaryTableHeaders.COORDINATE,
                 coord_item
             )
 
@@ -313,7 +313,7 @@ class SummaryPage(QWizardPage):
         unselected_coords = []
         for row in range(self.summary_table.rowCount()):
             if not self.summary_table.selectionModel().isRowSelected(row):
-                coord = self.summary_table.item(row, hm.SummaryTableHeaders.COORDINATE.value).text()
+                coord = self.summary_table.item(row, hm.SummaryTableHeaders.COORDINATE).text()
                 unselected_coords.append(coord)
         # This would be changed to `get_worksheet_by_name` if in the future more than
         # one worksheet would be chosen for recording hours. If across several workbooks
