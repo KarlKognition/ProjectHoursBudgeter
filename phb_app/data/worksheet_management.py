@@ -103,14 +103,14 @@ class ManagedOutputWorksheet(ManagedWorksheet):
         '''Set the color formatting of the employee's predicted hours.
         Predicted hours may be coloured as the user wishes but recorded
         hours must be set to black (default, theme or RGB).'''
-        for emp in self.yield_from_selected_employee():
-            if emp.hours.hours_coord:
+        for employee in self.yield_from_selected_employee():
+            if employee.hours.hours_coord:
                 # Check each employee's predicted hours colour
-                font_colour = self.selected_sheet.sheet_object[emp.hours.hours_coord].font.color
+                font_colour = self.selected_sheet.sheet_object[employee.hours.hours_coord].font.color
                 if not font_colour:
                     # Default (black): Already recorded.
                     # Show red to get the user's attention in summary
-                    emp.hours.pre_hours_colour = Qt.GlobalColor.red
+                    employee.hours.pre_hours_colour = Qt.GlobalColor.red
                 elif (
                     font_colour.type == 'theme' and
                     font_colour.theme == 1 and
@@ -118,14 +118,14 @@ class ManagedOutputWorksheet(ManagedWorksheet):
                 ):
                     # Black theme: Already recorded.
                     # Show red to get the user's attention in summary
-                    emp.hours.pre_hours_colour = Qt.GlobalColor.red
+                    employee.hours.pre_hours_colour = Qt.GlobalColor.red
                 elif (
                     font_colour.type == 'rgb' and
                     font_colour.rgb == 'FF000000'
                 ):
                     # Black RGB: Already recorded.
                     # Show red to get the user's attention in summary
-                    emp.hours.pre_hours_colour = Qt.GlobalColor.red
+                    employee.hours.pre_hours_colour = Qt.GlobalColor.red
 
     def clear_predicted_hours(self) -> None:
         '''Clears the recorded employee names and respective hours.'''

@@ -41,14 +41,13 @@ class IOSelectionPage(QWizardPage):
 
     def __init__(self, country_data: loc.CountryData, error_manager: em.ErrorManager, managed_workbooks: wm.WorkbookManager) -> None:
         super().__init__()
-        self.managed_workbooks = managed_workbooks
-        error_manager.error_panels[st.IORole.INPUT_FILE] = QWidget()
-        error_manager.error_panels[st.IORole.OUTPUT_FILE] = QWidget()
+        pu.setup_error_panel(error_manager, st.IORole.INPUT_FILE)
+        pu.setup_error_panel(error_manager, st.IORole.OUTPUT_FILE)
         pu.set_titles(self, st.IO_FILE_TITLE, st.IO_FILE_SUBTITLE)
         self.input_panel = io.IOControls(
             page=self,
             role=st.IORole.INPUT_FILE,
-            label=QLabel(st.I_FILE_INSTRUCTION_TEXT),
+            label=QLabel(st.INPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=error_manager.error_panels[st.IORole.INPUT_FILE]
@@ -56,14 +55,14 @@ class IOSelectionPage(QWizardPage):
         self.output_panel = io.IOControls(
             page=self,
             role=st.IORole.OUTPUT_FILE,
-            label=QLabel(st.O_FILE_INSTRUCTION_TEXT),
+            label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=error_manager.error_panels[st.IORole.OUTPUT_FILE]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        pu.connect_buttons(self, io.FileDialogHandler(self.input_panel, country_data, self.managed_workbooks, error_manager))
-        pu.connect_buttons(self, io.FileDialogHandler(self.output_panel, country_data, self.managed_workbooks, error_manager))
+        pu.connect_buttons(self, io.FileDialogHandler(self.input_panel, managed_workbooks, error_manager, country_data))
+        pu.connect_buttons(self, io.FileDialogHandler(self.output_panel, managed_workbooks, error_manager))
 
     def isComplete(self) -> bool:
         '''Override the page completion.

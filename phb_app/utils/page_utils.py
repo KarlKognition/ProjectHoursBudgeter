@@ -38,6 +38,7 @@ import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
 import phb_app.data.months_dict as md
+import phb_app.logging.error_manager as em
 
 if TYPE_CHECKING:
     import phb_app.data.io_management as io
@@ -90,6 +91,12 @@ def setup_page(page: QWizardPage, widgets: list[QWidget], layout_type: QBoxLayou
 ### Table and Panel Setup ###
 #############################
 
+def setup_error_panel(error_manager: em.ErrorManager, role: st.IORole) -> QWidget:
+    '''Set up the error panel for the given role with vertical layout.'''
+    error_manager.error_panels[role] = QWidget()
+    error_manager.error_panels[role].setLayout(QVBoxLayout())
+    return error_manager.error_panels[role]
+
 def create_table(table_headers: ie.BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: hm.ColWidths) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
     table = QTableWidget(0, len(table_headers))
@@ -121,7 +128,6 @@ def create_interaction_panel(panel: "io.IOControls") -> QWidget:
 
 def connect_buttons(page: QWizardPage, file_handler: "io.FileDialogHandler") -> None:
     '''Connect buttons to their respective actions dynamically.'''
-
     action_dispatch = {
         st.ButtonNames.ADD: lambda: _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, file_handler),
         st.ButtonNames.REMOVE: lambda: _remove_selected_file(page, file_handler),
@@ -146,19 +152,11 @@ def _setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QF
     file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
     return file_dialog
 
-def _handle_file_selection(page: QWizardPage, files: list[str], file_handler: "io.FileDialogHandler") -> None:
-    '''Handle file selection and populate the appropriate table.'''
-    if file_handler.panel.role == st.IORole.INPUT_FILE:
-        _populate_table(page, files, file_handler)
-    elif file_handler.panel.role == st.IORole.OUTPUT_FILE:
-        _populate_table(page, files, file_handler)
-
 def _add_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode, file_handler: "io.FileDialogHandler") -> None:
     '''Add files to either the input or output selection tables.'''
     file_dialog = _setup_file_dialog(page, file_mode)
     if file_dialog.exec():
-        selected_files = file_dialog.selectedFiles()
-        _handle_file_selection(page, selected_files, file_handler)
+        _populate_table(page, file_dialog.selectedFiles(), file_handler)
 
 def _remove_selected_file(page: QWizardPage, file_handler: "io.FileDialogHandler") -> None:
     '''Remove the currently selected file(s) from the table.'''

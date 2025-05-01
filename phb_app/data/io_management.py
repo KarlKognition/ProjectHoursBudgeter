@@ -75,19 +75,20 @@ class DropdownHandler:
 class FileDialogHandler:
     '''Data class for managing the file dialog.'''
     panel: IOControls
-    data: loc.CountryData
     workbook_manager: "wm.WorkbookManager"
-    workbook_entry: Union["wm.ManagedInputWorkbook", "wm.ManagedOutputWorkbook"]
+    error_manager: Optional[em.ErrorManager]
+    data: Optional[loc.CountryData] = None
+    workbook_entry: Optional[Union["wm.ManagedInputWorkbook", "wm.ManagedOutputWorkbook"]] = None
     file_path: Optional[str] = None
     file_name: Optional[str] = None
     configure_row: Optional[protocols.ConfigureRow] = None
-    error_manager: Optional[em.ErrorManager] = None
 
     def __post_init__(self) -> None:
         configure_row_dispatch = {
             st.IORole.INPUT_FILE: self.configure_input_row,
             st.IORole.OUTPUT_FILE: self.configure_output_row
         }
+        print(f"{configure_row_dispatch.get(self.panel.role) = }")
         self.configure_row = configure_row_dispatch.get(self.panel.role)
 
     def set_file_path_and_name(self, file_path: str) -> None:
