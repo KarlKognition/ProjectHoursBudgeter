@@ -88,11 +88,10 @@ class FileDialogHandler:
             st.IORole.INPUT_FILE: self.configure_input_row,
             st.IORole.OUTPUT_FILE: self.configure_output_row
         }
-        print(f"{configure_row_dispatch.get(self.panel.role) = }")
         self.configure_row = configure_row_dispatch.get(self.panel.role)
 
     def set_file_path_and_name(self, file_path: str) -> None:
-        '''Set the file path.'''
+        '''Set the file path and name.'''
         self.file_path = file_path
         self.file_name = path.basename(file_path)
 

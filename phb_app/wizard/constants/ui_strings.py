@@ -108,15 +108,34 @@ class YamlEnum(StrEnum):
 class CountriesEnum(StrEnum):
     '''Enum of countries.'''
 
+    # AUSTRIA = "Austria"
+    # CROATIA = "Croatia"
+    # DENMARK = "Denmark"
+    ENGLAND = "England"
+    # FINLAND = "Finland"
+    # FRANCE = "France"
     GERMANY = "Germany"
+    # GREECE = "Greece"
+    # HUNGARY = "Hungary"
+    # ICELAND = "Iceland"
+    # ITALY = "Italy"
+    # NORWAY = "Norway"
+    # POLAND = "Poland"
+    # PORTUGAL = "Portugal"
     ROMANIA = "Romania"
+    # SLOVENIA = "Slovenia"
+    # SPAIN = "Spain"
+    # SWEDEN = "Sweden"
+    # SWITZERLAND = "Switzerland"
 
 NON_NAMES = [
+    'Anställds namn\nDatum',
     'MA Name\nStartdatum',
     'GWR REG',
     'Verhandlung',
     'h/Mnt RUM',
     'h/Mnt REG',
     'h/Mnt\ngesamt',
+    'Antal\nanställda',
     'Anzahl\nMA'
 ]

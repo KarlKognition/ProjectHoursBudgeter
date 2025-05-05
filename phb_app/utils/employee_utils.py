@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 # Cache the function results
 # Only cache one result to minimise memory use
 @lru_cache(maxsize=1)
-def locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, anchors: emp.EmployeeRowAnchors) -> None:
+def _locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, anchors: emp.EmployeeRowAnchors) -> None:
     '''
     Finds the row range where the employee names should be located.
     '''
@@ -49,7 +49,7 @@ def set_selected_sheet(file_handler: "io.FileDialogHandler", sheet_name: str) ->
     entry.managed_sheet_object.selected_sheet = ws.SelectedSheet(sheet_name, entry.workbook_object[sheet_name])
     # Check whether the employees are located in the worksheet
     entry.managed_sheet_object.employee_range = emp.EmployeeRange()
-    locate_employee_range(entry.managed_sheet_object.selected_sheet.sheet_object, entry.managed_sheet_object.employee_range, entry.managed_sheet_object.employee_row_anchors)
+    _locate_employee_range(entry.managed_sheet_object.selected_sheet.sheet_object, entry.managed_sheet_object.employee_range, entry.managed_sheet_object.employee_row_anchors)
 
 def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     '''

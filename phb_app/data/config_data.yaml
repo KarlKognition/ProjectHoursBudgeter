@@ -6,9 +6,6 @@ countries:
     - ps18
     - .xlsx
   exp_sheet_name: Tabelle1
-  # cities: # Add cities as required
-  #   - Regensburg
-  #   #- Munich
   filter_headers:
     name: Name der P
     proj_id: PSP-Element
@@ -22,13 +19,23 @@ countries:
     - timesheet
     - .xlsx
   exp_sheet_name: Sheet1
-  # cities: # Add cities as required
-  #   - All
-  #   #- Bucharest
   filter_headers:
     name: Name of employee or applicant
     proj_id: Network
     description: Operation Short Text
+    hours: Hours
+    date: Date
+- country: England
+  file_type: Timesheet
+  file_patterns: # Keep all identifiers lowercase
+    - england
+    - timesheet
+    - .xlsx
+  exp_sheet_name: Timesheet
+  filter_headers:
+    name: Employee name
+    proj_id: Project ID
+    description: Project description
     hours: Hours
     date: Date
 deviations:
@@ -37,8 +44,8 @@ deviations:
 # Contact dev for changes below
 row_anchors:
   start_anchor: |-
-    MA Name
-    Startdatum
+    Anställds namn
+    Datum
   end_anchor: |-
-    Anzahl
-    MA
+    Antal
+    anställda

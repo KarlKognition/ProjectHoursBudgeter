@@ -94,7 +94,7 @@ class SummaryPage(QWizardPage):
         )
         # Selected date text
         date = self.wb_out.managed_sheet_object.selected_date
-        month = du.german_abbr_month(date.month, md.MONATE_KURZ_DE)
+        month = du.german_abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
         selected_date_text = (
             f"<p><strong>Selected date</strong>: {month} {date.year}</p>"
         )

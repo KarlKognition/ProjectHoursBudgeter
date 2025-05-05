@@ -37,14 +37,13 @@ def get_origin_from_file_name(file_name: str, country_data: loc.CountryData, cou
     '''
     Checks the workbook's origin. Returns the country of origin.
     '''
-    # Pattern in all German timesheets
-    german_patterns = country_data.get_locale_by_country(countries_enum.GERMANY).file_patterns
-    # Pattern in all Romanian timesheets
-    romanian_patterns = country_data.get_locale_by_country(countries_enum.ROMANIA).file_patterns
-    if all(pattern in file_name.lower() for pattern in german_patterns):
-        return countries_enum.GERMANY
-    if all(pattern in file_name.lower() for pattern in romanian_patterns):
-        return countries_enum.ROMANIA
+    file_name_lower = file_name.lower()
+    for country in countries_enum:
+        locale = country_data.get_locale_by_country(country)
+        # Assumes every locale has a .file_patterns attribute
+        patterns = locale.file_patterns
+        if all(pattern in file_name_lower for pattern in patterns):
+            return country
     raise ex.CountryIdentifiersNotInFilename(file_name)
 
 def is_workbook_open(file_path:str) -> bool:

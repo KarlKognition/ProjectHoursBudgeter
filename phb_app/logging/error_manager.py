@@ -35,7 +35,7 @@ class ErrorManager:
         # Allow word wrapping
         label.setWordWrap(True)
         # Red styled error
-        self.style_error_message(label)
+        self.style_error_message_red(label)
         # Put the label in the UI
         self.error_panels[file_role].layout().addWidget(label)
         # Track the label
@@ -54,7 +54,7 @@ class ErrorManager:
             # If no error for this role, remove entry
             del self.errors[key]
 
-    def style_error_message(self, label: QLabel) -> None:
+    def style_error_message_red(self, label: QLabel) -> None:
         '''Error messages are highlighted red and have white text.'''
 
         palette = label.palette()

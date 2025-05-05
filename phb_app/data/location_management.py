@@ -26,9 +26,6 @@ class InputLocaleData(FilePatternData):
     country: str # Country name
     exp_sheet_name: str # Expected worksheet name
     filter_headers: FilterHeaders = field(default_factory=dict)
-    # An extendable list of cities from where the files may originate.
-    # This attribute may be removed in a future update.
-    cities: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         '''Init the filter headers from the data received from the country data dataclass.'''
@@ -50,4 +47,4 @@ class CountryData(yh.YamlHandler):
 
     def get_locale_by_country(self, country: str) -> InputLocaleData:
         '''Returns the locale as per given country name.'''
-        return next((locale for locale in self.countries if locale.country == country), None)
+        return next((locale for locale in self.countries if locale.country.lower() == country.lower()), None)

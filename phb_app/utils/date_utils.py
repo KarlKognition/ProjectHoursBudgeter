@@ -35,7 +35,7 @@ def get_budgeting_dates(file_path: str, sheet_name: str) -> list[tuple[int, int,
     # and the key for that entry could be kept in a yaml config
     # for the user to define. Note: expand stops at the first
     # empty cell.
-    col1 = sheet.range('A52').expand('down')
+    col1 = sheet.range('A8').expand('down')
     months_years_rows = [(cell.value.month, cell.value.year, cell.row)
                          for cell in col1
                          if isinstance(cell.value, datetime)]
@@ -46,7 +46,7 @@ def get_budgeting_dates(file_path: str, sheet_name: str) -> list[tuple[int, int,
 def set_budgeting_date(file_handler: "io.FileDialogHandler", dropdown_text: "io.SelectedText") -> None:
     '''Sets the budgeting date with the row it is located in the worksheet.'''
     # Convert dates to integers and put in a tuple
-    month_year = (md.MONATE_KURZ_DE.get(dropdown_text.month), int(dropdown_text.year))
+    month_year = (md.LOCALIZED_MONTHS_SHORT.get(dropdown_text.month), int(dropdown_text.year))
     budgeting_dates = get_budgeting_dates(file_handler.file_path, dropdown_text.worksheet)
     for tup in budgeting_dates:
         if tup[:2] == month_year:
@@ -54,6 +54,5 @@ def set_budgeting_date(file_handler: "io.FileDialogHandler", dropdown_text: "io.
             break
     else:
         raise ex.BudgetingDatesNotFound(dropdown_text, path.basename(file_handler.file_path))
-    file_handler.workbook_entry.managed_sheet_object.selected_date.month = month
-    file_handler.workbook_entry.managed_sheet_object.selected_date.year = year
-    file_handler.workbook_entry.managed_sheet_object.selected_date.row = row
+    selected_date = file_handler.workbook_entry.managed_sheet_object.selected_date
+    selected_date.month, selected_date.year, selected_date.row = month, year, row

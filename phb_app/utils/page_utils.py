@@ -115,29 +115,13 @@ def create_interaction_panel(panel: "io.IOControls") -> QWidget:
     layout.addWidget(panel.label)
     layout.addWidget(panel.table)
     buttons_layout = QHBoxLayout()
+    # Add all assigned buttons
     for button in panel.buttons:
         buttons_layout.addWidget(button)
     layout.addLayout(buttons_layout)
     layout.addWidget(panel.error_panel)
     container.setLayout(layout)
     return container
-
-###############
-### Buttons ###
-###############
-
-def connect_buttons(page: QWizardPage, file_handler: "io.FileDialogHandler") -> None:
-    '''Connect buttons to their respective actions dynamically.'''
-    action_dispatch = {
-        st.ButtonNames.ADD: lambda: _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, file_handler),
-        st.ButtonNames.REMOVE: lambda: _remove_selected_file(page, file_handler),
-        st.ButtonNames.SELECT_ALL: file_handler.panel.table.selectAll,
-        st.ButtonNames.DESELECT_ALL: file_handler.panel.table.clearSelection
-    }
-    # Iterate over buttons and connect them dynamically
-    for button in file_handler.panel.buttons:
-        if action := action_dispatch.get(button.text()):
-            button.clicked.connect(action)
 
 #####################
 ### File Handling ###
@@ -174,6 +158,23 @@ def _remove_selected_file(page: QWizardPage, file_handler: "io.FileDialogHandler
         file_handler.error_manager.remove_error(file_name, file_handler.panel.role)
         # Update UI
         page.completeChanged.emit()
+
+###############
+### Buttons ###
+###############
+
+def connect_buttons(page: QWizardPage, file_handler: "io.FileDialogHandler") -> None:
+    '''Connect buttons to their respective actions dynamically.'''
+    action_dispatch = {
+        st.ButtonNames.ADD: lambda: _add_file_dialog(page, QFileDialog.FileMode.ExistingFiles, file_handler),
+        st.ButtonNames.REMOVE: lambda: _remove_selected_file(page, file_handler),
+        st.ButtonNames.SELECT_ALL: file_handler.panel.table.selectAll,
+        st.ButtonNames.DESELECT_ALL: file_handler.panel.table.clearSelection
+    }
+    # Iterate over buttons and connect them dynamically
+    for button in file_handler.panel.buttons:
+        if action := action_dispatch.get(button.text()):
+            button.clicked.connect(action)
 
 ##############################
 ### Input Table Population ###
@@ -254,8 +255,8 @@ def create_month_dropdown() -> QComboBox:
     Create a dropdown for selecting a month. The default month is set to the previous month.
     This is the month in which hours are yet to be analysed.
     '''
-    default_month = du.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, md.MONATE_KURZ_DE)
-    return _create_dropdown(list(md.MONATE_KURZ_DE.keys()), default_month)
+    default_month = du.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
+    return _create_dropdown(list(md.LOCALIZED_MONTHS_SHORT.keys()), default_month)
 
 def setup_dropdowns(table:QTableWidget, row_position: int, dropdowns: "io.DropdownHandler") -> None:
     '''Set up year, month, and worksheet dropdowns.'''
@@ -280,8 +281,8 @@ def handle_dropdown_selection(file_handler: "io.FileDialogHandler", row_position
     try:
         eu.set_selected_sheet(file_handler, dropdowns.current_text.worksheet)
         du.set_budgeting_date(file_handler, dropdowns.current_text)
-        file_handler.workbook_entry.managed_sheet_object.set_budgeting_date(file_handler.file_path, dropdowns.current_text)
-    except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound) as exc:
+    except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound,
+            KeyError) as exc:
         handle_selection_error(row_position, file_handler, exc)
 
 ########################
@@ -300,7 +301,7 @@ def _populate_table(page: QWizardPage, files: list[str], file_handler: "io.FileD
             file_handler.configure_row(row_position)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,
-                KeyError) as exc:
+                ex.WorkbookLoadError, KeyError) as exc:
             handle_selection_error(row_position, file_handler, exc)
         page.completeChanged.emit()
 
