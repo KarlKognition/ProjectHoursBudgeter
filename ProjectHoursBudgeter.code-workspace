@@ -5,10 +5,23 @@
 		}
 	],
 	"settings": {
+		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": true,
 		"python.linting.pylintPath": ".venv/Scripts/pylint.exe",
 		"python.linting.pylintArgs": [
 			"--disable=line-too-long"
-		]
+		],
+		"python.analysis.exclude": [
+		"**/__pycache__",
+		"**/.venv",
+		"**/*.xlsx",
+		"**/logs",
+		"**/*.log"
+		],
+		"files.exclude": {
+		"**/__pycache__": true,
+		"**/*.pyc": true,
+		"**/.venv": true
+		}
 	}
 }
