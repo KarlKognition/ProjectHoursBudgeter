@@ -30,11 +30,11 @@ import phb_app.wizard.constants.ui_strings as st
 
 class ProjectSelectionPage(QWizardPage):
     '''Page for selecting the projects in which the hours were booked.'''
-    def __init__(self):
+    def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
 
-        self.setTitle("Project Selection")
-        self.setSubTitle("Select the projects in which the hours were booked.")
+        self.setTitle(st.PROJECT_SELECTION_TITLE)
+        self.setSubTitle(st.PROJECT_SELECTION_SUBTITLE)
         # Headers
         self.headers = ie.ProjectIDTableHeaders.cap_members_list()
 

@@ -36,7 +36,7 @@ class PHBWizard(QWizard):
 
     def __init__(self, country_data: loc.CountryData, error_manager: em.ErrorManager, workbook_manager: wm.WorkbookManager) -> None:
         super().__init__()
-
+        self.workbook_manager = workbook_manager
         self.setWindowTitle(st.GUI_TITLE)
         self.setGeometry(0, 0, 1000, 600)
         # Centre the main window
@@ -45,8 +45,8 @@ class PHBWizard(QWizard):
 
         # Created wizard pages
         self.addPage(ep.ExplanationPage())
-        self.addPage(iosp.IOSelectionPage(country_data, error_manager, workbook_manager))
-        self.addPage(psp.ProjectSelectionPage())
+        self.addPage(iosp.IOSelectionPage(country_data, error_manager, self.workbook_manager))
+        self.addPage(psp.ProjectSelectionPage(self.workbook_manager))
         self.addPage(esp.EmployeeSelectionPage())
         self.addPage(sp.SummaryPage())
 
@@ -54,13 +54,8 @@ class PHBWizard(QWizard):
 
     def accept(self) -> bool:
         '''Extend the functionality of the Finish button.'''
-
-        managed_workbooks = self.property(
-            st.QPropName.MANAGED_WORKBOOKS)
-        if isinstance(managed_workbooks, wm.WorkbookManager):
-            # Get the first and only output workbook
-            wb_out = next(managed_workbooks.yield_workbooks_by_type(
-                wm.ManagedOutputWorkbook))
-            hu.write_hours_to_output_file(wb_out)
-            wb_out.save_output_workbook()
+        # Get the first and only output workbook
+        wb_out = next(self.workbook_manager.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
+        hu.write_hours_to_output_file(wb_out)
+        wb_out.save_output_workbook()
         return super().accept()

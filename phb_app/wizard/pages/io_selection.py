@@ -18,7 +18,7 @@ Constructs and manages the Input-Output selection page.
 '''
 # Third party libaries
 from PyQt6.QtWidgets import (
-    QWizardPage, QHBoxLayout, QWidget, QPushButton,
+    QWizardPage, QHBoxLayout, QPushButton,
     QTableWidget, QLabel
 )
 # First party libraries

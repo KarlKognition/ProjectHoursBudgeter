@@ -8,6 +8,8 @@ import git
 
 GUI_TITLE = "Project Hours Budgeting Wizard"
 
+### INTRO PAGE ###
+
 INTRO_TITLE = "Introduction"
 
 INTRO_SUBTITLE = "Welcome to the Project Hours Budgeting Wizard!"
@@ -36,6 +38,8 @@ def find_git_root():
 APP_ROOT = find_git_root() / "phb_app"
 IMAGES_DIR = APP_ROOT / "images"
 
+### IO SELECTION PAGE ###
+
 IO_FILE_TITLE = "Input/Output Files"
 
 IO_FILE_SUBTITLE = """
@@ -49,6 +53,14 @@ OUTPUT_FILE_INSTRUCTION_TEXT = "Select the project hours budgeting file as the t
 
 ADD_FILE = "Add File"
 EXCEL_FILE = "Excel files (*.xlsx)"
+
+### PROJECT SELECTION PAGE ###
+
+PROJECT_SELECTION_TITLE = "Project Selection"
+
+PROJECT_SELECTION_SUBTITLE = "Select the projects in which the hours were booked."
+
+
 
 class IORole(StrEnum):
     '''Input or output roles.'''
