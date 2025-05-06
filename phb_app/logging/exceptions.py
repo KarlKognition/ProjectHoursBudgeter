@@ -10,10 +10,12 @@ Author: Karl Goran Antony Zuvela
 
 Description
 -----------
-PHB Wizard speicific exceptions handling.
+PHB Wizard specific exceptions handling.
 '''
 
 from datetime import datetime
+# First party libraries
+import phb_app.data.io_management as io
 
 ##############################
 ### IOSelection Exceptions ###
@@ -25,7 +27,7 @@ class WorkbookLoadError(Exception):
 class WorkbookAlreadyTracked(Exception):
     '''Custom exception for when a workbook with the same file name is already in the list.'''
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         super().__init__(f"Workbook {file_name} is already being tracked.")
 
 class IncorrectWorksheetSelected(Exception):
@@ -40,7 +42,7 @@ class CountryIdentifiersNotInFilename(Exception):
     '''Custom exception for when the file name does not contain any country identifying
     patterns.'''
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         message = (f"Workbook {file_name} does not contain the required patterns "
                     "in its file name to identify its country of origin.")
         super().__init__(message)
@@ -48,7 +50,7 @@ class CountryIdentifiersNotInFilename(Exception):
 class FileAlreadySelected(Exception):
     '''Custom exception for when the user attempts to add the same file twice.'''
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         super().__init__(f"Workbook {file_name} has already been selected.")
 
 class TooManyOutputFilesSelected(Exception):
@@ -60,8 +62,8 @@ class TooManyOutputFilesSelected(Exception):
 class BudgetingDatesNotFound(Exception):
     '''Custom exception for when the chosen month and year are not in the output file.'''
 
-    def __init__(self, month: str, year: str, sheet: str, file: str):
-        super().__init__(f"{month} or {year} not found in sheet {sheet} of file {file}.")
+    def __init__(self, dropdown_handler: io.SelectedText, file: str):
+        super().__init__(f"{dropdown_handler.month} or {dropdown_handler.year} not found in sheet {dropdown_handler.worksheet} of file {file}.")
 
 ######################################
 ### Employee Management Exceptions ###

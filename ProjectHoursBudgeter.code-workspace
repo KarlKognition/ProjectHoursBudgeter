@@ -6,7 +6,9 @@
 	],
 	"settings": {
 		"python.linting.pylintEnabled": true,
-		"python.linting.pylintPath": ".venv/Scripts/pylint.exe"
-
+		"python.linting.pylintPath": ".venv/Scripts/pylint.exe",
+		"python.linting.pylintArgs": [
+			"--disable=line-too-long"
+		]
 	}
 }

@@ -19,21 +19,14 @@ Constructs and manages the employee selection page.
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWizardPage,
-    QLabel,
-    QTableWidget,
-    QPushButton,
-    QVBoxLayout,
-    QTableWidgetItem
+    QWizardPage, QLabel, QTableWidget, QPushButton,
+    QVBoxLayout, QTableWidgetItem
 )
-from phb_app.data.phb_dataclasses import (
-    ProjectIDTableHeaders,
-    WorkbookManager,
-    QPropName,
-    ButtonNames,
-    ManagedInputWorkbook
-)
-import phb_app.utils.func_utils as futils
+import phb_app.data.workbook_management as wm
+import phb_app.utils.project_utils as pro
+import phb_app.utils.page_utils as pu
+import phb_app.wizard.constants.integer_enums as ie
+import phb_app.wizard.constants.ui_strings as st
 
 class ProjectSelectionPage(QWizardPage):
     '''Page for selecting the projects in which the hours were booked.'''
@@ -43,11 +36,11 @@ class ProjectSelectionPage(QWizardPage):
         self.setTitle("Project Selection")
         self.setSubTitle("Select the projects in which the hours were booked.")
         # Headers
-        self.headers = ProjectIDTableHeaders.cap_members_list()
+        self.headers = ie.ProjectIDTableHeaders.cap_members_list()
 
         ## Init property
         # To be populated at page init
-        self.managed_workbooks: WorkbookManager
+        self.managed_workbooks: wm.WorkbookManager
 
         self.setup_widgets()
         self.setup_layout()
@@ -63,7 +56,7 @@ class ProjectSelectionPage(QWizardPage):
         # Make sure the table headers are displayed
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(
-            QPropName.MANAGED_WORKBOOKS.value)
+            st.QPropName.MANAGED_WORKBOOKS)
         # Set the IDs of every project in each workbook
         self.set_each_workbooks_project_ids()
         ## Table data
@@ -91,19 +84,19 @@ class ProjectSelectionPage(QWizardPage):
 
         ## Projects table
         # Start with 0 rows and 3 columns
-        self.projects_table = QTableWidget(0, len(ProjectIDTableHeaders))
+        self.projects_table = QTableWidget(0, len(ie.ProjectIDTableHeaders))
         # self.projects_table.resizerow
         # Allow multiple row selections in the table
         self.projects_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.projects_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
         # Adjust the width of each column
-        self.projects_table.setColumnWidth(ProjectIDTableHeaders.PROJECT_ID.value, 250)
-        self.projects_table.setColumnWidth(ProjectIDTableHeaders.DESCRIPTION.value, 250)
-        self.projects_table.setColumnWidth(ProjectIDTableHeaders.FILENAME.value, 400)
+        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.PROJECT_ID, 250)
+        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.DESCRIPTION, 250)
+        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.FILENAME, 400)
 
         ## Table selection buttons
         # Add deselect all button
-        self.deselect_projects_button = QPushButton(ButtonNames.DESELECT_ALL.value, self)
+        self.deselect_projects_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
 
     def setup_layout(self) -> None:
         '''Init layout.'''
@@ -140,7 +133,7 @@ class ProjectSelectionPage(QWizardPage):
         '''Set project IDs for each workbook.'''
 
         for wb in self.managed_workbooks.workbooks:
-            if isinstance(wb, ManagedInputWorkbook):
+            if isinstance(wb, wm.ManagedInputWorkbook):
                 wb.managed_sheet_object.set_selectable_project_ids(
                     wb.locale_data.filter_headers.proj_id,
                     wb.locale_data.filter_headers.description,
@@ -150,7 +143,7 @@ class ProjectSelectionPage(QWizardPage):
         '''Populate the table with selectable project IDs.'''
 
         for wb in self.managed_workbooks.workbooks:
-            if isinstance(wb, ManagedInputWorkbook):
+            if isinstance(wb, wm.ManagedInputWorkbook):
                 # Go through each selectable ID for each row in the table
                 for row_position, item in enumerate(
                     wb.managed_sheet_object.yield_from_project_id_and_desc()
@@ -160,25 +153,25 @@ class ProjectSelectionPage(QWizardPage):
                     table.insertRow(row_position)
                     # Add project ID
                     proj_id_item = QTableWidgetItem(
-                        item[ProjectIDTableHeaders.PROJECT_ID.value]
+                        item[ie.ProjectIDTableHeaders.PROJECT_ID]
                     )
                     proj_id_item.setFlags(proj_id_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     table.setItem(
                         row_position,
-                        ProjectIDTableHeaders.PROJECT_ID.value,
+                        ie.ProjectIDTableHeaders.PROJECT_ID,
                         proj_id_item
                     )
                     # Go through each description listed for the selectable ID
                     desc_text = "\n".join(
                         list_item for list_item in item[
-                            ProjectIDTableHeaders.DESCRIPTION.value]
+                            ie.ProjectIDTableHeaders.DESCRIPTION]
                     )
                     # Add project description
                     proj_desc_item = QTableWidgetItem(desc_text)
                     proj_desc_item.setFlags(proj_desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     table.setItem(
                         row_position,
-                        ProjectIDTableHeaders.DESCRIPTION.value,
+                        ie.ProjectIDTableHeaders.DESCRIPTION,
                         proj_desc_item
                     )
                     # Resize the row according to the number of rows
@@ -188,7 +181,7 @@ class ProjectSelectionPage(QWizardPage):
                     file_name = QTableWidgetItem(wb.file_name)
                     table.setItem(
                         row_position,
-                        ProjectIDTableHeaders.FILENAME.value,
+                        ie.ProjectIDTableHeaders.FILENAME,
                         file_name
                     )
 
@@ -207,7 +200,7 @@ class ProjectSelectionPage(QWizardPage):
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
 
-        return bool(self.projects_table.selectionModel().selectedRows())
+        return pu.check_completion(self.projects_table)
 
     def validatePage(self) -> bool:
         '''Override the page validation.
@@ -216,12 +209,12 @@ class ProjectSelectionPage(QWizardPage):
         # Get the selected rows
         selected_rows = self.projects_table.selectionModel().selectedRows()
         # Set the selected projects for the respective workbook
-        for wb in self.managed_workbooks.yield_workbooks_by_type(ManagedInputWorkbook):
-            futils.set_selected_project_ids(
+        for wb in self.managed_workbooks.yield_workbooks_by_type(wm.ManagedInputWorkbook):
+            pro.set_selected_project_ids(
                 wb,
                 self.projects_table,
                 selected_rows,
-                ProjectIDTableHeaders
+                ie.ProjectIDTableHeaders
             )
         # Validation complete
         return True

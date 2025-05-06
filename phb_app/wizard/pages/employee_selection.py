@@ -19,25 +19,14 @@ Constructs and manages the employee selection page.
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWizardPage,
-    QLabel,
-    QTableWidget,
-    QPushButton,
-    QVBoxLayout,
-    QTableWidgetItem
+    QWizardPage, QLabel, QTableWidget, QPushButton,
+    QVBoxLayout, QTableWidgetItem
 )
-from phb_app.data.phb_dataclasses import (
-    EmployeeTableHeaders,
-    WorkbookManager,
-    QPropName,
-    EmployeeTableHeaders,
-    ButtonNames,
-    ManagedOutputWorkbook,
-    ManagedInputWorkbook,
-    NON_NAMES
-)
-import phb_app.utils.func_utils as futils
-import phb_app.utils.hours_utils as hutils
+import phb_app.data.workbook_management as wm
+import phb_app.data.header_management as hm
+import phb_app.utils.employee_utils as eu
+import phb_app.utils.hours_utils as hu
+import phb_app.wizard.constants.ui_strings as st
 
 class EmployeeSelectionPage(QWizardPage):
     '''Page for selecting the employees whose hours will be budgeted.'''
@@ -47,10 +36,10 @@ class EmployeeSelectionPage(QWizardPage):
         self.setTitle("Employee Selection")
         self.setSubTitle("Select the employees whose hours will be budgeted.")
         # Headers
-        self.headers = EmployeeTableHeaders.cap_members_list()
+        self.headers = hm.EmployeeTableHeaders.cap_members_list()
 
         ## Init property
-        self.managed_workbooks: WorkbookManager
+        self.managed_workbooks: wm.WorkbookManager
 
         self.setup_widgets()
         self.setup_layout()
@@ -65,7 +54,7 @@ class EmployeeSelectionPage(QWizardPage):
 
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(
-            QPropName.MANAGED_WORKBOOKS.value)
+            st.QPropName.MANAGED_WORKBOOKS)
         ## Table data
         # Table headers
         self.employees_table.setHorizontalHeaderLabels(self.headers)
@@ -90,20 +79,20 @@ class EmployeeSelectionPage(QWizardPage):
 
         ## Projects table
         # Start with 0 rows and 2 columns
-        self.employees_table = QTableWidget(0, len(EmployeeTableHeaders))
+        self.employees_table = QTableWidget(0, len(hm.EmployeeTableHeaders))
         # Allow multiple row selections in the table
         self.employees_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.employees_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
         # Adjust the width of each column
-        self.employees_table.setColumnWidth(EmployeeTableHeaders.EMPLOYEE.value, 450)
-        self.employees_table.setColumnWidth(EmployeeTableHeaders.WORKSHEET.value, 150)
-        self.employees_table.setColumnWidth(EmployeeTableHeaders.COORDINATE.value, 80)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.EMPLOYEE, 450)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.WORKSHEET, 150)
+        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.COORDINATE, 80)
 
         ## Table selection buttons
         # Add deselect all button
-        self.select_all_employees_button = QPushButton(ButtonNames.SELECT_ALL.value, self)
+        self.select_all_employees_button = QPushButton(st.ButtonNames.SELECT_ALL, self)
         # Add deselect all button
-        self.deselect_all_employees_button = QPushButton(ButtonNames.DESELECT_ALL.value, self)
+        self.deselect_all_employees_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
 
     def setup_layout(self) -> None:
         '''Init layout.'''
@@ -148,7 +137,7 @@ class EmployeeSelectionPage(QWizardPage):
         coordinates from the given worksheet.'''
 
         # Get the first and only output workbook's file name
-        wb_name = next(self.managed_workbooks.yield_workbooks_by_type(ManagedOutputWorkbook)).file_name
+        wb_name = next(self.managed_workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook)).file_name
         wb = self.managed_workbooks.get_workbook_by_name(wb_name)
         ws = wb.managed_sheet_object.selected_sheet.sheet_object
         # Add employee per row. Skip empty cells from output file
@@ -162,14 +151,14 @@ class EmployeeSelectionPage(QWizardPage):
                 column=col
             )
             ## Populate row. No items editable after setting
-            if cell.value and cell.value not in NON_NAMES:
+            if cell.value and cell.value not in st.NON_NAMES:
                 employee_item = QTableWidgetItem(cell.value)
                 # Insert row 0-indexed then add employee name
                 table.insertRow(row_position)
                 employee_item.setFlags(employee_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    EmployeeTableHeaders.EMPLOYEE.value,
+                    hm.EmployeeTableHeaders.EMPLOYEE,
                     employee_item
                 )
                 # Add the worksheet name where the employee was found
@@ -179,7 +168,7 @@ class EmployeeSelectionPage(QWizardPage):
                 desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    EmployeeTableHeaders.WORKSHEET.value,
+                    hm.EmployeeTableHeaders.WORKSHEET,
                     desc_item
                 )
                 # Add Excel cell coordinate where the employee is located
@@ -187,7 +176,7 @@ class EmployeeSelectionPage(QWizardPage):
                 coord_item.setFlags(coord_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(
                     row_position,
-                    EmployeeTableHeaders.COORDINATE.value,
+                    hm.EmployeeTableHeaders.COORDINATE,
                     coord_item
                 )
                 row_position += 1
@@ -203,9 +192,9 @@ class EmployeeSelectionPage(QWizardPage):
         self.employees_table.clear()
         self.employees_table.setRowCount(0)
         # Clear the selected employees of the first and only output workbook
-        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(ManagedOutputWorkbook))
+        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
         out_wb.managed_sheet_object.clear_predicted_hours()
-        for in_wb in self.managed_workbooks.yield_workbooks_by_type(ManagedInputWorkbook):
+        for in_wb in self.managed_workbooks.yield_workbooks_by_type(wm.ManagedInputWorkbook):
             in_wb.managed_sheet_object.selected_project_ids.clear()
 
     def isComplete(self) -> bool:
@@ -223,10 +212,10 @@ class EmployeeSelectionPage(QWizardPage):
         selected_rows = self.employees_table.selectionModel().selectedRows()
         selected_employees = [
             (self.employees_table
-            .item(row.row(), EmployeeTableHeaders.COORDINATE.value)
+            .item(row.row(), hm.EmployeeTableHeaders.COORDINATE)
             .text(),
             self.employees_table
-            .item(row.row(), EmployeeTableHeaders.EMPLOYEE.value)
+            .item(row.row(), hm.EmployeeTableHeaders.EMPLOYEE)
             .text()
             )
             for row in selected_rows
@@ -235,11 +224,11 @@ class EmployeeSelectionPage(QWizardPage):
         # one worksheet would be chosen. If across several workbooks too, make and use
         # get workbook by type and name, then get worksheet by name.
         # Here: Get the first and only output workbook
-        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(ManagedOutputWorkbook))
+        out_wb = next(self.managed_workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
         out_wb.managed_sheet_object.set_selected_employees(selected_employees)
         ## Predicted hours per employee
         # Find hours
-        pre_hours = futils.find_predicted_hours(
+        pre_hours = eu.find_predicted_hours(
             out_wb.managed_sheet_object.selected_employees,
             out_wb.managed_sheet_object.selected_date.row,
             out_wb.file_path,
@@ -251,7 +240,7 @@ class EmployeeSelectionPage(QWizardPage):
         out_wb.managed_sheet_object.set_predicted_hours_colour()
         ## Recorded hours
         # Accumulate and set
-        hutils.sum_hours_selected_employee(self.managed_workbooks)
+        hu.sum_hours_selected_employee(self.managed_workbooks)
         for emp in out_wb.managed_sheet_object.selected_employees.values():
             emp.hours.set_deviation()
         # Validation complete
