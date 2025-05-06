@@ -1,4 +1,7 @@
-TO be able to run or test this script, Python 3 should have been installed through the Software Centre.
+!!REFACTOR IN PROGRESS!!
+Only the explanation and IO Selection pages are currently working. Running through a python terminal is currently fine. I am currently unsure if the run batch file does its job. Do not use the test batch file. It will not run any of the tests.
+
+Python 3 should be installed to be able to run or test this script.
 
 RUNNING:
 To use the hours budgeting script, use the RUN batch file.
