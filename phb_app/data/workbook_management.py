@@ -73,8 +73,8 @@ class ManagedInputWorkbook(ManagedWorkbook):
         self.managed_sheet_object.index_headers()
 
 Mng_wb_dispatch: dict[st.IORole, ManagedInputWorkbook | ManagedOutputWorkbook] = {
-    st.IORole.INPUT_FILE: ManagedInputWorkbook,
-    st.IORole.OUTPUT_FILE: ManagedOutputWorkbook
+    st.IORole.INPUTS: ManagedInputWorkbook,
+    st.IORole.OUTPUT: ManagedOutputWorkbook
 }
 
 @dataclass

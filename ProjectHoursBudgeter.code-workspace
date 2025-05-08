@@ -12,11 +12,13 @@
 			"--disable=line-too-long"
 		],
 		"python.analysis.exclude": [
-		"**/__pycache__",
-		"**/.venv",
-		"**/*.xlsx",
-		"**/logs",
-		"**/*.log"
+			"**/__pycache__",
+			"**/.venv",
+			"**/*.xlsx",
+			"**/logs",
+			"**/*.log",
+			"**/venv",
+			"**/.venv"
 		],
 		"files.exclude": {
 		"**/__pycache__": true,

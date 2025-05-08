@@ -60,15 +60,19 @@ PROJECT_SELECTION_TITLE = "Project Selection"
 
 PROJECT_SELECTION_SUBTITLE = "Select the projects in which the hours were booked."
 
+PROJECT_SELECTION_INSTRUCTIONS = """
+<p><strong>Select one or more project IDs.<strong></p>
+<p>The project decription is purely to help in the recognition of the wished after project ID. It will not be used in any calculations.</p>
+"""
 
 
 class IORole(StrEnum):
     '''Input or output roles.'''
 
-    INPUT_FILE = auto()
-    OUTPUT_FILE = auto()
-    EMPLOYEE_TABLE = auto()
+    INPUTS = auto()
+    OUTPUT = auto()
     PROJECT_TABLE = auto()
+    EMPLOYEE_TABLE = auto()
     SUMMARY_TABLE = auto()
 
 class SpecialStrings(StrEnum):

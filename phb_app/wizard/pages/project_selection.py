@@ -20,110 +20,37 @@ Constructs and manages the employee selection page.
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWizardPage, QLabel, QTableWidget, QPushButton,
-    QVBoxLayout, QTableWidgetItem
+    QHBoxLayout, QTableWidgetItem
 )
 import phb_app.data.workbook_management as wm
 import phb_app.utils.project_utils as pro
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.wizard.constants.ui_strings as st
+import phb_app.data.io_management as io
+import phb_app.data.header_management as hm
 
 class ProjectSelectionPage(QWizardPage):
     '''Page for selecting the projects in which the hours were booked.'''
     def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
-
-        self.setTitle(st.PROJECT_SELECTION_TITLE)
-        self.setSubTitle(st.PROJECT_SELECTION_SUBTITLE)
-        # Headers
-        self.headers = ie.ProjectIDTableHeaders.cap_members_list()
-
-        ## Init property
-        # To be populated at page init
-        self.managed_workbooks: wm.WorkbookManager
-
-        self.setup_widgets()
-        self.setup_layout()
-        self.setup_connections()
-
-    #######################################
-    ### QWizard setup function override ###
-    #######################################
+        self.managed_workbooks = managed_workbooks
+        self.project_panel = None
+        pu.set_titles(self, st.PROJECT_SELECTION_TITLE, st.PROJECT_SELECTION_SUBTITLE)
 
     def initializePage(self) -> None:
         '''Retrieve fields from other pages.'''
-
-        # Make sure the table headers are displayed
-        # Get workbooks from IOSelection
-        self.managed_workbooks = self.wizard().property(
-            st.QPropName.MANAGED_WORKBOOKS)
-        # Set the IDs of every project in each workbook
-        self.set_each_workbooks_project_ids()
-        ## Table data
-        # Table headers
-        self.projects_table.setHorizontalHeaderLabels(self.headers)
-        # Add all data to the table
-        self.populate_table(self.projects_table)
-
-    #######################
-    ### Setup functions ###
-    #######################
-
-    def setup_widgets(self) -> None:
-        '''Init all widgets.'''
-
-        ## Instructions
-        # Selection
-        self.project_instructions_label = QLabel(
-            "<p><strong>Select one or more project IDs.<strong></p>"
-            "<p>The project decription is purely to help in the recognition "
-            "of the wished after project ID. It will not be used in any "
-            "calculations.</p>"
+        self.project_panel = io.IOControls(
+            page=self,
+            role=st.IORole.OUTPUT,
+            label=QLabel(st.PROJECT_SELECTION_INSTRUCTIONS),
+            table=pu.create_table(ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
+            buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
-        self.project_instructions_label.setTextFormat(Qt.TextFormat.RichText)
-
-        ## Projects table
-        # Start with 0 rows and 3 columns
-        self.projects_table = QTableWidget(0, len(ie.ProjectIDTableHeaders))
-        # self.projects_table.resizerow
-        # Allow multiple row selections in the table
-        self.projects_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.projects_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
-        # Adjust the width of each column
-        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.PROJECT_ID, 250)
-        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.DESCRIPTION, 250)
-        self.projects_table.setColumnWidth(ie.ProjectIDTableHeaders.FILENAME, 400)
-
-        ## Table selection buttons
-        # Add deselect all button
-        self.deselect_projects_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
-
-    def setup_layout(self) -> None:
-        '''Init layout.'''
-
-        ## Layout types
-        # Main layout
-        main_layout = QVBoxLayout()
-
-        ## Add widgets
-        # To main layout
-        main_layout.addWidget(self.project_instructions_label)
-        main_layout.addWidget(self.projects_table)
-        main_layout.addWidget(self.deselect_projects_button)
-
-        ## Display
-        self.setLayout(main_layout)
-
-    def setup_connections(self) -> None:
-        '''Connect buttons to their respective actions.'''
-
-        ## Connect functions
-        # Deselect all
-        self.deselect_projects_button.clicked.connect(
-            self.projects_table.clearSelection)
-        # Check isComplete
-        self.projects_table.itemSelectionChanged.connect(
-            self.completeChanged.emit)
+        project_handler = io.EntryHandler(self.project_panel, self.managed_workbooks)
+        pu.setup_page(self, [pu.create_interaction_panel(self.project_panel)], QHBoxLayout())
+        pu.connect_buttons(self, project_handler)
+        pu.populate_selection_table(self, project_handler, wm.ManagedInputWorkbook)
 
     ############################
     ### Supporting functions ###

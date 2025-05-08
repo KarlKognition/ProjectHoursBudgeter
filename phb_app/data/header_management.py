@@ -61,6 +61,12 @@ OUTPUT_COLUMN_WIDTHS = {
     ie.OutputTableHeaders.YEAR: 60
 }
 
+PROJECT_COLUMN_WIDTHS = {
+    ie.ProjectIDTableHeaders.PROJECT_ID: 250,
+    ie.ProjectIDTableHeaders.DESCRIPTION: 250,
+    ie.ProjectIDTableHeaders.FILENAME: 400
+}
+
 DEFAULT_PADDING = 5
 
 @dataclass

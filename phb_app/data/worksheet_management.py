@@ -4,6 +4,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from PyQt6.QtCore import Qt
 import phb_app.data.selected_date as sd
 import phb_app.data.employee_management as emp
+import phb_app.templating.types as types
 
 @dataclass
 class SelectedSheet:
@@ -17,16 +18,15 @@ class ManagedWorksheet:
     selected_sheet: Optional[SelectedSheet] = None
     sheet_names: list[str] = field(default_factory=list)
 
-
 @dataclass
 class ManagedInputWorksheet(ManagedWorksheet):
     '''Child data class for input worksheet data.'''
     # The project number is not provided at init/postinit
     # key: project ID (network number [int] or PSP element [str]),
     # value: list of short project desciptions
-    selectable_project_ids: dict[str, list[str]] = field(default_factory=dict)
+    selectable_project_ids: types.ProjectsDict = field(default_factory=types.ProjectsDict)
     # Dictionary of project IDs (network number [int] or PSP element [str]): descriptions
-    selected_project_ids: dict[str, list[str]] = field(default_factory=dict)
+    selected_project_ids: types.ProjectsDict = field(default_factory=types.ProjectsDict)
     indexed_headers: dict[str, int] = field(default_factory=dict)
 
     def index_headers(self) -> None:
@@ -37,7 +37,7 @@ class ManagedInputWorksheet(ManagedWorksheet):
             if isinstance(cell.value, str):
                 self.indexed_headers[cell.value] = idx
 
-    def yield_from_project_id_and_desc(self) -> Iterator[tuple[str, list[str]]]:
+    def yield_from_project_id_and_desc(self) -> Iterator[types.ProjectsTup]:
         '''Yields from the project ID and description,
         one at a time in a tuple.'''
         yield from self.selectable_project_ids.items()

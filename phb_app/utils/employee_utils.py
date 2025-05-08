@@ -42,7 +42,7 @@ def _locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, a
         if start_anchor_temp and not end_anchor_temp:
             raise ex.MissingEmployeeRow(anchors.end_anchor)
 
-def set_selected_sheet(file_handler: "io.FileDialogHandler", sheet_name: str) -> None:
+def set_selected_sheet(file_handler: "io.EntryHandler", sheet_name: str) -> None:
     '''Set selected sheet.'''
     entry = file_handler.workbook_entry
     # Save the worksheet data
