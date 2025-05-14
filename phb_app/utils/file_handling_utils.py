@@ -29,11 +29,12 @@ from PyQt6.QtWidgets import QTableWidget
 import phb_app.data.location_management as loc
 import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st
+import phb_app.templating.types as t
 
 if TYPE_CHECKING:
     import phb_app.data.workbook_management as wm
 
-def get_origin_from_file_name(file_name: str, country_data: loc.CountryData, countries_enum: st.CountriesEnum) -> str:
+def get_origin_from_file_name(file_name: str, country_data: loc.CountryData, countries_enum: st.CountriesEnum) -> t.CountryName:
     '''
     Checks the workbook's origin. Returns the country of origin.
     '''

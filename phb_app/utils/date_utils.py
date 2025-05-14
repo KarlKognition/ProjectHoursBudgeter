@@ -47,12 +47,12 @@ def set_budgeting_date(file_handler: "io.EntryHandler", dropdown_text: "io.Selec
     '''Sets the budgeting date with the row it is located in the worksheet.'''
     # Convert dates to integers and put in a tuple
     month_year = (md.LOCALIZED_MONTHS_SHORT.get(dropdown_text.month), int(dropdown_text.year))
-    budgeting_dates = get_budgeting_dates(file_handler.data.file_path, dropdown_text.worksheet)
+    budgeting_dates = get_budgeting_dates(file_handler.io_data.file_path, dropdown_text.worksheet)
     for tup in budgeting_dates:
         if tup[:2] == month_year:
             month, year, row = tup
             break
     else:
-        raise ex.BudgetingDatesNotFound(dropdown_text, path.basename(file_handler.data.file_path))
+        raise ex.BudgetingDatesNotFound(dropdown_text, path.basename(file_handler.io_data.file_path))
     selected_date = file_handler.workbook_entry.managed_sheet_object.selected_date
     selected_date.month, selected_date.year, selected_date.row = month, year, row

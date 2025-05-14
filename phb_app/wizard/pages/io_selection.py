@@ -61,7 +61,7 @@ class IOSelectionPage(QWizardPage):
             error_panel=error_manager.error_panels[st.IORole.OUTPUT]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        pu.connect_buttons(self, io.EntryHandler(self.input_panel, managed_workbooks, error_manager, data=io.InputFileHandler(country_data=country_data)))
+        pu.connect_buttons(self, io.EntryHandler(self.input_panel, managed_workbooks, error_manager, io_data=io.InputFileHandler(country_data=country_data)))
         pu.connect_buttons(self, io.EntryHandler(self.output_panel, managed_workbooks, error_manager))
 
     def isComplete(self) -> bool:
