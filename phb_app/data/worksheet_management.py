@@ -24,9 +24,9 @@ class ManagedInputWorksheet(ManagedWorksheet):
     # The project number is not provided at init/postinit
     # key: project ID (network number [int] or PSP element [str]),
     # value: list of short project desciptions
-    selectable_project_ids: types.ProjectsDict = field(default_factory=types.ProjectsDict)
+    selectable_project_ids: types.ProjectsDict = field(default_factory=dict)
     # Dictionary of project IDs (network number [int] or PSP element [str]): descriptions
-    selected_project_ids: types.ProjectsDict = field(default_factory=types.ProjectsDict)
+    selected_project_ids: types.ProjectsDict = field(default_factory=dict)
     indexed_headers: dict[str, int] = field(default_factory=dict)
 
     def index_headers(self) -> None:

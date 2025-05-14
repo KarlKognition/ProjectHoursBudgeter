@@ -12,7 +12,7 @@ import phb_app.utils.file_handling_utils as fu
 @dataclass
 class ManagedWorkbook:
     '''Parent data class for workbook data.'''
-    file_path: str # Mandatory parameter
+    file_path: str
     file_name: Optional[str] = None
     workbook_object: Optional[Workbook] = None
 
@@ -53,7 +53,7 @@ class ManagedInputWorkbook(ManagedWorkbook):
 
     def __post_init__(self):
         super().__post_init__()
-        self.workbook_object = fu.try_load_workbook(self, ManagedOutputWorkbook)
+        self.workbook_object = fu.try_load_workbook(self, ManagedInputWorkbook)
 
     def set_locale_data(self, country_data: loc.CountryData, country_name: str) -> None:
         '''Sets the locale data.'''
@@ -63,7 +63,7 @@ class ManagedInputWorkbook(ManagedWorkbook):
             if locale.country == country_name),
             None)
 
-    def init_input_worksheet(self):
+    def init_input_worksheet(self) -> None:
         '''Init input worksheet.'''
         if len(self.workbook_object.sheetnames) <= 1:
             sheet_name = self.workbook_object.sheetnames[0]

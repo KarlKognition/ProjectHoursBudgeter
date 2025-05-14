@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Callable, TYPE_CHECKING, Union
 from os import path
 from PyQt6.QtWidgets import (
-    QWidget, QTableWidget, QComboBox, QLabel, QWizardPage
+    QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
 )
 import phb_app.templating.protocols as protocols
 import phb_app.wizard.constants.ui_strings as st
@@ -70,12 +70,28 @@ class DropdownHandler:
             dropdown.currentTextChanged.connect(func)
 
 @dataclass
-class DataHandler:
+class InputTableItems:
+    '''Data class for managing the input table items.'''
+    file_name: Optional[QTableWidgetItem] = None
+    country: Optional[QTableWidgetItem] = None
+    sheet_name: Optional[QTableWidgetItem] = None
+
+@dataclass
+class InputFileHandler:
     '''Data class for managing the data in the table.'''
     file_path: Optional[str] = None
     file_name: Optional[str] = None
     country_data: Optional[loc.CountryData] = None
     project_identifiers : Optional[types.ProjectsTup] = None
+    table_items: Optional[InputTableItems] = field(default_factory=InputTableItems)
+
+    def set_table_country(self, country: str) -> None:
+        '''Set the table item for the given file name and country.'''
+        self.table_items.country = QTableWidgetItem(country)
+
+    def set_table_sheet_name(self, sheet_name: str) -> None:
+        '''Set the table item for the given sheet name.'''
+        self.table_items.sheet_name = QTableWidgetItem(sheet_name)
 
 @dataclass
 class EntryHandler:
@@ -83,7 +99,7 @@ class EntryHandler:
     panel: IOControls
     workbook_manager: "wm.WorkbookManager"
     error_manager: Optional[em.ErrorManager] = None
-    data: DataHandler = field(default_factory=DataHandler)
+    data: InputFileHandler = field(default_factory=InputFileHandler)
     workbook_entry: Optional[Union["wm.ManagedInputWorkbook", "wm.ManagedOutputWorkbook"]] = None
     configure_row: Optional[protocols.ConfigureRow] = None
 
@@ -99,20 +115,21 @@ class EntryHandler:
         '''Set the file path and name.'''
         self.data.file_path = file_path
         self.data.file_name = path.basename(file_path)
+        self.data.table_items.file_name = QTableWidgetItem(self.data.file_name)
 
     def configure_input_file_row(self, row_position: int) -> None:
         '''Configure the input row in the table.'''
         self.workbook_entry = self.workbook_manager.get_workbook_by_name(self.data.file_name)
-        pu.update_country_details_in_table(self.data.country_data, self.workbook_entry)
-        pu.insert_row_data(self.panel.table, self.data.file_name, row_position, ie.InputTableHeaders.FILENAME)
-        pu.insert_row_data(self.panel.table, self.workbook_entry.locale_data.country, row_position, ie.InputTableHeaders.COUNTRY)
+        pu.update_handlers_country_details(self.data.country_data, self.workbook_entry)
+        self.data.set_table_country(self.workbook_entry.locale_data.country)
+        pu.insert_row_data(self.panel.table, self.data.table_items.country, row_position, ie.InputTableHeaders.COUNTRY)
         self.workbook_entry.init_input_worksheet()
-        pu.insert_row_data(self.panel.table, self.workbook_entry.managed_sheet_object.selected_sheet.sheet_name, row_position, ie.InputTableHeaders.WORKSHEET)
+        self.data.set_table_sheet_name(self.workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
+        pu.insert_row_data(self.panel.table, self.data.table_items.sheet_name, row_position, ie.InputTableHeaders.WORKSHEET)
 
     def configure_output_file_row(self, row_position: int) -> None:
         '''Configure the output row in the table.'''
         self.workbook_entry = pu.get_initialised_managed_output_workbook(self)
-        pu.insert_row_data(self.panel.table, self.data.file_name, row_position, ie.OutputTableHeaders.FILENAME)
         dropdowns = DropdownHandler(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(self.workbook_entry))
         pu.setup_dropdowns(self.panel.table, row_position, dropdowns)
         def connection_wrapper() -> None:

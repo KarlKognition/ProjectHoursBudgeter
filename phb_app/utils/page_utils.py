@@ -39,7 +39,6 @@ import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
 import phb_app.data.months_dict as md
 import phb_app.logging.error_manager as em
-import phb_app.templating.types as types
 
 if TYPE_CHECKING:
     import phb_app.data.io_management as io
@@ -182,15 +181,15 @@ def connect_buttons(page: QWizardPage, file_handler: "io.EntryHandler") -> None:
 ### Input Table Population ###
 ##############################
 
-def _check_file_validity(file_name: str, panel: "io.IOControls", file_item: QTableWidgetItem) -> None:
+def _check_file_validity(file_handler: "io.EntryHandler") -> None:
     '''Check if the file is valid and highlight errors if necessary.'''
-    file_exists = fu.is_file_already_in_table(file_name, ie.InputTableHeaders.FILENAME, panel.table)
-    if panel.table == st.IORole.OUTPUT and panel.table.rowCount() >= 2:
-        highlight_bad_item(file_item)
+    file_exists = fu.is_file_already_in_table(file_handler.data.file_name, ie.InputTableHeaders.FILENAME, file_handler.panel.table)
+    if file_handler.panel.table == st.IORole.OUTPUT and file_handler.panel.table.rowCount() >= 2:
+        _highlight_bad_item(file_handler.data.table_items.file_name)
         raise ex.TooManyOutputFilesSelected()
     if file_exists:
-        highlight_bad_item(file_item)
-        raise ex.FileAlreadySelected(file_name)
+        _highlight_bad_item(file_handler.data.table_items)
+        raise ex.FileAlreadySelected(file_handler.data.table_items.file_name)
 
 def _insert_row(panel: "io.IOControls") -> int:
     '''Insert a new row in the table.'''
@@ -198,20 +197,12 @@ def _insert_row(panel: "io.IOControls") -> int:
     panel.table.insertRow(row_position)
     return row_position
 
-def insert_row_data(table: QTableWidget, data_item: str, row_position: int, column: ie.InputTableHeaders) -> None:
+def insert_row_data(table: QTableWidget, widget_item: QTableWidgetItem, row_position: int, column: ie.InputTableHeaders) -> None:
     '''Insert a new row for the file and return the row position.'''
-    widget_item = QTableWidgetItem(data_item)
     widget_item.setFlags(widget_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
     table.setItem(row_position, column, widget_item)
 
-def _insert_data_row(panel: "io.IOControls", data: types.ProjectTuple, row, column: ie.ProjectIDTableHeaders) -> int:
-    '''Insert a new row for the entry and return the row position.'''
-    file_item = QTableWidgetItem(data)
-    file_item.setFlags(file_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-    panel.table.setItem(row, column, file_item)
-    return row
-
-def update_country_details_in_table(data: loc.CountryData, workbook_entry: "wm.ManagedInputWorkbook") -> None:
+def update_handlers_country_details(data: loc.CountryData, workbook_entry: "wm.ManagedInputWorkbook") -> None:
     '''Update country details.'''
     # Get country name from file name
     country_name = fu.get_origin_from_file_name(workbook_entry.file_name, data, st.CountriesEnum)
@@ -232,7 +223,7 @@ def _create_dropdown(items: list[str], default: str) -> QComboBox:
 
 def get_initialised_managed_output_workbook(file_handler: "io.EntryHandler") -> "wm.ManagedOutputWorkbook":
     '''Initialise and return the output worksheet.'''
-    workbook_entry = file_handler.workbook_manager.get_workbook_by_name(file_handler.file_name)
+    workbook_entry = file_handler.workbook_manager.get_workbook_by_name(file_handler.data.file_name)
     workbook_entry.init_output_worksheet()
     return workbook_entry
 
@@ -242,7 +233,7 @@ def create_worksheet_dropdown(workbook_entry: "wm.ManagedOutputWorkbook") -> QCo
 
 def create_year_dropdown() -> QComboBox:
     '''
-    Create a dropdown for selecting a year. The default year is the current year unless it is December,
+    Create a dropdown for selecting a year. The default year ist he current year unless it is December,
     then due to the default month being last month, the default year is set to the previous year.
     '''
     default_year = str((datetime.now() + relativedelta(months=-1)).year)
@@ -262,14 +253,14 @@ def setup_dropdowns(table:QTableWidget, row_position: int, dropdowns: "io.Dropdo
     table.setCellWidget(row_position, ie.OutputTableHeaders.MONTH, dropdowns.month_dropdown)
     table.setCellWidget(row_position, ie.OutputTableHeaders.YEAR, dropdowns.year_dropdown)
 
-def handle_selection_error(row_position: int, file_handler: "io.EntryHandler", error: Exception) -> None:
+def _handle_selection_error(row_position: int, file_handler: "io.EntryHandler", error: Exception) -> None:
     '''Handle errors during selection and update the UI accordingly.'''
     col: dict[st.IORole, ie.InputTableHeaders] = {
         st.IORole.INPUTS: ie.InputTableHeaders.FILENAME,
         st.IORole.OUTPUT: ie.OutputTableHeaders.FILENAME
     }
-    highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
-    file_handler.error_manager.add_error(file_handler.file_name, file_handler.panel.role, error)
+    _highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
+    file_handler.error_manager.add_error(file_handler.data.file_name, file_handler.panel.role, error)
 
 def handle_dropdown_selection(file_handler: "io.EntryHandler", row_position: int, dropdowns: "io.DropdownHandler") -> None:
     '''Handle dropdown selection and update the selected sheet accordingly.'''
@@ -281,7 +272,7 @@ def handle_dropdown_selection(file_handler: "io.EntryHandler", row_position: int
         du.set_budgeting_date(file_handler, dropdowns.current_text)
     except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound,
             KeyError) as exc:
-        handle_selection_error(row_position, file_handler, exc)
+        _handle_selection_error(row_position, file_handler, exc)
 
 ########################
 ### Table Population ###
@@ -292,23 +283,24 @@ def _populate_file_table(page: QWizardPage, files: list[str], file_handler: "io.
     for file_path in files:
         file_handler.set_file_path_and_name(file_path)
         try:
-            file_item = QTableWidgetItem(file_handler.file_name)
-            _check_file_validity(file_handler.file_name, file_handler.panel, file_item)
-            file_handler.workbook_manager.add_workbook(file_path, file_handler.panel.role)
             row_position = _insert_row(file_handler.panel)
+            insert_row_data(file_handler.panel.table, file_handler.data.table_items.file_name, row_position, ie.InputTableHeaders.FILENAME)
+            file_handler.workbook_manager.add_workbook(file_path, file_handler.panel.role)
             file_handler.configure_row(row_position)
+            _check_file_validity(file_handler)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,
                 ex.WorkbookLoadError, KeyError) as exc:
-            handle_selection_error(row_position, file_handler, exc)
+            _handle_selection_error(row_position, file_handler, exc)
     page.completeChanged.emit()
 
 def populate_selection_table(page: QWizardPage, entry_handler: "io.EntryHandler", workbook_type: "wm.ManagedWorkbook") -> None:
     '''Populate the selection table with projects, employees or summary,'''
     for workbook in entry_handler.workbook_manager.yield_workbooks_by_type(workbook_type):
-        for row_position, project_identifier in enumerate(workbook.managed_sheet_object.yield_from_project_id_and_desc()):
+        for row_position, project_identifiers in enumerate(workbook.managed_sheet_object.yield_from_project_id_and_desc()):
             row_position = _insert_row(entry_handler.panel)
-            entry_handler.data.project_identifiers = project_identifier
+            entry_handler.workbook_entry = workbook
+            entry_handler.data.project_identifiers = project_identifiers
             entry_handler.configure_row(row_position)
     page.completeChanged.emit()
 
@@ -316,13 +308,13 @@ def populate_selection_table(page: QWizardPage, entry_handler: "io.EntryHandler"
 ### Exception Styling and Handling ###
 ######################################
 
-def highlight_bad_item(item: QTableWidgetItem) -> None:
+def _highlight_bad_item(item: QTableWidgetItem) -> None:
     '''Highlight table items causing errors.'''
 
     item.setBackground(Qt.GlobalColor.red)
     item.setForeground(Qt.GlobalColor.white)
 
-def remove_highlighting(item: QTableWidgetItem) -> None:
+def _remove_highlighting(item: QTableWidgetItem) -> None:
     '''Removes the highlighting after error correction.'''
 
     item.setBackground(Qt.GlobalColor.white)
@@ -330,8 +322,8 @@ def remove_highlighting(item: QTableWidgetItem) -> None:
 
 def clear_row_error_status(file_handler: "io.EntryHandler", row_position: int, header: ie.BaseTableHeaders) -> None:
     '''Clear the error status of a row in the table.'''
-    file_handler.error_manager.remove_error(file_handler.file_name, file_handler.panel.role)
-    remove_highlighting(file_handler.panel.table.item(row_position, header))
+    file_handler.error_manager.remove_error(file_handler.data.file_name, file_handler.panel.role)
+    _remove_highlighting(file_handler.panel.table.item(row_position, header))
 
 ##################################
 ### QWizard function overrides ###

@@ -56,9 +56,7 @@ def is_workbook_open(file_path:str) -> bool:
     return False
 
 def try_load_workbook(managed_workbook: "wm.ManagedWorkbook", wb_type: "wm.ManagedOutputWorkbook") -> Workbook:
-    '''
-    Template for attempting to load the workbook.
-    '''
+    '''Template for attempting to load the workbook.'''
     file_name = managed_workbook.file_name
     file_path = managed_workbook.file_path
     try:
@@ -80,12 +78,6 @@ def try_load_workbook(managed_workbook: "wm.ManagedWorkbook", wb_type: "wm.Manag
         raise ex.WorkbookLoadError(f"Corrupted Excel file '{file_name}': {str(e)}") from e
 
 def is_file_already_in_table(file_path: str, col: int, table: QTableWidget) -> bool:
-    '''
-    Check if the file already exists in the given table
-    and return a respective boolean.
-    '''
-    return any(
-        table.item(row, col)
-        and table.item(row, col).text() == file_path
-        for row in range(table.rowCount())
-    )
+    '''Check if there are two or more of the same file in the given table and return
+    a respective boolean.'''
+    return 1 < sum(1 for row in range(table.rowCount()) if table.item(row, col) and table.item(row, col).text() == file_path)
