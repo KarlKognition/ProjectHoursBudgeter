@@ -77,21 +77,30 @@ class InputTableItems:
     sheet_name: Optional[QTableWidgetItem] = None
 
 @dataclass
+class ProjectTableItems:
+    '''Data class for managing the project table items.'''
+    project_id: Optional[QTableWidgetItem] = None
+    project_identifiers: Optional[QTableWidgetItem] = None
+    file_name: Optional[QTableWidgetItem] = None
+
+@dataclass
 class InputFileHandler:
     '''Data class for managing the data in the table.'''
     file_path: Optional[str] = None
     file_name: Optional[str] = None
     country_data: Optional[loc.CountryData] = None
     project_identifiers : Optional[types.ProjectsTup] = None
-    table_items: Optional[InputTableItems] = field(default_factory=InputTableItems)
+    table_items: Optional[InputTableItems] = field(init=False)
 
-    def set_table_country(self, country: str) -> None:
-        '''Set the table item for the given file name and country.'''
-        self.table_items.country = QTableWidgetItem(country)
+@dataclass
+class ProjectTableHandler:
+    '''Data class for managing the project table.'''
+    project_identifiers: Optional[types.ProjectsTup] = None
+    table_items: Optional[ProjectTableItems] = field(init=False)
 
-    def set_table_sheet_name(self, sheet_name: str) -> None:
-        '''Set the table item for the given sheet name.'''
-        self.table_items.sheet_name = QTableWidgetItem(sheet_name)
+    def join_project_identifiers(self, identifiers: types.ProjectsTup) -> None:
+        '''Set the project identifiers.'''
+        self.project_identifiers = "\n".join(proj_item for proj_item in identifiers[ie.ProjectIDTableHeaders.DESCRIPTION])
 
 @dataclass
 class EntryHandler:
@@ -99,7 +108,8 @@ class EntryHandler:
     panel: IOControls
     workbook_manager: "wm.WorkbookManager"
     error_manager: Optional[em.ErrorManager] = None
-    data: InputFileHandler = field(default_factory=InputFileHandler)
+    io_data: InputFileHandler = field(default_factory=InputFileHandler)
+    project_data: ProjectTableHandler = field(init=False)
     workbook_entry: Optional[Union["wm.ManagedInputWorkbook", "wm.ManagedOutputWorkbook"]] = None
     configure_row: Optional[protocols.ConfigureRow] = None
 
@@ -113,19 +123,19 @@ class EntryHandler:
 
     def set_file_path_and_name(self, file_path: str) -> None:
         '''Set the file path and name.'''
-        self.data.file_path = file_path
-        self.data.file_name = path.basename(file_path)
-        self.data.table_items.file_name = QTableWidgetItem(self.data.file_name)
+        self.io_data.file_path = file_path
+        self.io_data.file_name = path.basename(file_path)
+        self.io_data.table_items.file_name = QTableWidgetItem(self.io_data.file_name)
 
     def configure_input_file_row(self, row_position: int) -> None:
         '''Configure the input row in the table.'''
-        self.workbook_entry = self.workbook_manager.get_workbook_by_name(self.data.file_name)
-        pu.update_handlers_country_details(self.data.country_data, self.workbook_entry)
-        self.data.set_table_country(self.workbook_entry.locale_data.country)
-        pu.insert_row_data(self.panel.table, self.data.table_items.country, row_position, ie.InputTableHeaders.COUNTRY)
+        self.workbook_entry = self.workbook_manager.get_workbook_by_name(self.io_data.file_name)
+        pu.update_handlers_country_details(self.io_data.country_data, self.workbook_entry)
+        self.io_data.table_items.country = QTableWidgetItem(self.workbook_entry.locale_data.country)
+        pu.insert_data_widget(self.panel.table, self.io_data.table_items.country, row_position, ie.InputTableHeaders.COUNTRY)
         self.workbook_entry.init_input_worksheet()
-        self.data.set_table_sheet_name(self.workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
-        pu.insert_row_data(self.panel.table, self.data.table_items.sheet_name, row_position, ie.InputTableHeaders.WORKSHEET)
+        self.io_data.table_items.sheet_name = QTableWidgetItem(self.workbook_entry.managed_sheet_object.selected_sheet.sheet_name)
+        pu.insert_data_widget(self.panel.table, self.io_data.table_items.sheet_name, row_position, ie.InputTableHeaders.WORKSHEET)
 
     def configure_output_file_row(self, row_position: int) -> None:
         '''Configure the output row in the table.'''
@@ -140,4 +150,8 @@ class EntryHandler:
 
     def configure_project_row(self, row_position: int) -> None:
         '''Configure the project row in the table.'''
+        self.project_data.table_items.project_id = QTableWidgetItem(self.io_data.table_items.file_name)
+        self.project_data.table_items.project_identifiers = QTableWidgetItem(self.io_data.project_identifiers)
+        self.project_data.table_items.file_name = self.io_data.table_items.file_name
+
         
