@@ -42,12 +42,12 @@ class ProjectSelectionPage(QWizardPage):
         '''Retrieve fields from other pages.'''
         self.project_panel = io.IOControls(
             page=self,
-            role=st.IORole.OUTPUT,
+            role=st.IORole.PROJECT_TABLE,
             label=QLabel(st.PROJECT_SELECTION_INSTRUCTIONS),
             table=pu.create_table(ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
-        project_handler = io.EntryHandler(self.project_panel, self.managed_workbooks)
+        project_handler = io.EntryContext(self.project_panel, self.managed_workbooks)
         pu.setup_page(self, [pu.create_interaction_panel(self.project_panel)], QHBoxLayout())
         pu.connect_buttons(self, project_handler)
         pu.populate_selection_table(self, project_handler, wm.ManagedInputWorkbook)
@@ -59,7 +59,7 @@ class ProjectSelectionPage(QWizardPage):
     def set_each_workbooks_project_ids(self) -> None:
         '''Set project IDs for each workbook.'''
 
-        for wb in self.managed_workbooks.workbooks:
+        for wb in self.managed_workbooks.workbooks_ctxs:
             if isinstance(wb, wm.ManagedInputWorkbook):
                 wb.managed_sheet_object.set_selectable_project_ids(
                     wb.locale_data.filter_headers.proj_id,
@@ -69,7 +69,7 @@ class ProjectSelectionPage(QWizardPage):
     def populate_table(self, table: QTableWidget) -> None:
         '''Populate the table with selectable project IDs.'''
 
-        for wb in self.managed_workbooks.workbooks:
+        for wb in self.managed_workbooks.workbooks_ctxs:
             if isinstance(wb, wm.ManagedInputWorkbook):
                 # Go through each selectable ID for each row in the table
                 for row_position, item in enumerate(

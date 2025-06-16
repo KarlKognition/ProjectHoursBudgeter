@@ -1,5 +1,8 @@
+"""Types"""
+from typing import Callable
 from PyQt6.QtWidgets import QPushButton
 
+type ProjectId = str | int
 type CountryName = str
 type ProjectsDict = dict[str, list[str]]
 type ProjectsTup = tuple[str, list[str]]

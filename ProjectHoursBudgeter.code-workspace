@@ -25,6 +25,9 @@
 		"**/*.pyc": true,
 		"**/.venv": true
 		},
-		"dart.lineLength": 200
+		"dart.lineLength": 200,
+		"python.analysis.openFilesOnly": true,
+		"python.analysis.memory.keepLibraryAst": false,
+		"python.analysis.indexing": false
 	}
 }

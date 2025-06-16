@@ -22,30 +22,31 @@ from datetime import datetime
 from openpyxl.styles import Font
 import phb_app.data.workbook_management as wm
 import phb_app.utils.employee_utils as eu
+import phb_app.wizard.constants.ui_strings as st
 
 def sum_hours_selected_employee(workbooks: wm.WorkbookManager) -> None:
     '''Sum the hours of each employee by project ID if they are
     found in the given worksheets.'''
 
     # Get the first (only) managed output workbook
-    out_wb = next(workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
-    selected_date = out_wb.managed_sheet_object.selected_date
+    out_wb_ctx = workbooks.get_output_workbook_ctx()
+    selected_date = out_wb_ctx.managed_sheet.selected_date
     # Get the selected employee objects
-    sel_emps = out_wb.managed_sheet_object.selected_employees.values()
-    for in_wb in workbooks.yield_workbooks_by_type(wm.ManagedInputWorkbook):
+    sel_emps = out_wb_ctx.managed_sheet.selected_employees.values()
+    for in_wb in workbooks.yield_workbook_ctxs_by_role(st.IORole.INPUTS):
         # Get the localised filter headings from the managed input workbook
-        employee_name_col = in_wb.managed_sheet_object.indexed_headers.get(
+        employee_name_col = in_wb.managed_sheet.indexed_headers.get(
             in_wb.locale_data.filter_headers.name)
-        proj_id_col = in_wb.managed_sheet_object.indexed_headers.get(
+        proj_id_col = in_wb.managed_sheet.indexed_headers.get(
             in_wb.locale_data.filter_headers.proj_id)
-        hours_col = in_wb.managed_sheet_object.indexed_headers.get(
+        hours_col = in_wb.managed_sheet.indexed_headers.get(
             in_wb.locale_data.filter_headers.hours)
-        date_col = in_wb.managed_sheet_object.indexed_headers.get(
+        date_col = in_wb.managed_sheet.indexed_headers.get(
             in_wb.locale_data.filter_headers.date)
         # Selected project ID iterator
-        proj_id_dict = in_wb.managed_sheet_object.selected_project_ids
+        proj_id_dict = in_wb.managed_sheet.selected_project_ids
         # Go through each row of the selected worksheet, skipping the header row (row 1)
-        for row in in_wb.managed_sheet_object.selected_sheet.sheet_object.iter_rows(min_row=2):
+        for row in in_wb.managed_sheet.selected_sheet.sheet_object.iter_rows(min_row=2):
             # Skip rows with missing data
             if (not row[employee_name_col].value or
                 not row[proj_id_col].value or
@@ -76,12 +77,12 @@ def sum_hours_selected_employee(workbooks: wm.WorkbookManager) -> None:
                 # Accumulate found hours
                 emp.hours.accumulated_hours += hours_val
 
-def write_hours_to_output_file(output_file: wm.ManagedOutputWorkbook) -> None:
+def write_hours_to_output_file(output_file: wm.OutputWorkbookContext) -> None:
     '''Write recorded hours to output budgeting file.'''
 
-    emp_dict = output_file.managed_sheet_object.selected_employees
-    date_row = output_file.managed_sheet_object.selected_date.row
-    sheet = output_file.managed_sheet_object.selected_sheet.sheet_object
+    emp_dict = output_file.managed_sheet.selected_employees
+    date_row = output_file.managed_sheet.selected_date.row
+    sheet = output_file.managed_sheet.selected_sheet.sheet_object
     for emp_coord in emp_dict.keys():
         acc_hours = emp_dict.get(emp_coord).hours.accumulated_hours
         if acc_hours is not None:

@@ -18,7 +18,6 @@ Provides file handling utility functions in the project hours budgeting wizard.
 '''
 
 import zipfile
-from typing import TYPE_CHECKING
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
 from openpyxl.utils.exceptions import (
@@ -31,13 +30,12 @@ import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.templating.types as t
 
-if TYPE_CHECKING:
-    import phb_app.data.workbook_management as wm
-
-def get_origin_from_file_name(file_name: str, country_data: loc.CountryData, countries_enum: st.CountriesEnum) -> t.CountryName:
-    '''
-    Checks the workbook's origin. Returns the country of origin.
-    '''
+def get_origin_from_file_name(
+    file_name: str,
+    country_data: loc.CountryData,
+    countries_enum: st.CountriesEnum
+) -> t.CountryName:
+    '''    Checks the workbook's origin. Returns the country of origin.'''
     file_name_lower = file_name.lower()
     for country in countries_enum:
         locale = country_data.get_locale_by_country(country)
@@ -56,14 +54,12 @@ def is_workbook_open(file_path:str) -> bool:
         return True
     return False
 
-def try_load_workbook(managed_workbook: "wm.ManagedWorkbook", wb_type: "wm.ManagedOutputWorkbook") -> Workbook:
+def try_load_workbook(file_path: str, file_name: str, writable: bool = False) -> Workbook:
     '''Template for attempting to load the workbook.'''
-    file_name = managed_workbook.file_name
-    file_path = managed_workbook.file_path
     try:
-        if isinstance(managed_workbook, wb_type):
-            # We only care about the output workbook being open
-            # as we will not write to the input workbook
+        if writable:
+            # We only care about the output workbook, which is writable
+            # being open as we will not write to the input workbook
             with open(file_path, 'r+', encoding='utf-8'):
                 pass
         return load_workbook(file_path)
@@ -81,4 +77,7 @@ def try_load_workbook(managed_workbook: "wm.ManagedWorkbook", wb_type: "wm.Manag
 def is_file_already_in_table(file_path: str, col: int, table: QTableWidget) -> bool:
     '''Check if there are two or more of the same file in the given table and return
     a respective boolean.'''
-    return 1 < sum(1 for row in range(table.rowCount()) if table.item(row, col) and table.item(row, col).text() == file_path)
+    return 1 < sum(
+        1 for row in range(table.rowCount())
+        if table.item(row, col) and table.item(row, col).text() == file_path
+        )

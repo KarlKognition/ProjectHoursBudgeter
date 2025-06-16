@@ -41,21 +41,16 @@ def generate_log_file_name(output_dir: str,
     month = du.german_abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
     return path.join(output_dir, f"log_output_for_{month}_{date.year}__{timestamp}.txt")
 
-def get_out_workbook(wb_mng: wm.WorkbookManager) -> wm.ManagedOutputWorkbook:
-    '''Returns the output workbook.'''
-
-    return next(wb_mng.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
-
 def get_file_data(wb_mng: wm.WorkbookManager) -> lm.FileMetaData:
     '''Gets all required log information and returns it as a LogData object.'''
 
-    out_wb = get_out_workbook(wb_mng)
-    output_file_name = out_wb.file_name
-    output_worksheet_name = out_wb.managed_sheet_object.selected_sheet.sheet_name
-    output_dir = path.dirname(out_wb.file_path)
-    selected_date = out_wb.managed_sheet_object.selected_date
+    out_wb = wb_mng.get_output_workbook_ctx()
+    output_file_name = out_wb.mngd_wb.file_name
+    output_worksheet_name = out_wb.managed_sheet.selected_sheet.sheet_name
+    output_dir = path.dirname(out_wb.mngd_wb.file_path)
+    selected_date = out_wb.managed_sheet.selected_date
     log_file_path = generate_log_file_name(output_dir, selected_date)
-    input_workbooks = [wb.file_name for wb in wb_mng.yield_workbooks_by_type(wm.ManagedInputWorkbook)]
+    input_workbooks = [wb.mngd_wb.file_name for wb in wb_mng.yield_workbook_ctxs_by_role(st.IORole.INPUTS)]
     return lm.FileMetaData(
         log_file_path=log_file_path,
         selected_date=selected_date,
@@ -137,8 +132,8 @@ def format_hours_wrapper(text: str) -> Callable[[Optional[float], Qt.GlobalColor
 def get_employee_data(wb_mng: wm.WorkbookManager) -> list[emp.Employee]:
     '''Gets employee names, project IDs and coordinates from the summary table.'''
 
-    out_wb = get_out_workbook(wb_mng)
-    return list(out_wb.managed_sheet_object.selected_employees.values())
+    out_wb = wb_mng.get_output_workbook_ctx()
+    return list(out_wb.managed_sheet.selected_employees.values())
 
 def format_row(employees: list[emp.Employee],
                table_structure: lm.TableStructure) -> list[str]:

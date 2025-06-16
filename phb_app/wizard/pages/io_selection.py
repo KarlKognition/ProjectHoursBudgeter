@@ -39,7 +39,13 @@ class IOSelectionPage(QWizardPage):
     from its file name is not desired. One or more project numbers must be selected for
     the output file.'''
 
-    def __init__(self, country_data: loc.CountryData, error_manager: em.ErrorManager, managed_workbooks: wm.WorkbookManager) -> None:
+    def __init__(
+        self,
+        country_data: loc.CountryData,
+        error_manager: em.ErrorManager,
+        managed_workbooks: wm.WorkbookManager
+        ) -> None:
+
         super().__init__()
         pu.setup_error_panel(error_manager, st.IORole.INPUTS)
         pu.setup_error_panel(error_manager, st.IORole.OUTPUT)
@@ -57,12 +63,15 @@ class IOSelectionPage(QWizardPage):
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
-            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panels[st.IORole.OUTPUT]
+            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)], error_panel=error_manager.error_panels[st.IORole.OUTPUT]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        pu.connect_buttons(self, io.EntryHandler(self.input_panel, managed_workbooks, error_manager, io_data=io.InputFileHandler(country_data=country_data)))
-        pu.connect_buttons(self, io.EntryHandler(self.output_panel, managed_workbooks, error_manager))
+        in_ctx = io.EntryContext(self.input_panel, error_manager, data=io.IOFileContext(country_data=country_data))
+        io.EntryHandler(in_ctx)
+        pu.connect_buttons(self, managed_workbooks, in_ctx)
+        out_ctx = io.EntryContext(self.output_panel, error_manager)
+        io.EntryHandler(out_ctx)
+        pu.connect_buttons(self, managed_workbooks, out_ctx)
 
     def isComplete(self) -> bool:
         '''Override the page completion.

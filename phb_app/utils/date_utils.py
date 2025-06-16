@@ -43,7 +43,7 @@ def get_budgeting_dates(file_path: str, sheet_name: str) -> list[tuple[int, int,
     # Excel will quit if no other workbooks are open
     return months_years_rows
 
-def set_budgeting_date(file_handler: "io.EntryHandler", dropdown_text: "io.SelectedText") -> None:
+def set_budgeting_date(file_handler: "io.EntryContext", dropdown_text: "io.SelectedText") -> None:
     '''Sets the budgeting date with the row it is located in the worksheet.'''
     # Convert dates to integers and put in a tuple
     month_year = (md.LOCALIZED_MONTHS_SHORT.get(dropdown_text.month), int(dropdown_text.year))
