@@ -20,7 +20,6 @@ from PyQt6.QtWidgets import (
 )
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
-import phb_app.logging.error_manager as em
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.templating.types as t
@@ -89,7 +88,6 @@ type FileHandlerData = IOFileContext | ProjectTableContext
 class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls
-    error_manager: Optional[em.ErrorManager] = None
     data: Optional[FileHandlerData] = None
     configure_row: Callable[[Optional[int], Optional["wm.WorkbookManager"]], None] = None
 
@@ -122,12 +120,14 @@ class EntryHandler:
 
     def _configure_output_file_row(self, row: int, wb_mngr: "wm.WorkbookManager") -> None:
         '''Configure the output row in the table.'''
-        workbook_entry = pu.get_initialised_managed_output_workbook(self)
-        dropdowns = Dropdowns(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(workbook_entry))
+        wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(self.ent_ctx.panel.role, self.ent_ctx.data.file_name)
+        import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
+        wm.init_output_worksheet(wb_ctx)
+        dropdowns = Dropdowns(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(wb_ctx))
         pu.setup_dropdowns(self.ent_ctx.panel.table, row, dropdowns)
         def connection_wrapper() -> None:
             '''Connect functionality to the dropdowns.'''
-            pu.handle_dropdown_selection(self, row, dropdowns)
+            pu.handle_dropdown_selection(self.ent_ctx, wb_ctx, row, dropdowns)
             self.ent_ctx.panel.page.completeChanged.emit()
         connect_dropdowns(dropdowns, connection_wrapper)
 

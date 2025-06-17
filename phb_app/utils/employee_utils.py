@@ -4,6 +4,7 @@ import openpyxl.utils as xlutils
 import xlwings as xw
 from openpyxl.worksheet.worksheet import Worksheet
 import phb_app.logging.exceptions as ex
+import phb_app.data.workbook_management as wm
 import phb_app.data.worksheet_management as ws
 import phb_app.data.employee_management as emp
 
@@ -42,14 +43,13 @@ def _locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, a
         if start_anchor_temp and not end_anchor_temp:
             raise ex.MissingEmployeeRow(anchors.end_anchor)
 
-def set_selected_sheet(file_handler: "io.EntryContext", sheet_name: str) -> None:
+def set_selected_sheet(wb_ctx: "wm.OutputWorkbookContext", sheet_name: str) -> None:
     '''Set selected sheet.'''
-    entry = file_handler.workbook_entry
     # Save the worksheet data
-    entry.managed_sheet_object.selected_sheet = ws.SelectedSheet(sheet_name, entry.workbook_object[sheet_name])
+    wb_ctx.managed_sheet.selected_sheet = ws.SelectedSheet(sheet_name, wb_ctx.mngd_wb.workbook_object[sheet_name])
     # Check whether the employees are located in the worksheet
-    entry.managed_sheet_object.employee_range = emp.EmployeeRange()
-    _locate_employee_range(entry.managed_sheet_object.selected_sheet.sheet_object, entry.managed_sheet_object.employee_range, entry.managed_sheet_object.employee_row_anchors)
+    wb_ctx.managed_sheet.employee_range = emp.EmployeeRange()
+    _locate_employee_range(wb_ctx.managed_sheet.selected_sheet.sheet_object, wb_ctx.managed_sheet.employee_range, wb_ctx.managed_sheet.employee_row_anchors)
 
 def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     '''

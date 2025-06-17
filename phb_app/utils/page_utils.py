@@ -91,11 +91,11 @@ def setup_page(page: QWizardPage, widgets: list[QWidget], layout_type: QBoxLayou
 ### Table and Panel Setup ###
 #############################
 
-def setup_error_panel(error_manager: em.ErrorManager, role: st.IORole) -> QWidget:
+def setup_error_panel(role: st.IORole) -> QWidget:
     '''Set up the error panel for the given role with vertical layout.'''
-    error_manager.error_panels[role] = QWidget()
-    error_manager.error_panels[role].setLayout(QVBoxLayout())
-    return error_manager.error_panels[role]
+    em.error_panels[role] = QWidget()
+    em.error_panels[role].setLayout(QVBoxLayout())
+    return em.error_panels[role]
 
 def create_table(table_headers: ie.BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: hm.ColWidths) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
@@ -156,7 +156,7 @@ def _remove_selected_file(page: QWizardPage, wb_mngr: "wm.WorkbookManager", file
         # Remove selected rows
         file_ctx.panel.table.removeRow(row)
         # Remove any associated error
-        file_ctx.error_manager.remove_error(file_name, file_ctx.panel.role)
+        em.remove_error(file_name, file_ctx.panel.role)
         # Update UI
         page.completeChanged.emit()
 
@@ -222,15 +222,9 @@ def _create_dropdown(items: list[str], default: str) -> QComboBox:
     dropdown.setCurrentIndex(0)
     return dropdown
 
-def get_initialised_managed_output_workbook(file_handler: "io.EntryContext") -> "wm.ManagedOutputWorkbook":
-    '''Initialise and return the output worksheet.'''
-    workbook_entry = file_handler.wb_mngr.get_workbook_by_name(file_handler.data.file_name)
-    workbook_entry.init_output_worksheet()
-    return workbook_entry
-
-def create_worksheet_dropdown(workbook_entry: "wm.ManagedOutputWorkbook") -> QComboBox:
+def create_worksheet_dropdown(workbook_entry: "wm.OutputWorkbookContext") -> QComboBox:
     '''Create a dropdown for selecting a worksheet.'''
-    return _create_dropdown(workbook_entry.managed_sheet_object.sheet_names, st.SpecialStrings.SELECT_WORKSHEET)
+    return _create_dropdown(workbook_entry.managed_sheet.sheet_names, st.SpecialStrings.SELECT_WORKSHEET)
 
 def create_year_dropdown() -> QComboBox:
     '''
@@ -248,11 +242,11 @@ def create_month_dropdown() -> QComboBox:
     default_month = du.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
     return _create_dropdown(list(md.LOCALIZED_MONTHS_SHORT.keys()), default_month)
 
-def setup_dropdowns(table:QTableWidget, row_position: int, dropdowns: "io.DropdownHandler") -> None:
+def setup_dropdowns(table:QTableWidget, row_position: int, dds: "io.Dropdowns") -> None:
     '''Set up year, month, and worksheet dropdowns.'''
-    table.setCellWidget(row_position, ie.OutputTableHeaders.WORKSHEET, dropdowns.worksheet_dropdown)
-    table.setCellWidget(row_position, ie.OutputTableHeaders.MONTH, dropdowns.month_dropdown)
-    table.setCellWidget(row_position, ie.OutputTableHeaders.YEAR, dropdowns.year_dropdown)
+    table.setCellWidget(row_position, ie.OutputTableHeaders.WORKSHEET, dds.worksheet)
+    table.setCellWidget(row_position, ie.OutputTableHeaders.MONTH, dds.month)
+    table.setCellWidget(row_position, ie.OutputTableHeaders.YEAR, dds.year)
 
 def _handle_selection_error(row_position: int, file_handler: "io.EntryContext", error: Exception) -> None:
     '''Handle errors during selection and update the UI accordingly.'''
@@ -261,20 +255,20 @@ def _handle_selection_error(row_position: int, file_handler: "io.EntryContext", 
         st.IORole.OUTPUT: ie.OutputTableHeaders.FILENAME
     }
     _highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
-    file_handler.error_manager.add_error(file_handler.data.file_name, file_handler.panel.role, error)
+    em.add_error(file_handler.data.file_name, file_handler.panel.role, error)
 
-def handle_dropdown_selection(file_handler: "io.EntryContext", row_position: int, dropdowns: "io.Dropdowns") -> None:
+def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWorkbookContext", row: int, dropdowns: "io.Dropdowns") -> None:
     '''Handle dropdown selection and update the selected sheet accordingly.'''
     # Remove the error if it is still there (if retrying)
-    _clear_row_error_status(file_handler, row_position, ie.OutputTableHeaders.FILENAME)
+    _clear_row_error_status(file_ctx, row, ie.OutputTableHeaders.FILENAME)
     import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
     io.update_current_text(dropdowns)
     try:
-        eu.set_selected_sheet(file_handler, dropdowns.current_text.worksheet)
-        du.set_budgeting_date(file_handler, dropdowns.current_text)
+        eu.set_selected_sheet(wb_ctx, dropdowns.current_text.worksheet)
+        du.set_budgeting_date(file_ctx, dropdowns.current_text)
     except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound,
             KeyError) as exc:
-        _handle_selection_error(row_position, file_handler, exc)
+        _handle_selection_error(row, file_ctx, exc)
 
 ########################
 ### Table Population ###
@@ -325,18 +319,18 @@ def _remove_highlighting(item: QTableWidgetItem) -> None:
     item.setBackground(Qt.GlobalColor.white)
     item.setForeground(Qt.GlobalColor.black)
 
-def _clear_row_error_status(file_handler: "io.EntryContext", row_position: int, header: ie.BaseTableHeaders) -> None:
+def _clear_row_error_status(file_ctx: "io.EntryContext", row: int, header: ie.BaseTableHeaders) -> None:
     '''Clear the error status of a row in the table.'''
-    file_handler.error_manager.remove_error(file_handler.data.file_name, file_handler.panel.role)
-    _remove_highlighting(file_handler.panel.table.item(row_position, header))
+    em.remove_error(file_ctx.data.file_name, file_ctx.panel.role)
+    _remove_highlighting(file_ctx.panel.table.item(row, header))
 
 ##################################
 ### QWizard function overrides ###
 ##################################
 
-def get_combo_box(panel: "io.IOControls", row_position: int, col: int) -> Optional[QComboBox]:
+def get_combo_box(panel: "io.IOControls", row: int, col: int) -> Optional[QComboBox]:
     '''Get the combo box from the table.'''
-    return panel.table.cellWidget(row_position, col) if panel.table.cellWidget(row_position, col) else None
+    return panel.table.cellWidget(row, col) if panel.table.cellWidget(row, col) else None
 
 def check_completion(panels: tuple["io.IOControls"]) -> bool:
     '''Return the appropriate isComplete function based on the page type.'''

@@ -23,7 +23,6 @@ import phb_app.wizard.pages.io_selection as iosp
 import phb_app.wizard.pages.project_selection as ps
 import phb_app.wizard.pages.explanation as ep
 import phb_app.wizard.pages.summary as sp
-import phb_app.logging.error_manager as em
 import phb_app.data.workbook_management as wm
 import phb_app.data.location_management as loc
 import phb_app.utils.hours_utils as hu
@@ -37,7 +36,6 @@ class PHBWizard(QWizard):
     def __init__(
         self,
         country_data: loc.CountryData,
-        error_manager: em.ErrorManager,
         workbook_manager: wm.WorkbookManager
         ) -> None:
 
@@ -51,7 +49,7 @@ class PHBWizard(QWizard):
 
         # Created wizard pages
         self.addPage(ep.ExplanationPage())
-        self.addPage(iosp.IOSelectionPage(country_data, error_manager, self.workbook_manager))
+        self.addPage(iosp.IOSelectionPage(country_data, self.workbook_manager))
         self.addPage(ps.ProjectSelectionPage(self.workbook_manager))
         self.addPage(ems.EmployeeSelectionPage())
         self.addPage(sp.SummaryPage())

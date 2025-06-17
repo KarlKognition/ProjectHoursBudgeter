@@ -42,13 +42,12 @@ class IOSelectionPage(QWizardPage):
     def __init__(
         self,
         country_data: loc.CountryData,
-        error_manager: em.ErrorManager,
         managed_workbooks: wm.WorkbookManager
         ) -> None:
 
         super().__init__()
-        pu.setup_error_panel(error_manager, st.IORole.INPUTS)
-        pu.setup_error_panel(error_manager, st.IORole.OUTPUT)
+        pu.setup_error_panel(st.IORole.INPUTS)
+        pu.setup_error_panel(st.IORole.OUTPUT)
         pu.set_titles(self, st.IO_FILE_TITLE, st.IO_FILE_SUBTITLE)
         self.input_panel = io.IOControls(
             page=self,
@@ -56,20 +55,20 @@ class IOSelectionPage(QWizardPage):
             label=QLabel(st.INPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
-            error_panel=error_manager.error_panels[st.IORole.INPUTS]
+            error_panel=em.error_panels[st.IORole.INPUTS]
         )
         self.output_panel = io.IOControls(
             page=self,
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
-            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)], error_panel=error_manager.error_panels[st.IORole.OUTPUT]
+            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)], error_panel=em.error_panels[st.IORole.OUTPUT]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
-        in_ctx = io.EntryContext(self.input_panel, error_manager, data=io.IOFileContext(country_data=country_data))
+        in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))
         io.EntryHandler(in_ctx)
         pu.connect_buttons(self, managed_workbooks, in_ctx)
-        out_ctx = io.EntryContext(self.output_panel, error_manager)
+        out_ctx = io.EntryContext(self.output_panel, data=io.IOFileContext())
         io.EntryHandler(out_ctx)
         pu.connect_buttons(self, managed_workbooks, out_ctx)
 
