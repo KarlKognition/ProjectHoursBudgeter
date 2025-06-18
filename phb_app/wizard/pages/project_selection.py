@@ -34,7 +34,7 @@ class ProjectSelectionPage(QWizardPage):
     '''Page for selecting the projects in which the hours were booked.'''
     def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
-        self.managed_workbooks = managed_workbooks
+        self.wb_mgmt = managed_workbooks
         self.project_panel = None
         pu.set_titles(self, st.PROJECT_SELECTION_TITLE, st.PROJECT_SELECTION_SUBTITLE)
 
@@ -47,10 +47,10 @@ class ProjectSelectionPage(QWizardPage):
             table=pu.create_table(ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
-        project_handler = io.EntryContext(self.project_panel, self.managed_workbooks)
+        proj_ctx = io.EntryContext(self.project_panel, self.wb_mgmt)
         pu.setup_page(self, [pu.create_interaction_panel(self.project_panel)], QHBoxLayout())
-        pu.connect_buttons(self, project_handler)
-        pu.populate_selection_table(self, project_handler, wm.ManagedInputWorkbook)
+        pu.connect_buttons(self, proj_ctx)
+        pu.populate_selection_table(self, proj_ctx, self.wb_mgmt)
 
     ############################
     ### Supporting functions ###
@@ -59,7 +59,7 @@ class ProjectSelectionPage(QWizardPage):
     def set_each_workbooks_project_ids(self) -> None:
         '''Set project IDs for each workbook.'''
 
-        for wb in self.managed_workbooks.workbooks_ctxs:
+        for wb in self.wb_mgmt.workbooks_ctxs:
             if isinstance(wb, wm.ManagedInputWorkbook):
                 wb.managed_sheet_object.set_selectable_project_ids(
                     wb.locale_data.filter_headers.proj_id,
@@ -69,7 +69,7 @@ class ProjectSelectionPage(QWizardPage):
     def populate_table(self, table: QTableWidget) -> None:
         '''Populate the table with selectable project IDs.'''
 
-        for wb in self.managed_workbooks.workbooks_ctxs:
+        for wb in self.wb_mgmt.workbooks_ctxs:
             if isinstance(wb, wm.ManagedInputWorkbook):
                 # Go through each selectable ID for each row in the table
                 for row_position, item in enumerate(
@@ -136,7 +136,7 @@ class ProjectSelectionPage(QWizardPage):
         # Get the selected rows
         selected_rows = self.projects_table.selectionModel().selectedRows()
         # Set the selected projects for the respective workbook
-        for wb in self.managed_workbooks.yield_workbooks_by_type(wm.ManagedInputWorkbook):
+        for wb in self.wb_mgmt.yield_workbooks_by_type(wm.ManagedInputWorkbook):
             pro.set_selected_project_ids(
                 wb,
                 self.projects_table,

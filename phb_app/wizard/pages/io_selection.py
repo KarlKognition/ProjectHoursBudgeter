@@ -42,7 +42,7 @@ class IOSelectionPage(QWizardPage):
     def __init__(
         self,
         country_data: loc.CountryData,
-        managed_workbooks: wm.WorkbookManager
+        wb_mgmt: wm.WorkbookManager
         ) -> None:
 
         super().__init__()
@@ -67,10 +67,10 @@ class IOSelectionPage(QWizardPage):
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
         in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))
         io.EntryHandler(in_ctx)
-        pu.connect_buttons(self, managed_workbooks, in_ctx)
+        pu.connect_buttons(self, in_ctx, wb_mgmt)
         out_ctx = io.EntryContext(self.output_panel, data=io.IOFileContext())
         io.EntryHandler(out_ctx)
-        pu.connect_buttons(self, managed_workbooks, out_ctx)
+        pu.connect_buttons(self, out_ctx, wb_mgmt)
 
     def isComplete(self) -> bool:
         '''Override the page completion.
