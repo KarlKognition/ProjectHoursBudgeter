@@ -248,14 +248,14 @@ def setup_dropdowns(table:QTableWidget, row_position: int, dds: "io.Dropdowns") 
     table.setCellWidget(row_position, ie.OutputTableHeaders.MONTH, dds.month)
     table.setCellWidget(row_position, ie.OutputTableHeaders.YEAR, dds.year)
 
-def _handle_selection_error(row_position: int, file_handler: "io.EntryContext", error: Exception) -> None:
+def _handle_selection_error(row: int, file_ctx: "io.EntryContext", error: Exception) -> None:
     '''Handle errors during selection and update the UI accordingly.'''
     col: dict[st.IORole, ie.InputTableHeaders] = {
         st.IORole.INPUTS: ie.InputTableHeaders.FILENAME,
         st.IORole.OUTPUT: ie.OutputTableHeaders.FILENAME
     }
-    _highlight_bad_item(file_handler.panel.table.item(row_position, col[file_handler.panel.role]))
-    em.add_error(file_handler.data.file_name, file_handler.panel.role, error)
+    _highlight_bad_item(file_ctx.panel.table.item(row, col[file_ctx.panel.role]))
+    em.add_error(file_ctx.data.file_name, file_ctx.panel.role, error)
 
 def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWorkbookContext", row: int, dropdowns: "io.Dropdowns") -> None:
     '''Handle dropdown selection and update the selected sheet accordingly.'''
@@ -265,7 +265,7 @@ def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWor
     io.update_current_text(dropdowns)
     try:
         eu.set_selected_sheet(wb_ctx, dropdowns.current_text.worksheet)
-        du.set_budgeting_date(file_ctx, dropdowns.current_text)
+        du.set_budgeting_date(wb_ctx, dropdowns.current_text)
     except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound,
             KeyError) as exc:
         _handle_selection_error(row, file_ctx, exc)

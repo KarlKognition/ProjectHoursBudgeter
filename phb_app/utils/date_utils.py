@@ -8,6 +8,7 @@ import phb_app.logging.exceptions as ex
 
 if TYPE_CHECKING:
     import phb_app.data.io_management as io
+    import phb_app.data.workbook_management as wm
 
 def german_abbr_month(month_number: int, months: dict) -> str:
     '''
@@ -43,16 +44,16 @@ def get_budgeting_dates(file_path: str, sheet_name: str) -> list[tuple[int, int,
     # Excel will quit if no other workbooks are open
     return months_years_rows
 
-def set_budgeting_date(file_ctx: "io.EntryContext", dropdown_text: "io.SelectedText") -> None:
+def set_budgeting_date(wb_ctx: "wm.OutputWorkbookContext", dropdown_text: "io.SelectedText") -> None:
     '''Sets the budgeting date with the row it is located in the worksheet.'''
     # Convert dates to integers and put in a tuple
     month_year = (md.LOCALIZED_MONTHS_SHORT.get(dropdown_text.month), int(dropdown_text.year))
-    budgeting_dates = get_budgeting_dates(file_ctx.data.file_path, dropdown_text.worksheet)
+    budgeting_dates = get_budgeting_dates(wb_ctx.mngd_wb.file_path, dropdown_text.worksheet)
     for tup in budgeting_dates:
         if tup[:2] == month_year:
             month, year, row = tup
             break
     else:
-        raise ex.BudgetingDatesNotFound(dropdown_text, path.basename(file_ctx.data.file_path))
-    selected_date = file_ctx.workbook_entry.managed_sheet.selected_date
+        raise ex.BudgetingDatesNotFound(dropdown_text, wb_ctx.mngd_wb.file_name)
+    selected_date = wb_ctx.managed_sheet.selected_date
     selected_date.month, selected_date.year, selected_date.row = month, year, row
