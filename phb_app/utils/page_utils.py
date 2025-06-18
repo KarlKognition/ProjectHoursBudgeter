@@ -164,16 +164,16 @@ def _remove_selected_file(page: QWizardPage, wb_mngr: "wm.WorkbookManager", file
 ### Buttons ###
 ###############
 
-def connect_buttons(page: QWizardPage, wb_mngr: "wm.WorkbookManager", file_ctx: "io.EntryContext") -> None:
+def connect_buttons(page: QWizardPage, ent_ctx: "io.EntryContext", wb_mngr: Optional["wm.WorkbookManager"] = None) -> None:
     '''Connect buttons to their respective actions dynamically.'''
     action_dispatch = {
-        st.ButtonNames.ADD: lambda: _add_file_dialog(page, wb_mngr, QFileDialog.FileMode.ExistingFiles, file_ctx),
-        st.ButtonNames.REMOVE: lambda: _remove_selected_file(page, wb_mngr, file_ctx),
-        st.ButtonNames.SELECT_ALL: file_ctx.panel.table.selectAll,
-        st.ButtonNames.DESELECT_ALL: file_ctx.panel.table.clearSelection
+        st.ButtonNames.ADD: lambda: _add_file_dialog(page, wb_mngr, QFileDialog.FileMode.ExistingFiles, ent_ctx),
+        st.ButtonNames.REMOVE: lambda: _remove_selected_file(page, wb_mngr, ent_ctx),
+        st.ButtonNames.SELECT_ALL: ent_ctx.panel.table.selectAll,
+        st.ButtonNames.DESELECT_ALL: ent_ctx.panel.table.clearSelection
     }
     # Iterate over buttons and connect them dynamically
-    for button in file_ctx.panel.buttons:
+    for button in ent_ctx.panel.buttons:
         if action := action_dispatch.get(button.text()):
             button.clicked.connect(action)
 
@@ -293,14 +293,14 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
             _handle_selection_error(row_position, file_ctx, exc)
     page.completeChanged.emit()
 
-def populate_selection_table(page: QWizardPage, entry_handler: "io.EntryContext", workbook_type: "wm.ManagedWorkbook") -> None:
+def populate_selection_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the selection table with projects, employees or summary,'''
-    for workbook in entry_handler.wb_mngr.yield_workbooks_by_type(workbook_type):
-        for row_position, project_identifiers in enumerate(workbook.managed_sheet_object.yield_from_project_id_and_desc()):
-            row_position = _insert_row(entry_handler.panel)
-            entry_handler.workbook_entry = workbook
-            entry_handler.project_data.join_project_identifiers(project_identifiers)
-            entry_handler.configure_row(row_position)
+    for workbook in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
+        for row, proj_ids in enumerate(workbook.worksheet_service.yield_project_id_and_desc()):
+            row = _insert_row(proj_ctx.panel)
+            proj_ctx.workbook_entry = workbook
+            proj_ctx.project_data.join_project_identifiers(proj_ids)
+            proj_ctx.configure_row(row)
     page.completeChanged.emit()
 
 ######################################
