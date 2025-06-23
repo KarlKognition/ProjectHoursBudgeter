@@ -44,9 +44,7 @@ if TYPE_CHECKING:
     import phb_app.data.io_management as io
     import phb_app.data.workbook_management as wm
 
-###################
-### Title Setup ###
-###################
+#           --- Title Setup ---
 
 def set_titles(page: QWizardPage, title: str, subtitle: str) -> None:
     '''Set the title and subtitle for the page.'''
@@ -87,9 +85,7 @@ def setup_page(page: QWizardPage, widgets: list[QWidget], layout_type: QBoxLayou
         layout_type.addWidget(widget)
     page.setLayout(layout_type)
 
-#############################
-### Table and Panel Setup ###
-#############################
+#           --- Table and Panel Setup ---
 
 def setup_error_panel(role: st.IORole) -> QWidget:
     '''Set up the error panel for the given role with vertical layout.'''
@@ -120,13 +116,12 @@ def create_interaction_panel(panel: "io.IOControls") -> QWidget:
     for button in panel.buttons:
         buttons_layout.addWidget(button)
     layout.addLayout(buttons_layout)
-    layout.addWidget(panel.error_panel)
+    if panel.error_panel:
+        layout.addWidget(panel.error_panel)
     container.setLayout(layout)
     return container
 
-#####################
-### File Handling ###
-#####################
+#           --- File Handling ---
 
 def _setup_file_dialog(page: QWizardPage, file_mode: QFileDialog.FileMode) -> QFileDialog:
     '''Set up and return a file dialog.'''
@@ -160,9 +155,7 @@ def _remove_selected_file(page: QWizardPage, wb_mngr: "wm.WorkbookManager", file
         # Update UI
         page.completeChanged.emit()
 
-###############
-### Buttons ###
-###############
+#           --- Buttons ---
 
 def connect_buttons(page: QWizardPage, ent_ctx: "io.EntryContext", wb_mngr: Optional["wm.WorkbookManager"] = None) -> None:
     '''Connect buttons to their respective actions dynamically.'''
@@ -177,9 +170,7 @@ def connect_buttons(page: QWizardPage, ent_ctx: "io.EntryContext", wb_mngr: Opti
         if action := action_dispatch.get(button.text()):
             button.clicked.connect(action)
 
-##############################
-### Input Table Population ###
-##############################
+#           --- Input Table Population ---
 
 def _check_file_validity(file_ctx: "io.EntryContext") -> None:
     '''Check if the file is valid and highlight errors if necessary.'''
@@ -193,14 +184,14 @@ def _check_file_validity(file_ctx: "io.EntryContext") -> None:
 
 def _insert_row(panel: "io.IOControls") -> int:
     '''Insert a new row in the table.'''
-    row_position = panel.table.rowCount()
-    panel.table.insertRow(row_position)
-    return row_position
+    row = panel.table.rowCount()
+    panel.table.insertRow(row)
+    return row
 
-def insert_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row_position: int, column: ie.InputTableHeaders) -> None:
+def insert_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row: int, column: ie.InputTableHeaders) -> None:
     '''Insert given widget item into the table.'''
     widget_item.setFlags(widget_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-    table.setItem(row_position, column, widget_item)
+    table.setItem(row, column, widget_item)
 
 def update_handlers_country_details(data: loc.CountryData, wb_ctx: "wm.InputWorkbookContext") -> None:
     '''Update country details of the input workbook context from the IO file context.'''
@@ -210,9 +201,7 @@ def update_handlers_country_details(data: loc.CountryData, wb_ctx: "wm.InputWork
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     wm.set_locale_data(wb_ctx, data, country_name)
 
-###############################
-### Output Table Population ###
-###############################
+#           --- Output Table Population ---
 
 def _create_dropdown(items: list[str], default: str) -> QComboBox:
     '''Create a dropdown with the given items and default selection.'''
@@ -242,11 +231,11 @@ def create_month_dropdown() -> QComboBox:
     default_month = du.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
     return _create_dropdown(list(md.LOCALIZED_MONTHS_SHORT.keys()), default_month)
 
-def setup_dropdowns(table:QTableWidget, row_position: int, dds: "io.Dropdowns") -> None:
+def setup_dropdowns(table:QTableWidget, row: int, dds: "io.Dropdowns") -> None:
     '''Set up year, month, and worksheet dropdowns.'''
-    table.setCellWidget(row_position, ie.OutputTableHeaders.WORKSHEET, dds.worksheet)
-    table.setCellWidget(row_position, ie.OutputTableHeaders.MONTH, dds.month)
-    table.setCellWidget(row_position, ie.OutputTableHeaders.YEAR, dds.year)
+    table.setCellWidget(row, ie.OutputTableHeaders.WORKSHEET, dds.worksheet)
+    table.setCellWidget(row, ie.OutputTableHeaders.MONTH, dds.month)
+    table.setCellWidget(row, ie.OutputTableHeaders.YEAR, dds.year)
 
 def _handle_selection_error(row: int, file_ctx: "io.EntryContext", error: Exception) -> None:
     '''Handle errors during selection and update the UI accordingly.'''
@@ -270,9 +259,7 @@ def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWor
             KeyError) as exc:
         _handle_selection_error(row, file_ctx, exc)
 
-########################
-### Table Population ###
-########################
+#           --- Table Population ---
 
 def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files: list[str], file_ctx: "io.EntryContext") -> None:
     '''Populate the table with selected file(s).'''
@@ -280,32 +267,32 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
     for file_path in files:
         try:
             wb_ctx = wm.create_wb_context_by_role(file_path, file_ctx.panel.role)
-            row_position = _insert_row(file_ctx.panel)
+            row = _insert_row(file_ctx.panel)
             wb_mngr.add_workbook(file_ctx.panel.role, wb_ctx)
             file_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             file_ctx.data.table_items.file_name = QTableWidgetItem(file_ctx.data.file_name)
-            insert_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row_position, ie.InputTableHeaders.FILENAME)
-            file_ctx.configure_row(row_position, wb_mngr)
+            insert_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
+            file_ctx.configure_row(row, wb_mngr)
             _check_file_validity(file_ctx)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,
                 ex.WorkbookLoadError, KeyError, ValueError) as exc:
-            _handle_selection_error(row_position, file_ctx, exc)
+            _handle_selection_error(row, file_ctx, exc)
     page.completeChanged.emit()
 
 def populate_selection_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the selection table with projects, employees or summary,'''
-    for workbook in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
-        for row, proj_ids in enumerate(workbook.worksheet_service.yield_project_id_and_desc()):
+    for wb_ctx in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
+        for proj_ids in wb_ctx.worksheet_service.yield_project_id_and_desc():
             row = _insert_row(proj_ctx.panel)
-            proj_ctx.workbook_entry = workbook
-            proj_ctx.project_data.join_project_identifiers(proj_ids)
+            import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
+            proj_ctx.data.project_id = proj_ids[ie.ProjectIDTableHeaders.PROJECT_ID]
+            proj_ctx.data.project_identifiers = io.join_project_identifiers(proj_ids)
+            proj_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             proj_ctx.configure_row(row)
     page.completeChanged.emit()
 
-######################################
-### Exception Styling and Handling ###
-######################################
+#           --- Exception Styling and Handling ---
 
 def _highlight_bad_item(item: QTableWidgetItem) -> None:
     '''Highlight table items causing errors.'''
@@ -324,30 +311,40 @@ def _clear_row_error_status(file_ctx: "io.EntryContext", row: int, header: ie.Ba
     em.remove_error(file_ctx.data.file_name, file_ctx.panel.role)
     _remove_highlighting(file_ctx.panel.table.item(row, header))
 
-##################################
-### QWizard function overrides ###
-##################################
+#           --- QWizard function overrides ---
 
 def get_combo_box(panel: "io.IOControls", row: int, col: int) -> Optional[QComboBox]:
     '''Get the combo box from the table.'''
     return panel.table.cellWidget(row, col) if panel.table.cellWidget(row, col) else None
 
-def check_completion(panels: tuple["io.IOControls"]) -> bool:
+def _in_selection_complete(panel: "io.IOControls") -> bool:
+    '''Check if both tables have at least one row selected
+    and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
+    return (
+        panel.table.rowCount() >= 1
+        and not panel.error_panel.findChildren(QLabel)
+    )
+
+def _out_selection_complete(panel: "io.IOControls") -> bool:
+    '''Check if both tables have at least one row selected
+    and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
+    out_item = get_combo_box(panel, ie.OutputFile.FIRST_ENTRY, ie.OutputTableHeaders.WORKSHEET)
+    return (
+        panel.table.rowCount() == 1
+        and out_item is not None
+        and out_item.currentText() != st.SpecialStrings.SELECT_WORKSHEET
+        and not panel.error_panel.findChildren(QLabel)
+    )
+
+def _table_selection_complete(panel: "io.IOControls") -> bool:
+    '''Check if the table has at least one row selected. There is only one panel in this case.'''
+    return bool(panel.table.selectionModel().selectedRows())
+
+def check_completion(panel: "io.IOControls") -> bool:
     '''Return the appropriate isComplete function based on the page type.'''
-    in_panel, out_panel = (panel for panel in panels if panel.role in {st.IORole.INPUTS, st.IORole.OUTPUT})
-    def io_selection_complete() -> bool:
-        '''Check if both tables have at least one row selected
-        and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
-        output_item = get_combo_box(out_panel, ie.OutputFile.FIRST_ENTRY, ie.OutputTableHeaders.WORKSHEET)
-        return (
-            all(panel.table.rowCount() >= 1 for panel in (in_panel, out_panel))
-            and output_item is not None
-            and output_item.currentText() != st.SpecialStrings.SELECT_WORKSHEET
-            and all(not panel.error_panel.findChildren(QLabel) for panel in (in_panel, out_panel))
-        )
-    def table_selection_complete() -> bool:
-        '''Check if the table has at least one row selected. There is only one panel in this case.'''
-        return bool(panels[0].table.selectionModel().selectedRows())
-    if in_panel or out_panel:
-        return io_selection_complete()
-    return table_selection_complete()
+    page_checker = {
+        st.IORole.INPUTS: _in_selection_complete,
+        st.IORole.OUTPUT: _out_selection_complete,
+        st.IORole.PROJECT_TABLE: _table_selection_complete
+    }
+    return page_checker.get(panel.role, False)(panel)

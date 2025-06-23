@@ -27,7 +27,7 @@ import phb_app.logging.exceptions as ex
 import phb_app.data.worksheet_management as ws
 import phb_app.utils.file_handling_utils as fu
 
-            ### DATA CONTAINERS ###
+#           --- DATA CONTAINERS ---
 
 @dataclass
 class ManagedWorkbook:
@@ -51,26 +51,26 @@ class OutputWorkbookContext:
     managed_sheet: Optional[ws.ManagedOutputWorksheet] = None
     worksheet_service: Optional[ws.OutputWorksheetService] = None
 
-            ### FACTORY FUNCTIONS ###
+#           --- MODULE FACTORY FUNCTIONS ---
 
 def _create_managed_workbook_from_file(file_path: str, writable: bool = False) -> ManagedWorkbook:
-    """Creates a ManagedWorkbook instance from a file path, loading the workbook object."""
+    """Private module level. Creates a ManagedWorkbook instance from a file path, loading the workbook object."""
     file_name = path.basename(file_path)
     workbook_object = fu.try_load_workbook(file_path, file_name, writable=writable)
     return ManagedWorkbook(file_path, file_name, workbook_object)
 
 def _create_input_context(file_path: str) -> InputWorkbookContext:
-    """Creates an InputWorkbookContext for the given file path."""
+    """Private module level. Creates an InputWorkbookContext for the given file path."""
     core = _create_managed_workbook_from_file(file_path)
     return InputWorkbookContext(mngd_wb=core)
 
 def _create_output_context(file_path: str) -> OutputWorkbookContext:
-    """Creates an OutputWorkbookContext for the given file path."""
+    """Private module level. Creates an OutputWorkbookContext for the given file path."""
     core = _create_managed_workbook_from_file(file_path, writable=True)
     return OutputWorkbookContext(mngd_wb=core)
 
 def create_wb_context_by_role(file_path: str, role: st.IORole) -> InputWorkbookContext | OutputWorkbookContext:
-    """Creates a context for the given file path and role."""
+    """Public module level. Creates a context for the given file path and role."""
     dispatch = {
         st.IORole.INPUTS: _create_input_context,
         st.IORole.OUTPUT: _create_output_context
@@ -80,14 +80,14 @@ def create_wb_context_by_role(file_path: str, role: st.IORole) -> InputWorkbookC
     except KeyError as exc:
         raise ValueError(f"Invalid role: {role}") from exc
 
-            ### INPUT SERVICE FUNCTIONS ###
+#           --- INPUT SERVICE MODULE FUNCTIONS ---
 
 def set_locale_data(
     context: InputWorkbookContext,
     country_data: loc.CountryData,
     country_name: str
     ) -> None:
-    """Sets the locale data for the input workbook."""
+    """Public module level. Sets the locale data for the input workbook."""
     # A deep copy is not required because the data object will not change
     context.locale_data = next(
         (locale for locale in country_data.countries
@@ -95,7 +95,7 @@ def set_locale_data(
         None)
 
 def init_input_worksheet(context: InputWorkbookContext) -> None:
-    """Init input worksheet."""
+    """Public module level. Init input worksheet."""
     sheetnames = context.mngd_wb.workbook_object.sheetnames
     # If there is only one sheet, use that;
     # otherwise, use the locale data's expected sheet name.
@@ -111,10 +111,10 @@ def init_input_worksheet(context: InputWorkbookContext) -> None:
     context.worksheet_service = service
     service.index_headers()
 
-            ### OUTPUT SERVICE FUNCTIONS ###
+#           --- OUTPUT SERVICE MODULE FUNCTIONS ---
 
 def init_output_worksheet(context: OutputWorkbookContext) -> None:
-    """Init output worksheet."""
+    """Public module level. Init output worksheet."""
     worksheet = ws.create_managed_output_worksheet()
     service = ws.OutputWorksheetService(worksheet=worksheet)
     service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
@@ -122,10 +122,10 @@ def init_output_worksheet(context: OutputWorkbookContext) -> None:
     context.worksheet_service = service
 
 def save_output_workbook(context: OutputWorkbookContext) -> None:
-    """Saves the workbook with its given file path."""
+    """Public module level. Saves the workbook with its given file path."""
     context.mngd_wb.workbook_object.save(context.mngd_wb.file_path)
 
-            ### MANAGER ###
+#            --- WORKBOOK MANAGER ---
 
 class WorkbookManager:
     """Class for tracking workbooks."""

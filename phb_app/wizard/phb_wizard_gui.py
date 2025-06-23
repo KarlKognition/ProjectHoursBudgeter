@@ -29,7 +29,6 @@ import phb_app.utils.hours_utils as hu
 import phb_app.wizard.constants.ui_strings as st
 
 
-########################
 class PHBWizard(QWizard):
     '''Main GUI interface for the Auto Hours Collector.'''
 

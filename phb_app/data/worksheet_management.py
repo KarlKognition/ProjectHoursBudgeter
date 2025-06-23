@@ -24,7 +24,7 @@ import phb_app.data.selected_date as sd
 import phb_app.data.employee_management as emp
 import phb_app.templating.types as t
 
-            ### DATA CONTAINERS ###
+#           --- DATA CONTAINERS ---
 
 @dataclass
 class SelectedSheet:
@@ -51,21 +51,21 @@ class ManagedOutputWorksheet:
     employee_range: emp.EmployeeRange = field(default_factory=emp.EmployeeRange)
     selected_employees: dict[str, emp.Employee] = field(default_factory=dict)
 
-            ### FACTORY FUNCTIONS ###
+#           --- MODULE FACTORY FUNCTIONS ---
 
 def create_managed_input_worksheet(
     sheet_name: str,
     sheet_object: Worksheet
 ) -> ManagedInputWorksheet:
-    '''Creates an InputWorksheet for the given sheet name and sheet object.'''
+    '''Public module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
     selected = SelectedSheet(sheet_name=sheet_name, sheet_object=sheet_object)
     return ManagedInputWorksheet(selected_sheet=selected)
 
 def create_managed_output_worksheet() -> ManagedOutputWorksheet:
-    '''Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
+    '''Public module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
     return ManagedOutputWorksheet()
 
-            ### SERVICE CLASSES ###
+#           --- SERVICE CLASSES ---
 
 class InputWorksheetService:
     '''Service class for managing an input worksheet.'''

@@ -76,4 +76,4 @@ class IOSelectionPage(QWizardPage):
         '''Override the page completion.
         Check if both tables have at least one row selected
         and no error messages are displayed.'''
-        return pu.check_completion(panels=(self.input_panel, self.output_panel))
+        return pu.check_completion(self.input_panel) and pu.check_completion(self.output_panel)

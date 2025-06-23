@@ -23,11 +23,12 @@ import phb_app.data.location_management as loc
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.templating.types as t
+import phb_app.utils.project_utils as pro
 
 if TYPE_CHECKING:
     import phb_app.data.workbook_management as wm
 
-            ### DATA CONTAINERS ###
+#           --- DATA CONTAINERS ---
 
 @dataclass
 class SelectedText:
@@ -80,6 +81,7 @@ class ProjectTableContext:
     '''Data class for managing the project table.'''
     project_id: Optional[t.ProjectId] = None
     project_identifiers: Optional[t.ProjectsTup] = None
+    file_name: Optional[str] = None
     table_items: Optional[ProjectTableItems] = field(default_factory=ProjectTableItems)
 
 type FileHandlerData = IOFileContext | ProjectTableContext
@@ -89,9 +91,9 @@ class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     data: Optional[FileHandlerData] = None
-    configure_row: Callable[[Optional[int], Optional["wm.WorkbookManager"]], None] = None
+    configure_row: Callable[[int, Optional["wm.WorkbookManager"]], None] = None
 
-            ### Service Classes ###
+#           --- SERVICE CLASS ---
 
 class EntryHandler:
     """Class for handling entries per panel."""
@@ -131,25 +133,29 @@ class EntryHandler:
             self.ent_ctx.panel.page.completeChanged.emit()
         connect_dropdowns(dropdowns, connection_wrapper)
 
-    def _configure_project_row(self, row: int, wb_mngr: "wm.WorkbookManager") -> None:
+    def _configure_project_row(self, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None:
         '''Configure the project row in the table.'''
+        # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
         self.ent_ctx.data.table_items.project_id = QTableWidgetItem(self.ent_ctx.data.project_id)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.project_id, row, ie.ProjectIDTableHeaders.PROJECT_ID)
         self.ent_ctx.data.table_items.project_identifiers = QTableWidgetItem(self.ent_ctx.data.project_identifiers)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
         self.ent_ctx.data.table_items.file_name = QTableWidgetItem(self.ent_ctx.data.file_name)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
 
-                ### Service Functions ###
+#           --- MODULE SERVICE FUNCTIONS ---
 
-def join_project_identifiers(proj_ctx: ProjectTableContext, identifiers: t.ProjectsTup) -> None:
-    '''Set the project identifiers.'''
-    proj_ctx.project_identifiers = "\n".join(proj_item for proj_item in identifiers[ie.ProjectIDTableHeaders.DESCRIPTION])
+def join_project_identifiers(id_tup: t.ProjectsTup) -> str:
+    '''Public module level. Set the project identifiers.'''
+    return "\n".join(proj_item for proj_item in id_tup[ie.ProjectIDTableHeaders.DESCRIPTION])
 
 def update_current_text(dd: Dropdowns) -> None:
-    '''Update the current text of the dropdown QComboboxes.'''
+    '''Public module level. Update the current text of the dropdown QComboboxes.'''
     dd.current_text.year = dd.year.currentText()
     dd.current_text.month = dd.month.currentText()
     dd.current_text.worksheet = dd.worksheet.currentText()
 
 def connect_dropdowns(dd: Dropdowns, func: Callable) -> None:
-    '''Connect the dropdowns to the given function.'''
+    '''Public module level. Connect the dropdowns to the given function.'''
     for dropdown in (dd.year, dd.month, dd.worksheet):
         dropdown.currentTextChanged.connect(func)
