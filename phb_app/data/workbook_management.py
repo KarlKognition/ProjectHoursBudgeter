@@ -107,6 +107,7 @@ def init_input_worksheet(context: InputWorkbookContext) -> None:
     sheet_obj = context.mngd_wb.workbook_object[sheet_name]
     managed_sheet = ws.create_managed_input_worksheet(sheet_name, sheet_obj)
     service = ws.InputWorksheetService(worksheet=managed_sheet)
+    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
     context.managed_sheet = managed_sheet
     context.worksheet_service = service
     service.index_headers()

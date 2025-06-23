@@ -37,9 +37,10 @@ class ProjectSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.PROJECT_TABLE,
             label=QLabel(st.PROJECT_SELECTION_INSTRUCTIONS),
-            table=pu.create_table(ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
+            table=pu.create_table(self, ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
+        self.proj_ctx = io.EntryContext(self.project_panel, io.ProjectTableContext())
         pu.setup_page(self, [pu.create_interaction_panel(self.project_panel)], QHBoxLayout())
 
 #           --- QWizard function overrides ---
@@ -47,10 +48,9 @@ class ProjectSelectionPage(QWizardPage):
     def initializePage(self) -> None:
         '''Retrieve fields from other pages.'''
         pro.set_project_ids_each_input_wb(self.wb_mgmt)
-        proj_ctx = io.EntryContext(self.project_panel, io.ProjectTableContext())
-        io.EntryHandler(proj_ctx)
-        pu.connect_buttons(self, proj_ctx)
-        pu.populate_selection_table(self, proj_ctx, self.wb_mgmt)
+        io.EntryHandler(self.proj_ctx)
+        pu.connect_buttons(self, self.proj_ctx)
+        pu.populate_selection_table(self, self.proj_ctx, self.wb_mgmt)
 
     def cleanupPage(self):
         '''Override the page cleanup.
@@ -61,4 +61,8 @@ class ProjectSelectionPage(QWizardPage):
     def isComplete(self) -> bool:
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
-        return pu.check_completion(self.project_panel)
+        check = pu.check_completion(self.project_panel)
+        rows = self.project_panel.table.selectionModel().selectedRows()
+        for wb_ctx in self.wb_mgmt.yield_workbook_ctxs_by_role(st.IORole.INPUTS):
+            pro.set_selected_project_ids(wb_ctx, self.project_panel.table, rows, ie.ProjectIDTableHeaders)
+        return check

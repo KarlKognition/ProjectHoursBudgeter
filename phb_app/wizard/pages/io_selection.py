@@ -22,14 +22,15 @@ from PyQt6.QtWidgets import (
     QTableWidget, QLabel
 )
 # First party libraries
-import phb_app.logging.error_manager as em
-import phb_app.wizard.constants.ui_strings as st
-import phb_app.utils.page_utils as pu
-import phb_app.wizard.constants.integer_enums as ie
 import phb_app.data.header_management as hm
+import phb_app.data.io_management as io
 import phb_app.data.location_management as loc
 import phb_app.data.workbook_management as wm
-import phb_app.data.io_management as io
+import phb_app.logging.error_manager as em
+import phb_app.utils.page_utils as pu
+import phb_app.utils.project_utils as pro
+import phb_app.wizard.constants.integer_enums as ie
+import phb_app.wizard.constants.ui_strings as st
 
 class IOSelectionPage(QWizardPage):
     '''Page for the selection of input and output files.
@@ -53,7 +54,7 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.INPUTS,
             label=QLabel(st.INPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
+            table=pu.create_table(self, ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.INPUTS]
         )
@@ -61,7 +62,7 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
+            table=pu.create_table(self, ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)], error_panel=em.error_panels[st.IORole.OUTPUT]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())

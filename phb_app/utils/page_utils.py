@@ -29,16 +29,16 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem
 )
 # First party libraries
+import phb_app.data.header_management as hm
+import phb_app.data.location_management as loc
+import phb_app.data.months_dict as md
+import phb_app.logging.error_manager as em
+import phb_app.logging.exceptions as ex
 import phb_app.utils.date_utils as du
 import phb_app.utils.employee_utils as eu
 import phb_app.utils.file_handling_utils as fu
 import phb_app.wizard.constants.integer_enums as ie
-import phb_app.data.header_management as hm
-import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st
-import phb_app.data.location_management as loc
-import phb_app.data.months_dict as md
-import phb_app.logging.error_manager as em
 
 if TYPE_CHECKING:
     import phb_app.data.io_management as io
@@ -93,11 +93,12 @@ def setup_error_panel(role: st.IORole) -> QWidget:
     em.error_panels[role].setLayout(QVBoxLayout())
     return em.error_panels[role]
 
-def create_table(table_headers: ie.BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: hm.ColWidths) -> QTableWidget:
+def create_table(page: QWizardPage, table_headers: ie.BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: hm.ColWidths) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
     table = QTableWidget(0, len(table_headers))
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     table.setSelectionMode(selection_mode)
+    table.selectionModel().selectionChanged.connect(lambda selected, deselected: page.completeChanged.emit())
     table.setHorizontalHeaderLabels(table_headers.cap_members_list())
     table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
     for header, width in col_widths.items():

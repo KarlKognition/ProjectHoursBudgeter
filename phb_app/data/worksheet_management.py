@@ -70,31 +70,35 @@ def create_managed_output_worksheet() -> ManagedOutputWorksheet:
 class InputWorksheetService:
     '''Service class for managing an input worksheet.'''
     def __init__(self, worksheet: ManagedInputWorksheet):
-        self.data = worksheet
+        self.worksheet = worksheet
+
+    def set_sheet_names(self, sheet_names: list[str]) -> None:
+        '''Set the sheet names in the output worksheet data.'''
+        self.worksheet.sheet_names = sheet_names
 
     def index_headers(self) -> None:
         '''Indexes the headers in the selected worksheet.'''
-        if self.data.selected_sheet:
-            for idx, cell in enumerate(self.data.selected_sheet.sheet_object[1]):
+        if self.worksheet.selected_sheet:
+            for idx, cell in enumerate(self.worksheet.selected_sheet.sheet_object[1]):
                 if isinstance(cell.value, str):
-                    self.data.indexed_headers[cell.value] = idx
+                    self.worksheet.indexed_headers[cell.value] = idx
 
     def yield_project_id_and_desc(self) -> Iterator[t.ProjectsTup]:
         '''Yields from the project ID and description, one at a time in a tuple.'''
-        yield from self.data.selectable_project_ids.items()
+        yield from self.worksheet.selectable_project_ids.items()
 
     def set_selectable_project_ids(self, proj_id: str, proj_desc: str, name: str) -> None:
         '''Extracts all project IDs in the selected worksheet and saves the 
         data in the selectable project IDs dictionary.'''
         # Return early if no worksheet is selected
-        if not self.data.selected_sheet:
+        if not self.worksheet.selected_sheet:
             return
         # Get the worksheet object
-        sheet_object = self.data.selected_sheet.sheet_object
+        sheet_object = self.worksheet.selected_sheet.sheet_object
         # Get the column indices for project ID, description, and person
-        project_id_col = self.data.indexed_headers.get(proj_id)
-        project_desc_col = self.data.indexed_headers.get(proj_desc)
-        person_col = self.data.indexed_headers.get(name)
+        project_id_col = self.worksheet.indexed_headers.get(proj_id)
+        project_desc_col = self.worksheet.indexed_headers.get(proj_desc)
+        person_col = self.worksheet.indexed_headers.get(name)
         # Iterate over each row in the worksheet, skipping the header
         for row in sheet_object.iter_rows(min_row=2):
             # Extract values for project ID, description, and person from the row
@@ -108,11 +112,11 @@ class InputWorksheetService:
                 desc_value = str(desc_value)
                 person_value = str(person_value)
                 # If this project ID is not yet in the dictionary, add it with an empty list
-                if id_value not in self.data.selectable_project_ids:
-                    self.data.selectable_project_ids[id_value] = []
+                if id_value not in self.worksheet.selectable_project_ids:
+                    self.worksheet.selectable_project_ids[id_value] = []
                 # If this description is not already associated with the project ID, append it
-                if desc_value not in self.data.selectable_project_ids[id_value]:
-                    self.data.selectable_project_ids[id_value].append(desc_value)
+                if desc_value not in self.worksheet.selectable_project_ids[id_value]:
+                    self.worksheet.selectable_project_ids[id_value].append(desc_value)
 
 class OutputWorksheetService:
     '''Service class for managing an output worksheet.'''
