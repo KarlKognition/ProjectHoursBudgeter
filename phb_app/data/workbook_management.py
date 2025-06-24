@@ -41,14 +41,14 @@ class InputWorkbookContext:
     """Context data class for managing an input workbook."""
     mngd_wb: ManagedWorkbook
     locale_data: Optional[loc.InputLocaleData] = None
-    managed_sheet: Optional[ws.ManagedInputWorksheet] = None
+    managed_sheet: Optional[ws.InputWorksheetContext] = None
     worksheet_service: Optional[ws.InputWorksheetService] = None
 
 @dataclass
 class OutputWorkbookContext:
     """Context data class for managing an output workbook."""
     mngd_wb: ManagedWorkbook
-    managed_sheet: Optional[ws.ManagedOutputWorksheet] = None
+    managed_sheet: Optional[ws.OutputWorksheetContext] = None
     worksheet_service: Optional[ws.OutputWorksheetService] = None
 
 #           --- MODULE FACTORY FUNCTIONS ---

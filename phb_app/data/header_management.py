@@ -14,9 +14,7 @@ Provides several data classes for the Project Hours Budgeting Wizard.
 '''
 
 from enum import auto
-from dataclasses import dataclass
-from PyQt6.QtWidgets import QTableWidget
-# First party library imports
+#           ---  First party library imports ---
 import phb_app.wizard.constants.integer_enums as ie
 
 type ColWidths = dict[ie.BaseTableHeaders, int]
@@ -29,13 +27,6 @@ class WizardPageIDs(ie.BaseTableHeaders):
     PROJECT_SELECTION_PAGE = auto()
     EMPLOYEE_SELECTION_PAGE = auto()
     SUMMARY_PAGE = auto()
-
-class EmployeeTableHeaders(ie.BaseTableHeaders):
-    '''Employee table headers in employee selection.'''
-
-    EMPLOYEE = 0
-    WORKSHEET = auto()
-    COORDINATE = auto()
 
 class SummaryTableHeaders(ie.BaseTableHeaders):
     '''Summary table headers in summary selection.'''
@@ -67,12 +58,10 @@ PROJECT_COLUMN_WIDTHS = {
     ie.ProjectIDTableHeaders.FILENAME: 400
 }
 
-DEFAULT_PADDING = 5
+EMPLOYEE_COLUMN_WIDTHS = {
+    ie.EmployeeTableHeaders.EMPLOYEE: 450,
+    ie.EmployeeTableHeaders.WORKSHEET: 150,
+    ie.EmployeeTableHeaders.COORDINATE: 80
+}
 
-@dataclass
-class RowHandler:
-    '''Data class for managing the row in the table.'''
-    table: QTableWidget
-    row_position: int
-    file_name: str
-    file_path: str
+DEFAULT_PADDING = 5

@@ -1,4 +1,4 @@
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator
 from functools import lru_cache
 import openpyxl.utils as xlutils
 import xlwings as xw
@@ -7,9 +7,6 @@ import phb_app.logging.exceptions as ex
 import phb_app.data.workbook_management as wm
 import phb_app.data.worksheet_management as ws
 import phb_app.data.employee_management as emp
-
-if TYPE_CHECKING:
-    import phb_app.data.io_management as io
 
 # Cache the function results
 # Only cache one result to minimise memory use

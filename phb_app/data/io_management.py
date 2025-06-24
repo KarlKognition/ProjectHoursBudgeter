@@ -23,7 +23,6 @@ import phb_app.data.location_management as loc
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.templating.types as t
-import phb_app.utils.project_utils as pro
 
 if TYPE_CHECKING:
     import phb_app.data.workbook_management as wm
@@ -70,6 +69,13 @@ class ProjectTableItems:
     file_name: Optional[QTableWidgetItem] = None
 
 @dataclass
+class EmployeeTableItems:
+    '''Data class for managing the employee table items.'''
+    employee: Optional[QTableWidgetItem] = None
+    worksheet: Optional[QTableWidgetItem] = None
+    coord: Optional[QTableWidgetItem] = None
+
+@dataclass
 class IOFileContext:
     '''Data class for managing the data in the table.'''
     file_name: Optional[str] = None
@@ -84,7 +90,16 @@ class ProjectTableContext:
     file_name: Optional[str] = None
     table_items: Optional[ProjectTableItems] = field(default_factory=ProjectTableItems)
 
-type FileHandlerData = IOFileContext | ProjectTableContext
+@dataclass
+class EmployeeTableContext:
+    '''Data class for managing the employee table.'''
+    employee: Optional[str] = None
+    worksheet: Optional[str] = None
+    coord: Optional[str] = None
+    table_items: Optional[EmployeeTableItems] = field(default_factory=EmployeeTableItems)
+
+
+type FileHandlerData = IOFileContext | ProjectTableContext | EmployeeTableContext
 
 @dataclass
 class EntryContext:
@@ -106,7 +121,8 @@ class EntryHandler:
         self.ent_ctx.configure_row = {
             st.IORole.INPUTS:           self._configure_input_file_row,
             st.IORole.OUTPUT:           self._configure_output_file_row,
-            st.IORole.PROJECT_TABLE:    self._configure_project_row
+            st.IORole.PROJECT_TABLE:    self._configure_project_row,
+            st.IORole.EMPLOYEE_TABLE:   self._configure_employee_row
             }.get(self.ent_ctx.panel.role)
 
     def _configure_input_file_row(self, row: int, wb_mngr: "wm.WorkbookManager") -> None:
@@ -142,6 +158,16 @@ class EntryHandler:
         pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
         self.ent_ctx.data.table_items.file_name = QTableWidgetItem(self.ent_ctx.data.file_name)
         pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
+
+    def _configure_employee_row(self, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None:
+        '''Configure the employee row in the table.'''
+
+        self.ent_ctx.data.table_items.employee = QTableWidgetItem(self.ent_ctx.data.employee)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
+        self.ent_ctx.data.table_items.worksheet = QTableWidgetItem(self.ent_ctx.data.worksheet)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
+        self.ent_ctx.data.table_items.coord = QTableWidgetItem(self.ent_ctx.data.coord)
+        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
 #           --- MODULE SERVICE FUNCTIONS ---
 

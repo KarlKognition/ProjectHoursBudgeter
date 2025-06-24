@@ -32,7 +32,7 @@ import phb_app.data.months_dict as md
 class SummaryPage(QWizardPage):
     '''Page for displaying the summary of results from the actions taken by
     the background functionality.'''
-    def __init__(self):
+    def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
 
         self.setTitle("Summary")
@@ -61,7 +61,7 @@ class SummaryPage(QWizardPage):
     #######################################
 
     def initializePage(self) -> None:
-        '''Retrieve fields from other pages.'''
+        '''Override page initialisation. Setup page on each visit.'''
 
         # Get workbooks from IOSelection
         self.managed_workbooks = self.wizard().property(

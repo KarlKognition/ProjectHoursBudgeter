@@ -33,7 +33,7 @@ class SelectedSheet:
     sheet_object: Worksheet
 
 @dataclass
-class ManagedInputWorksheet:
+class InputWorksheetContext:
     '''Data class for input worksheet data.'''
     selected_sheet: Optional[SelectedSheet]
     sheet_names: list[str] = field(default_factory=list)
@@ -42,7 +42,7 @@ class ManagedInputWorksheet:
     indexed_headers: dict[str, int] = field(default_factory=dict)
 
 @dataclass
-class ManagedOutputWorksheet:
+class OutputWorksheetContext:
     '''Data class for output worksheet data.'''
     selected_sheet: Optional[SelectedSheet] = None
     sheet_names: list[str] = field(default_factory=list)
@@ -56,20 +56,20 @@ class ManagedOutputWorksheet:
 def create_managed_input_worksheet(
     sheet_name: str,
     sheet_object: Worksheet
-) -> ManagedInputWorksheet:
+) -> InputWorksheetContext:
     '''Public module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
     selected = SelectedSheet(sheet_name=sheet_name, sheet_object=sheet_object)
-    return ManagedInputWorksheet(selected_sheet=selected)
+    return InputWorksheetContext(selected_sheet=selected)
 
-def create_managed_output_worksheet() -> ManagedOutputWorksheet:
+def create_managed_output_worksheet() -> OutputWorksheetContext:
     '''Public module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
-    return ManagedOutputWorksheet()
+    return OutputWorksheetContext()
 
 #           --- SERVICE CLASSES ---
 
 class InputWorksheetService:
     '''Service class for managing an input worksheet.'''
-    def __init__(self, worksheet: ManagedInputWorksheet):
+    def __init__(self, worksheet: InputWorksheetContext):
         self.worksheet = worksheet
 
     def set_sheet_names(self, sheet_names: list[str]) -> None:
@@ -120,7 +120,7 @@ class InputWorksheetService:
 
 class OutputWorksheetService:
     '''Service class for managing an output worksheet.'''
-    def __init__(self, worksheet: ManagedOutputWorksheet):
+    def __init__(self, worksheet: OutputWorksheetContext):
         self.worksheet = worksheet
 
     def set_sheet_names(self, sheet_names: list[str]) -> None:

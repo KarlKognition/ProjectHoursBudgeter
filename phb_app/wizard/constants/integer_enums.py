@@ -40,3 +40,10 @@ class ProjectIDTableHeaders(BaseTableHeaders):
     PROJECT_ID = 0
     DESCRIPTION = auto()
     FILENAME = auto()
+
+class EmployeeTableHeaders(BaseTableHeaders):
+    '''Employee table headers in employee selection.'''
+
+    EMPLOYEE = 0
+    WORKSHEET = auto()
+    COORDINATE = auto()

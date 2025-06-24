@@ -193,6 +193,7 @@ def insert_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row: 
     '''Insert given widget item into the table.'''
     widget_item.setFlags(widget_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
     table.setItem(row, column, widget_item)
+    table.resizeRowToContents(row)
 
 def update_handlers_country_details(data: loc.CountryData, wb_ctx: "wm.InputWorkbookContext") -> None:
     '''Update country details of the input workbook context from the IO file context.'''
@@ -281,7 +282,7 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
             _handle_selection_error(row, file_ctx, exc)
     page.completeChanged.emit()
 
-def populate_selection_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
+def populate_project_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the selection table with projects, employees or summary,'''
     for wb_ctx in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
         for proj_ids in wb_ctx.worksheet_service.yield_project_id_and_desc():
@@ -291,6 +292,21 @@ def populate_selection_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_
             proj_ctx.data.project_identifiers = io.join_project_identifiers(proj_ids)
             proj_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             proj_ctx.configure_row(row)
+    page.completeChanged.emit()
+
+def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
+    '''Populate the employee table with employees.'''
+    wb_ctx = wb_mngr.get_output_workbook_ctx()
+    ws_ctx = wb_ctx.managed_sheet.selected_sheet.sheet_object
+    row = _insert_row(emp_ctx.panel)
+    for col in range(wb_ctx.managed_sheet.employee_range.start_col_idx, wb_ctx.managed_sheet.employee_range.end_col_idx + 1):
+        cell = ws_ctx.cell(row=wb_ctx.managed_sheet.employee_range.start_row_idx, column=col)
+        if cell.value and cell.value not in st.NON_NAMES:
+            emp_ctx.data.employee = cell.value
+            emp_ctx.data.worksheet = wb_ctx.managed_sheet.selected_sheet.sheet_name
+            emp_ctx.data.coord = cell.coordinate
+            emp_ctx.configure_row(row)
+        row += 1
     page.completeChanged.emit()
 
 #           --- Exception Styling and Handling ---

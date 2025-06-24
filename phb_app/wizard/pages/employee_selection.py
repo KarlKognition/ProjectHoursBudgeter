@@ -17,173 +17,40 @@ Description
 Constructs and manages the employee selection page.
 '''
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QWizardPage, QLabel, QTableWidget, QPushButton,
-    QVBoxLayout, QTableWidgetItem
-)
-import phb_app.data.workbook_management as wm
+from PyQt6.QtWidgets import QWizardPage, QLabel, QTableWidget, QPushButton, QHBoxLayout
 import phb_app.data.header_management as hm
+import phb_app.data.io_management as io
+import phb_app.data.workbook_management as wm
 import phb_app.utils.employee_utils as eu
 import phb_app.utils.hours_utils as hu
+import phb_app.utils.page_utils as pu
+import phb_app.wizard.constants.integer_enums as ie
 import phb_app.wizard.constants.ui_strings as st
 
 class EmployeeSelectionPage(QWizardPage):
     '''Page for selecting the employees whose hours will be budgeted.'''
-    def __init__(self):
+    def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
 
-        self.setTitle("Employee Selection")
-        self.setSubTitle("Select the employees whose hours will be budgeted.")
-        # Headers
-        self.headers = hm.EmployeeTableHeaders.cap_members_list()
+        self.wb_mgmt = managed_workbooks
+        pu.set_titles(self, st.PROJECT_SELECTION_TITLE, st.PROJECT_SELECTION_SUBTITLE)
+        self.employee_panel = io.IOControls(
+            page=self,
+            role=st.IORole.EMPLOYEE_TABLE,
+            label=QLabel(st.EMPLOYEE_SELECTION_INSTRUCTIONS),
+            table=pu.create_table(self, ie.EmployeeTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.EMPLOYEE_COLUMN_WIDTHS),
+            buttons=[QPushButton(st.ButtonNames.SELECT_ALL, self), QPushButton(st.ButtonNames.DESELECT_ALL, self)]
+        )
+        self.emp_ctx = io.EntryContext(self.employee_panel, io.EmployeeTableContext())
+        pu.setup_page(self, [pu.create_interaction_panel(self.employee_panel)], QHBoxLayout())
 
-        ## Init property
-        self.managed_workbooks: wm.WorkbookManager
-
-        self.setup_widgets()
-        self.setup_layout()
-        self.setup_connections()
-
-    #######################################
-    ### QWizard setup function override ###
-    #######################################
+#           --- QWizard function overrides ---
 
     def initializePage(self) -> None:
-        '''Retrieve fields from other pages.'''
-
-        # Get workbooks from IOSelection
-        self.managed_workbooks = self.wizard().property(
-            st.QPropName.MANAGED_WORKBOOKS)
-        ## Table data
-        # Table headers
-        self.employees_table.setHorizontalHeaderLabels(self.headers)
-        # Add all data to the table
-        self.populate_table(self.employees_table)
-
-    #######################
-    ### Setup functions ###
-    #######################
-
-    def setup_widgets(self) -> None:
-        '''Init all widgets.'''
-
-        ## Instructions
-        # Selection
-        self.employee_instructions_label = QLabel(
-            "<p><strong>Select one or more employees by name.</strong></p>"
-            "<p><em>Coord</em> indicates the cell coordinate in the output budgeting "
-            "file where the employee's name stands.</p>"
-            )
-        self.employee_instructions_label.setTextFormat(Qt.TextFormat.RichText)
-
-        ## Projects table
-        # Start with 0 rows and 2 columns
-        self.employees_table = QTableWidget(0, len(hm.EmployeeTableHeaders))
-        # Allow multiple row selections in the table
-        self.employees_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.employees_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
-        # Adjust the width of each column
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.EMPLOYEE, 450)
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.WORKSHEET, 150)
-        self.employees_table.setColumnWidth(hm.EmployeeTableHeaders.COORDINATE, 80)
-
-        ## Table selection buttons
-        # Add deselect all button
-        self.select_all_employees_button = QPushButton(st.ButtonNames.SELECT_ALL, self)
-        # Add deselect all button
-        self.deselect_all_employees_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
-
-    def setup_layout(self) -> None:
-        '''Init layout.'''
-
-        ## Layout types
-        # Main layout
-        main_layout = QVBoxLayout()
-
-        ## Add widgets
-        # To main layout
-        main_layout.addWidget(self.employee_instructions_label)
-        main_layout.addWidget(self.employees_table)
-        main_layout.addWidget(self.select_all_employees_button)
-        main_layout.addWidget(self.deselect_all_employees_button)
-
-        ## Display
-        self.setLayout(main_layout)
-
-    def setup_connections(self):
-        '''Connect buttons to their respective actions.'''
-
-        ## Connect functions
-        # Select all
-        self.select_all_employees_button.clicked.connect(
-            self.employees_table.selectAll
-        )
-        # Deselect all
-        self.deselect_all_employees_button.clicked.connect(
-            self.employees_table.clearSelection
-        )
-        # Check isComplete
-        self.employees_table.itemSelectionChanged.connect(
-            self.completeChanged.emit
-        )
-
-    ############################
-    ### Supporting functions ###
-    ############################
-
-    def populate_table(self, table: QTableWidget) -> None:
-        '''Populate the table with the employees with
-        coordinates from the given worksheet.'''
-
-        # Get the first and only output workbook's file name
-        wb_name = next(self.managed_workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook)).file_name
-        wb = self.managed_workbooks.get_workbook_by_name(wb_name)
-        ws = wb.managed_sheet_object.selected_sheet.sheet_object
-        # Add employee per row. Skip empty cells from output file
-        row_position = 0
-        for col in range(
-            wb.managed_sheet_object.employee_range.start_col_idx,
-            wb.managed_sheet_object.employee_range.end_col_idx + 1
-        ):
-            cell = ws.cell(
-                row=wb.managed_sheet_object.employee_range.start_row_idx,
-                column=col
-            )
-            ## Populate row. No items editable after setting
-            if cell.value and cell.value not in st.NON_NAMES:
-                employee_item = QTableWidgetItem(cell.value)
-                # Insert row 0-indexed then add employee name
-                table.insertRow(row_position)
-                employee_item.setFlags(employee_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                table.setItem(
-                    row_position,
-                    hm.EmployeeTableHeaders.EMPLOYEE,
-                    employee_item
-                )
-                # Add the worksheet name where the employee was found
-                desc_text = wb.managed_sheet_object.selected_sheet.sheet_name
-                # Add Excel cell coordinate where the employee is located
-                desc_item = QTableWidgetItem(desc_text)
-                desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                table.setItem(
-                    row_position,
-                    hm.EmployeeTableHeaders.WORKSHEET,
-                    desc_item
-                )
-                # Add Excel cell coordinate where the employee is located
-                coord_item = QTableWidgetItem(cell.coordinate)
-                coord_item.setFlags(coord_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                table.setItem(
-                    row_position,
-                    hm.EmployeeTableHeaders.COORDINATE,
-                    coord_item
-                )
-                row_position += 1
-
-    ##################################
-    ### QWizard function overrides ###
-    ##################################
+        '''Override page initialisation. Setup page on each visit.'''
+        io.EntryHandler(self.emp_ctx)
+        pu.connect_buttons(self, self.emp_ctx)
+        pu.populate_employee_table(self, self.emp_ctx, self.wb_mgmt)
 
     def cleanupPage(self):
         '''Clean up if the back button is pressed.'''
@@ -201,7 +68,7 @@ class EmployeeSelectionPage(QWizardPage):
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
 
-        return bool(self.employees_table.selectionModel().selectedRows())
+        return bool(self.employee_panel.table.selectionModel().selectedRows())
 
     def validatePage(self) -> bool:
         '''Override the page validation.

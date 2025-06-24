@@ -28,7 +28,6 @@ import phb_app.data.location_management as loc
 import phb_app.data.workbook_management as wm
 import phb_app.logging.error_manager as em
 import phb_app.utils.page_utils as pu
-import phb_app.utils.project_utils as pro
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.wizard.constants.ui_strings as st
 
@@ -63,7 +62,8 @@ class IOSelectionPage(QWizardPage):
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
             table=pu.create_table(self, ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
-            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)], error_panel=em.error_panels[st.IORole.OUTPUT]
+            buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
+            error_panel=em.error_panels[st.IORole.OUTPUT]
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
         in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))

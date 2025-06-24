@@ -8,7 +8,7 @@ import git
 
 GUI_TITLE = "Project Hours Budgeting Wizard"
 
-### INTRO PAGE ###
+#           --- INTRO PAGE ---
 
 INTRO_TITLE = "Introduction"
 
@@ -38,7 +38,7 @@ def find_git_root():
 APP_ROOT = find_git_root() / "phb_app"
 IMAGES_DIR = APP_ROOT / "images"
 
-### IO SELECTION PAGE ###
+#           --- IO SELECTION PAGE ---
 
 IO_FILE_TITLE = "Input/Output Files"
 
@@ -54,7 +54,7 @@ OUTPUT_FILE_INSTRUCTION_TEXT = "Select the project hours budgeting file as the t
 ADD_FILE = "Add File"
 EXCEL_FILE = "Excel files (*.xlsx)"
 
-### PROJECT SELECTION PAGE ###
+#           --- PROJECT SELECTION PAGE ---
 
 PROJECT_SELECTION_TITLE = "Project Selection"
 
@@ -65,6 +65,16 @@ PROJECT_SELECTION_INSTRUCTIONS = """
 <p>The project decription is purely to help in the recognition of the wished after project ID. It will not be used in any calculations.</p>
 """
 
+#           --- PROJECT SELECTION PAGE ---
+
+EMPLOYEE_SELECTION_TITLE = "Employee Selection"
+
+EMPLOYEE_SELECTION_SUBTITLE = "Select the employees whose hours will be budgeted."
+
+EMPLOYEE_SELECTION_INSTRUCTIONS = """
+<p><strong>Select one or more employees by name.</strong></p>
+<p><em>Coord</em> indicates the cell coordinate in the output budgeting file where the employee's name stands.</p>
+"""
 
 class IORole(StrEnum):
     '''Input or output roles.'''

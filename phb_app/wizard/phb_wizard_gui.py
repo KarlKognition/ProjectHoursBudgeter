@@ -50,8 +50,8 @@ class PHBWizard(QWizard):
         self.addPage(ep.ExplanationPage())
         self.addPage(iosp.IOSelectionPage(country_data, self.workbook_manager))
         self.addPage(ps.ProjectSelectionPage(self.workbook_manager))
-        self.addPage(ems.EmployeeSelectionPage())
-        self.addPage(sp.SummaryPage())
+        self.addPage(ems.EmployeeSelectionPage(self.workbook_manager))
+        self.addPage(sp.SummaryPage(self.workbook_manager))
 
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
 
