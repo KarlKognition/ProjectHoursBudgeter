@@ -297,15 +297,14 @@ def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mn
     '''Populate the employee table with employees.'''
     wb_ctx = wb_mngr.get_output_workbook_ctx()
     ws_ctx = wb_ctx.managed_sheet.selected_sheet.sheet_object
-    row = _insert_row(emp_ctx.panel)
     for col in range(wb_ctx.managed_sheet.employee_range.start_col_idx, wb_ctx.managed_sheet.employee_range.end_col_idx + 1):
+        row = _insert_row(emp_ctx.panel)
         cell = ws_ctx.cell(row=wb_ctx.managed_sheet.employee_range.start_row_idx, column=col)
         if cell.value and cell.value not in st.NON_NAMES:
-            emp_ctx.data.employee = cell.value
+            emp_ctx.data.emp_name = cell.value
             emp_ctx.data.worksheet = wb_ctx.managed_sheet.selected_sheet.sheet_name
             emp_ctx.data.coord = cell.coordinate
             emp_ctx.configure_row(emp_ctx, row)
-        row += 1
     page.completeChanged.emit()
 
 #           --- Exception Styling and Handling ---

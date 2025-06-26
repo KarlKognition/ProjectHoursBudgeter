@@ -50,7 +50,6 @@ class EmployeeSelectionPage(QWizardPage):
         # Choose the row configurator for the employee table
         io.set_row_configurator(self.emp_ctx)
         pu.connect_buttons(self, self.emp_ctx)
-        print(f"{self.emp_ctx = }\n{self.wb_mgmt = }")
         pu.populate_employee_table(self, self.emp_ctx, self.wb_mgmt)
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
@@ -66,6 +65,5 @@ class EmployeeSelectionPage(QWizardPage):
         wb_ctx = self.wb_mgmt.get_output_workbook_ctx()
         eu.compute_selected_employees(self.employee_panel.table, wb_ctx)
         hu.compute_predicted_hours(wb_ctx)
-        print(f"{}")
         hu.compute_hours_for_selected_employees(self.wb_mgmt, wb_ctx)
         return check

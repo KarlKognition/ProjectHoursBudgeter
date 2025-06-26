@@ -92,7 +92,7 @@ class ProjectTableContext:
 @dataclass
 class EmployeeTableContext:
     '''Data class for managing the employee table.'''
-    employee: Optional[str] = None
+    emp_name: Optional[str] = None
     worksheet: Optional[str] = None
     coord: Optional[str] = None
     table_items: Optional[EmployeeTableItems] = field(default_factory=EmployeeTableItems)
@@ -154,7 +154,7 @@ def _configure_project_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Workboo
 
 def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
     '''Configure the employee row in the table.'''
-    ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.employee)
+    ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
     ent_ctx.data.table_items.worksheet = QTableWidgetItem(ent_ctx.data.worksheet)
     pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
