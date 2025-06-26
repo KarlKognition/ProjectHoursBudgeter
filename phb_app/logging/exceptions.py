@@ -3,10 +3,9 @@ Module Name
 ---------
 PHB Wizard Exceptions
 
-Version
+Author
 -------
-Date-based Version: 20250212
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

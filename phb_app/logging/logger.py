@@ -3,10 +3,9 @@ Module Name
 ---------
 Wizard Logger
 
-Version
+Author
 -------
-Date-based Version: 202502010
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

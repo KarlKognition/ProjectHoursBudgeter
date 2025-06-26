@@ -7,22 +7,26 @@ Module Name
 ---------
 Worksheet Management
 
-Version
+Author
 -------
-Date-based Version: 10062025
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
 Provides worksheet management.
 '''
 from dataclasses import dataclass, field
-from typing import Optional, Iterator
+from typing import Optional, Iterator, TYPE_CHECKING
 from openpyxl.worksheet.worksheet import Worksheet
 from PyQt6.QtCore import Qt
+#           --- First party libraries ---
 import phb_app.data.selected_date as sd
 import phb_app.data.employee_management as emp
 import phb_app.templating.types as t
+import phb_app.utils.employee_utils as eu
+
+if TYPE_CHECKING:
+    import phb_app.data.workbook_management as wm
 
 #           --- DATA CONTAINERS ---
 
@@ -50,20 +54,6 @@ class OutputWorksheetContext:
     employee_row_anchors: emp.EmployeeRowAnchors = field(default_factory=emp.EmployeeRowAnchors)
     employee_range: emp.EmployeeRange = field(default_factory=emp.EmployeeRange)
     selected_employees: dict[str, emp.Employee] = field(default_factory=dict)
-
-#           --- MODULE FACTORY FUNCTIONS ---
-
-def create_managed_input_worksheet(
-    sheet_name: str,
-    sheet_object: Worksheet
-) -> InputWorksheetContext:
-    '''Public module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
-    selected = SelectedSheet(sheet_name=sheet_name, sheet_object=sheet_object)
-    return InputWorksheetContext(selected_sheet=selected)
-
-def create_managed_output_worksheet() -> OutputWorksheetContext:
-    '''Public module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
-    return OutputWorksheetContext()
 
 #           --- SERVICE CLASSES ---
 
@@ -127,6 +117,16 @@ class OutputWorksheetService:
         '''Set the sheet names in the output worksheet data.'''
         self.worksheet.sheet_names = sheet_names
 
+    def set_selected_sheet(self, wb_ctx: "wm.OutputWorkbookContext", sheet_name: str) -> None:
+        '''Set selected sheet.'''
+        # Save the worksheet data
+        self.worksheet.selected_sheet = SelectedSheet(sheet_name, wb_ctx.mngd_wb.workbook_object[sheet_name])
+
+    def compute_employee_range(self) -> None:
+        '''Create the employee range.'''
+        self.worksheet.employee_range = emp.EmployeeRange()
+        eu.set_employee_range(self.worksheet.selected_sheet.sheet_object, self.worksheet.employee_range, self.worksheet.employee_row_anchors)
+
     def set_selected_employees(self, coord_name: list[tuple[str, str]]) -> None:
         '''Save the coordinate in the worksheet with the selected employee.'''
         for coord, name in coord_name:
@@ -165,4 +165,44 @@ class OutputWorksheetService:
 
     def yield_from_selected_employee(self) -> Iterator[emp.Employee]:
         '''Yields from the selected employees.'''
-        yield from self.worksheet.selected_employees.values
+        yield from self.worksheet.selected_employees.values()
+
+#           --- MODULE FACTORY FUNCTIONS ---
+
+def _create_input_worksheet_context(
+    sheet_name: str,
+    sheet_object: Worksheet
+) -> InputWorksheetContext:
+    '''Public module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
+    selected = SelectedSheet(sheet_name=sheet_name, sheet_object=sheet_object)
+    return InputWorksheetContext(selected_sheet=selected)
+
+def init_output_worksheet(context: "wm.OutputWorkbookContext") -> None:
+    """Public module level. Init output worksheet."""
+    worksheet = _create_output_worksheet_context()
+    service = OutputWorksheetService(worksheet=worksheet)
+    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
+    context.managed_sheet = worksheet
+    context.worksheet_service = service
+
+def _create_output_worksheet_context() -> OutputWorksheetContext:
+    '''Public module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
+    return OutputWorksheetContext()
+
+def init_input_worksheet(context: "wm.InputWorkbookContext") -> None:
+    """Public module level. Init input worksheet."""
+    sheetnames = context.mngd_wb.workbook_object.sheetnames
+    # If there is only one sheet, use that;
+    # otherwise, use the locale data's expected sheet name.
+    sheet_name = (
+        sheetnames[0]
+        if len(sheetnames) <= 1
+        else context.locale_data.exp_sheet_name
+    )
+    sheet_obj = context.mngd_wb.workbook_object[sheet_name]
+    managed_sheet = _create_input_worksheet_context(sheet_name, sheet_obj)
+    service = InputWorksheetService(worksheet=managed_sheet)
+    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
+    context.managed_sheet = managed_sheet
+    context.worksheet_service = service
+    service.index_headers()

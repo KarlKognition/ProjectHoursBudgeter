@@ -1,17 +1,37 @@
+'''
+Package
+-------
+PHB Wizard
+
+Module Name
+---------
+Employee Utilities
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+All functions necessary for managing employee data.
+'''
+
 from typing import Iterator
 from functools import lru_cache
+from PyQt6.QtWidgets import QTableWidget
 import openpyxl.utils as xlutils
 import xlwings as xw
 from openpyxl.worksheet.worksheet import Worksheet
-import phb_app.logging.exceptions as ex
+#           --- First party libraries ---
 import phb_app.data.workbook_management as wm
-import phb_app.data.worksheet_management as ws
+import phb_app.wizard.constants.integer_enums as ie
+import phb_app.logging.exceptions as ex
 import phb_app.data.employee_management as emp
 
 # Cache the function results
 # Only cache one result to minimise memory use
 @lru_cache(maxsize=1)
-def _locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, anchors: emp.EmployeeRowAnchors) -> None:
+def set_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, anchors: emp.EmployeeRowAnchors) -> None:
     '''
     Finds the row range where the employee names should be located.
     '''
@@ -39,14 +59,6 @@ def _locate_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, a
             raise ex.MissingEmployeeRow(anchors.start_anchor)
         if start_anchor_temp and not end_anchor_temp:
             raise ex.MissingEmployeeRow(anchors.end_anchor)
-
-def set_selected_sheet(wb_ctx: "wm.OutputWorkbookContext", sheet_name: str) -> None:
-    '''Set selected sheet.'''
-    # Save the worksheet data
-    wb_ctx.managed_sheet.selected_sheet = ws.SelectedSheet(sheet_name, wb_ctx.mngd_wb.workbook_object[sheet_name])
-    # Check whether the employees are located in the worksheet
-    wb_ctx.managed_sheet.employee_range = emp.EmployeeRange()
-    _locate_employee_range(wb_ctx.managed_sheet.selected_sheet.sheet_object, wb_ctx.managed_sheet.employee_range, wb_ctx.managed_sheet.employee_row_anchors)
 
 def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     '''
@@ -76,3 +88,15 @@ def find_predicted_hours(emp_dict: dict[str, emp.Employee], row: int, file_path:
         employee.hours.hours_coord = hours_coord
     wb.close()
     return pre_hours
+
+def compute_selected_employees(table: QTableWidget, wb_ctx: "wm.OutputWorkbookContext") -> None:
+    """
+    Find selected employees in the table and set them as selected in the managed output workbook.
+    """
+    selected_rows = table.selectionModel().selectedRows()
+    selected_employees = [
+        (table.item(row.row(), ie.EmployeeTableHeaders.COORDINATE).text(),
+        table.item(row.row(), ie.EmployeeTableHeaders.EMPLOYEE).text())
+        for row in selected_rows
+    ]
+    wb_ctx.worksheet_service.set_selected_employees(selected_employees)

@@ -3,10 +3,9 @@ Module Name
 ---------
 Project Hours Budgeting Data Classes (phb_dataclasses)
 
-Version
+Author
 -------
-Date-based Version: 20250304
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

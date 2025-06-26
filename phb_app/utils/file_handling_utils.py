@@ -7,10 +7,9 @@ Module Name
 ---------
 Employee Management Utilities
 
-Version
+Author
 -------
-Date-based Version: 20250425
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

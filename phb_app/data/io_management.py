@@ -3,10 +3,9 @@ Module Name
 ---------
 PHB Wizard IO Management
 
-Version
+Author
 -------
-Date-based Version: 20250428
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -15,11 +14,11 @@ PHB Wizard text selection management.
 
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING, Callable
-from PyQt6.QtWidgets import (
-    QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
-)
+from PyQt6.QtWidgets import QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
+#           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
+import phb_app.data.worksheet_management as ws
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.templating.types as t
@@ -106,70 +105,61 @@ class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     data: Optional[FileHandlerData] = None
-    configure_row: Callable[[int, Optional["wm.WorkbookManager"]], None] = None
-
-#           --- SERVICE CLASS ---
-
-class EntryHandler:
-    """Class for handling entries per panel."""
-    def __init__(self, ent_ctx: EntryContext) -> None:
-        self.ent_ctx = ent_ctx
-        self.set_row_configurator()
-
-    def set_row_configurator(self) -> None:
-        '''Initialise the entry handler.'''
-        self.ent_ctx.configure_row = {
-            st.IORole.INPUTS:           self._configure_input_file_row,
-            st.IORole.OUTPUT:           self._configure_output_file_row,
-            st.IORole.PROJECT_TABLE:    self._configure_project_row,
-            st.IORole.EMPLOYEE_TABLE:   self._configure_employee_row
-            }.get(self.ent_ctx.panel.role)
-
-    def _configure_input_file_row(self, row: int, wb_mngr: "wm.WorkbookManager") -> None:
-        '''Configure the input row in the table.'''
-        wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(self.ent_ctx.panel.role, self.ent_ctx.data.file_name)
-        import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
-        wm.init_input_worksheet(wb_ctx)
-        pu.update_handlers_country_details(self.ent_ctx.data.country_data, wb_ctx)
-        self.ent_ctx.data.table_items.country = QTableWidgetItem(wb_ctx.locale_data.country)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.country, row, ie.InputTableHeaders.COUNTRY)
-        self.ent_ctx.data.table_items.sheet_name = QTableWidgetItem(wb_ctx.managed_sheet.selected_sheet.sheet_name)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.sheet_name, row, ie.InputTableHeaders.WORKSHEET)
-
-    def _configure_output_file_row(self, row: int, wb_mngr: "wm.WorkbookManager") -> None:
-        '''Configure the output row in the table.'''
-        wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(self.ent_ctx.panel.role, self.ent_ctx.data.file_name)
-        import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
-        wm.init_output_worksheet(wb_ctx)
-        dropdowns = Dropdowns(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(wb_ctx))
-        pu.setup_dropdowns(self.ent_ctx.panel.table, row, dropdowns)
-        def connection_wrapper() -> None:
-            '''Connect functionality to the dropdowns.'''
-            pu.handle_dropdown_selection(self.ent_ctx, wb_ctx, row, dropdowns)
-            self.ent_ctx.panel.page.completeChanged.emit()
-        connect_dropdowns(dropdowns, connection_wrapper)
-
-    def _configure_project_row(self, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None:
-        '''Configure the project row in the table.'''
-        # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
-        self.ent_ctx.data.table_items.project_id = QTableWidgetItem(self.ent_ctx.data.project_id)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.project_id, row, ie.ProjectIDTableHeaders.PROJECT_ID)
-        self.ent_ctx.data.table_items.project_identifiers = QTableWidgetItem(self.ent_ctx.data.project_identifiers)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
-        self.ent_ctx.data.table_items.file_name = QTableWidgetItem(self.ent_ctx.data.file_name)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
-
-    def _configure_employee_row(self, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None:
-        '''Configure the employee row in the table.'''
-
-        self.ent_ctx.data.table_items.employee = QTableWidgetItem(self.ent_ctx.data.employee)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
-        self.ent_ctx.data.table_items.worksheet = QTableWidgetItem(self.ent_ctx.data.worksheet)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
-        self.ent_ctx.data.table_items.coord = QTableWidgetItem(self.ent_ctx.data.coord)
-        pu.insert_data_widget(self.ent_ctx.panel.table, self.ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
+    configure_row: Callable[["EntryContext", int, Optional["wm.WorkbookManager"]], None] = None
 
 #           --- MODULE SERVICE FUNCTIONS ---
+
+def set_row_configurator(ent_ctx: EntryContext) -> None:
+    '''Initialise the entry handler.'''
+    ent_ctx.configure_row = {
+        st.IORole.INPUTS:           _configure_input_file_row,
+        st.IORole.OUTPUT:           _configure_output_file_row,
+        st.IORole.PROJECT_TABLE:    _configure_project_row,
+        st.IORole.EMPLOYEE_TABLE:   _configure_employee_row
+        }.get(ent_ctx.panel.role)
+
+def _configure_input_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
+    '''Configure the input row in the table.'''
+    wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(ent_ctx.panel.role, ent_ctx.data.file_name)
+    import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
+    ws.init_input_worksheet(wb_ctx)
+    pu.update_handlers_country_details(ent_ctx.data.country_data, wb_ctx)
+    ent_ctx.data.table_items.country = QTableWidgetItem(wb_ctx.locale_data.country)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.country, row, ie.InputTableHeaders.COUNTRY)
+    ent_ctx.data.table_items.sheet_name = QTableWidgetItem(wb_ctx.managed_sheet.selected_sheet.sheet_name)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.sheet_name, row, ie.InputTableHeaders.WORKSHEET)
+
+def _configure_output_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
+    '''Configure the output row in the table.'''
+    wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(ent_ctx.panel.role, ent_ctx.data.file_name)
+    import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
+    ws.init_output_worksheet(wb_ctx)
+    dropdowns = Dropdowns(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(wb_ctx))
+    pu.setup_dropdowns(ent_ctx.panel.table, row, dropdowns)
+    def connection_wrapper() -> None:
+        '''Connect functionality to the dropdowns.'''
+        pu.handle_dropdown_selection(ent_ctx, wb_ctx, row, dropdowns)
+        ent_ctx.panel.page.completeChanged.emit()
+    connect_dropdowns(dropdowns, connection_wrapper)
+
+def _configure_project_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+    '''Configure the project row in the table.'''
+    # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
+    ent_ctx.data.table_items.project_id = QTableWidgetItem(ent_ctx.data.project_id)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_id, row, ie.ProjectIDTableHeaders.PROJECT_ID)
+    ent_ctx.data.table_items.project_identifiers = QTableWidgetItem(ent_ctx.data.project_identifiers)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
+    ent_ctx.data.table_items.file_name = QTableWidgetItem(ent_ctx.data.file_name)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
+
+def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+    '''Configure the employee row in the table.'''
+    ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.employee)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
+    ent_ctx.data.table_items.worksheet = QTableWidgetItem(ent_ctx.data.worksheet)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
+    ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
 def join_project_identifiers(id_tup: t.ProjectsTup) -> str:
     '''Public module level. Set the project identifiers.'''

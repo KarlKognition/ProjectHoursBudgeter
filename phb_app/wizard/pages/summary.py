@@ -7,10 +7,9 @@ Module Name
 ---------
 Summary Page
 
-Version
+Author
 -------
-Date-based Version: 20250304
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

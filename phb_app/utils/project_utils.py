@@ -7,10 +7,9 @@ Module Name
 ---------
 Project ID Utilities
 
-Version
+Author
 -------
-Date-based Version: 20250304
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -39,9 +38,16 @@ def set_project_ids_each_input_wb(wb_mngr: "wm.WorkbookManager") -> None:
 
 def set_selected_project_ids(wb_ctx: "wm.InputWorkbookContext", table: QTableWidget, rows: list[QModelIndex], headers: ie.ProjectIDTableHeaders) -> None:
     '''Sets the selected projects IDs as references from the selectable IDs.'''
+    currently_selected = set()
     # Get the project ID and file name from each row
     for row in rows:
         proj_id = table.item(row.row(), headers.PROJECT_ID).text()
+        currently_selected.add(proj_id)
         if (proj_id not in wb_ctx.managed_sheet.selected_project_ids and
             proj_id in wb_ctx.managed_sheet.selectable_project_ids):
             wb_ctx.managed_sheet.selected_project_ids[proj_id] = wb_ctx.managed_sheet.selectable_project_ids[proj_id]
+    not_selected = set(wb_ctx.managed_sheet.selectable_project_ids.keys()) - currently_selected
+    # Remove the not selected projects from the selected projects variable
+    for proj_id in not_selected:
+        if proj_id in wb_ctx.managed_sheet.selected_project_ids:
+            del wb_ctx.managed_sheet.selected_project_ids[proj_id]

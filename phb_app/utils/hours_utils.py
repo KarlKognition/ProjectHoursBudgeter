@@ -7,10 +7,9 @@ Module Name
 ---------
 Hours Utilities
 
-Version
+Author
 -------
-Date-based Version: 20250210
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -24,25 +23,35 @@ import phb_app.data.workbook_management as wm
 import phb_app.utils.employee_utils as eu
 import phb_app.wizard.constants.ui_strings as st
 
-def sum_hours_selected_employee(workbooks: wm.WorkbookManager) -> None:
+def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext) -> None:
+    '''Compute the predicted hours for each employee in the output workbook.'''
+    pre_hours = eu.find_predicted_hours(
+        wb_ctx.managed_sheet.selected_employees,
+        wb_ctx.managed_sheet.selected_date.row,
+        wb_ctx.mngd_wb.file_path,
+        wb_ctx.managed_sheet.selected_sheet.sheet_name
+    )
+    wb_ctx.worksheet_service.set_predicted_hours(pre_hours)
+    wb_ctx.worksheet_service.set_predicted_hours_colour()
+
+def compute_hours_for_selected_employees(wbs: wm.WorkbookManager, wb_ctx: wm.OutputWorkbookContext) -> None:
+    """Compute the hours for each selected employee in the output workbook."""
+    sum_hours_selected_employee(wbs, wb_ctx)
+    for emp in wb_ctx.managed_sheet.selected_employees.values():
+        emp.hours.set_deviation()
+
+def sum_hours_selected_employee(wbs: wm.WorkbookManager, out_wb_ctx: wm.OutputWorkbookContext) -> None:
     '''Sum the hours of each employee by project ID if they are
     found in the given worksheets.'''
-
-    # Get the first (only) managed output workbook
-    out_wb_ctx = workbooks.get_output_workbook_ctx()
     selected_date = out_wb_ctx.managed_sheet.selected_date
     # Get the selected employee objects
     sel_emps = out_wb_ctx.managed_sheet.selected_employees.values()
-    for in_wb in workbooks.yield_workbook_ctxs_by_role(st.IORole.INPUTS):
+    for in_wb in wbs.yield_workbook_ctxs_by_role(st.IORole.INPUTS):
         # Get the localised filter headings from the managed input workbook
-        employee_name_col = in_wb.managed_sheet.indexed_headers.get(
-            in_wb.locale_data.filter_headers.name)
-        proj_id_col = in_wb.managed_sheet.indexed_headers.get(
-            in_wb.locale_data.filter_headers.proj_id)
-        hours_col = in_wb.managed_sheet.indexed_headers.get(
-            in_wb.locale_data.filter_headers.hours)
-        date_col = in_wb.managed_sheet.indexed_headers.get(
-            in_wb.locale_data.filter_headers.date)
+        employee_name_col = in_wb.managed_sheet.indexed_headers.get(in_wb.locale_data.filter_headers.name)
+        proj_id_col = in_wb.managed_sheet.indexed_headers.get(in_wb.locale_data.filter_headers.proj_id)
+        hours_col = in_wb.managed_sheet.indexed_headers.get(in_wb.locale_data.filter_headers.hours)
+        date_col = in_wb.managed_sheet.indexed_headers.get(in_wb.locale_data.filter_headers.date)
         # Selected project ID iterator
         proj_id_dict = in_wb.managed_sheet.selected_project_ids
         # Go through each row of the selected worksheet, skipping the header row (row 1)
@@ -79,7 +88,6 @@ def sum_hours_selected_employee(workbooks: wm.WorkbookManager) -> None:
 
 def write_hours_to_output_file(output_file: wm.OutputWorkbookContext) -> None:
     '''Write recorded hours to output budgeting file.'''
-
     emp_dict = output_file.managed_sheet.selected_employees
     date_row = output_file.managed_sheet.selected_date.row
     sheet = output_file.managed_sheet.selected_sheet.sheet_object

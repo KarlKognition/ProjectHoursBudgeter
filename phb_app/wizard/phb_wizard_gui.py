@@ -3,10 +3,9 @@ Module Name
 ---------
 Project Hours Budgeting Wizard GUI
 
-Version
+Author
 -------
-Date-based Version: 202502005
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

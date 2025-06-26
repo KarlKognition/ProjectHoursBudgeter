@@ -7,10 +7,9 @@ Module Name
 ---------
 Workbook Management
 
-Version
+Author
 -------
-Date-based Version: 10062025
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -94,33 +93,7 @@ def set_locale_data(
         if locale.country == country_name),
         None)
 
-def init_input_worksheet(context: InputWorkbookContext) -> None:
-    """Public module level. Init input worksheet."""
-    sheetnames = context.mngd_wb.workbook_object.sheetnames
-    # If there is only one sheet, use that;
-    # otherwise, use the locale data's expected sheet name.
-    sheet_name = (
-        sheetnames[0]
-        if len(sheetnames) <= 1
-        else context.locale_data.exp_sheet_name
-    )
-    sheet_obj = context.mngd_wb.workbook_object[sheet_name]
-    managed_sheet = ws.create_managed_input_worksheet(sheet_name, sheet_obj)
-    service = ws.InputWorksheetService(worksheet=managed_sheet)
-    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
-    context.managed_sheet = managed_sheet
-    context.worksheet_service = service
-    service.index_headers()
-
 #           --- OUTPUT SERVICE MODULE FUNCTIONS ---
-
-def init_output_worksheet(context: OutputWorkbookContext) -> None:
-    """Public module level. Init output worksheet."""
-    worksheet = ws.create_managed_output_worksheet()
-    service = ws.OutputWorksheetService(worksheet=worksheet)
-    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
-    context.managed_sheet = worksheet
-    context.worksheet_service = service
 
 def save_output_workbook(context: OutputWorkbookContext) -> None:
     """Public module level. Saves the workbook with its given file path."""

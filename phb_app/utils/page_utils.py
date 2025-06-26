@@ -5,12 +5,11 @@ PHB Wizard
 
 Module Name
 ---------
-Page Setup
+Page Utilities
 
-Version
+Author
 -------
-Date-based Version: 20250504
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -35,7 +34,6 @@ import phb_app.data.months_dict as md
 import phb_app.logging.error_manager as em
 import phb_app.logging.exceptions as ex
 import phb_app.utils.date_utils as du
-import phb_app.utils.employee_utils as eu
 import phb_app.utils.file_handling_utils as fu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.wizard.constants.ui_strings as st
@@ -255,7 +253,8 @@ def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWor
     import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
     io.update_current_text(dropdowns)
     try:
-        eu.set_selected_sheet(wb_ctx, dropdowns.current_text.worksheet)
+        wb_ctx.worksheet_service.set_selected_sheet(wb_ctx, dropdowns.current_text.worksheet)
+        wb_ctx.worksheet_service.compute_employee_range()
         du.set_budgeting_date(wb_ctx, dropdowns.current_text)
     except (ex.EmployeeRowAnchorsMisalignment, ex.MissingEmployeeRow, ex.BudgetingDatesNotFound,
             KeyError) as exc:
@@ -274,7 +273,7 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
             file_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             file_ctx.data.table_items.file_name = QTableWidgetItem(file_ctx.data.file_name)
             insert_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
-            file_ctx.configure_row(row, wb_mngr)
+            file_ctx.configure_row(file_ctx, row, wb_mngr)
             _check_file_validity(file_ctx)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,
@@ -291,7 +290,7 @@ def populate_project_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mn
             proj_ctx.data.project_id = proj_ids[ie.ProjectIDTableHeaders.PROJECT_ID]
             proj_ctx.data.project_identifiers = io.join_project_identifiers(proj_ids)
             proj_ctx.data.file_name = wb_ctx.mngd_wb.file_name
-            proj_ctx.configure_row(row)
+            proj_ctx.configure_row(proj_ctx, row)
     page.completeChanged.emit()
 
 def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
@@ -305,7 +304,7 @@ def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mn
             emp_ctx.data.employee = cell.value
             emp_ctx.data.worksheet = wb_ctx.managed_sheet.selected_sheet.sheet_name
             emp_ctx.data.coord = cell.coordinate
-            emp_ctx.configure_row(row)
+            emp_ctx.configure_row(emp_ctx, row)
         row += 1
     page.completeChanged.emit()
 

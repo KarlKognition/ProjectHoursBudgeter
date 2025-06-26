@@ -11,7 +11,7 @@ countries:
     proj_id: Projekt-Element
     description: Projektbezeichnung
     hours: Stunden gesamt
-    date: BuchDatum
+    date: Buchdatum
 - country: Romania
   file_type: Romanian timesheet
   file_patterns: # Keep all identifiers lowercase

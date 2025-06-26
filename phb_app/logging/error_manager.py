@@ -3,10 +3,9 @@ Module Name
 ---------
 Project Hours Budgeting Error Management functionality
 
-Version
+Author
 -------
-Date-based Version: 20250224
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------

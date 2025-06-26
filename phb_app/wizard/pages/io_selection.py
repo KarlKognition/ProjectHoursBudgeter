@@ -7,10 +7,9 @@ Module Name
 ---------
 IO Selection Page
 
-Version
+Author
 -------
-Date-based Version: 20250304
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -67,13 +66,15 @@ class IOSelectionPage(QWizardPage):
         )
         pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
         in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))
-        io.EntryHandler(in_ctx)
+        # Choose the row configurator for the input context
+        io.set_row_configurator(in_ctx)
         pu.connect_buttons(self, in_ctx, wb_mgmt)
         out_ctx = io.EntryContext(self.output_panel, data=io.IOFileContext())
-        io.EntryHandler(out_ctx)
+        # Choose the row configurator for the output context
+        io.set_row_configurator(out_ctx)
         pu.connect_buttons(self, out_ctx, wb_mgmt)
 
-    def isComplete(self) -> bool:
+    def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.
         Check if both tables have at least one row selected
         and no error messages are displayed.'''

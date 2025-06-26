@@ -7,10 +7,9 @@ Module Name
 ---------
 Project Selection Page
 
-Version
+Author
 -------
-Date-based Version: 20250304
-Author: Karl Goran Antony Zuvela
+Karl Goran Antony Zuvela
 
 Description
 -----------
@@ -45,20 +44,21 @@ class ProjectSelectionPage(QWizardPage):
 
 #           --- QWizard function overrides ---
 
-    def initializePage(self) -> None:
+    def initializePage(self) -> None: # pylint: disable=invalid-name
         '''Override page initialisation. Setup page on each visit.'''
         pro.set_project_ids_each_input_wb(self.wb_mgmt)
-        io.EntryHandler(self.proj_ctx)
+        # Choose the row configurator for the project table
+        io.set_row_configurator(self.proj_ctx)
         pu.connect_buttons(self, self.proj_ctx)
         pu.populate_project_table(self, self.proj_ctx, self.wb_mgmt)
 
-    def cleanupPage(self):
+    def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Override the page cleanup.
         Clear the table if the back button is pressed.'''
         self.project_panel.table.clear()
         self.project_panel.table.setRowCount(0)
 
-    def isComplete(self) -> bool:
+    def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
         check = pu.check_completion(self.project_panel)
