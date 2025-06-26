@@ -52,7 +52,12 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.INPUTS,
             label=QLabel(st.INPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(self, ie.InputTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.INPUT_COLUMN_WIDTHS),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.InputTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.MultiSelection,
+                col_widths=hm.INPUT_COLUMN_WIDTHS
+            ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.INPUTS]
         )
@@ -60,11 +65,20 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(self, ie.OutputTableHeaders, QTableWidget.SelectionMode.SingleSelection, hm.OUTPUT_COLUMN_WIDTHS),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.OutputTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.SingleSelection,
+                col_widths=hm.OUTPUT_COLUMN_WIDTHS
+            ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.OUTPUT]
         )
-        pu.setup_page(self, [pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)], QHBoxLayout())
+        pu.setup_page(
+            page=self,
+            widgets=[pu.create_interaction_panel(self.input_panel), pu.create_interaction_panel(self.output_panel)],
+            layout_type=QHBoxLayout()
+        )
         in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))
         # Choose the row configurator for the input context
         io.set_row_configurator(in_ctx)

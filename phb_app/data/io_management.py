@@ -75,6 +75,22 @@ class EmployeeTableItems:
     coord: Optional[QTableWidgetItem] = None
 
 @dataclass
+class SummaryIOTableItems:
+    '''Data class for managing the summary IO table items.'''
+    io_sum: Optional[QTableWidgetItem] = None
+
+@dataclass
+class SummaryDataTableItems:
+    '''Data class for managing the summary data table items.'''
+    emp_name: Optional[QTableWidgetItem] = None
+    pred_hrs: Optional[QTableWidgetItem] = None
+    acc_hrs: Optional[QTableWidgetItem] = None
+    dev: Optional[QTableWidgetItem] = None
+    proj_id: Optional[QTableWidgetItem] = None
+    out_ws: Optional[QTableWidgetItem] = None
+    coord: Optional[QTableWidgetItem] = None
+
+@dataclass
 class IOFileContext:
     '''Data class for managing the data in the table.'''
     file_name: Optional[str] = None
@@ -97,8 +113,27 @@ class EmployeeTableContext:
     coord: Optional[str] = None
     table_items: Optional[EmployeeTableItems] = field(default_factory=EmployeeTableItems)
 
+@dataclass
+class SummaryIOContext:
+    '''Data class for managing the summary table.'''
+    io_sum: Optional[str] = None
+    table_items: Optional[SummaryIOTableItems] = field(default_factory=SummaryIOTableItems)
 
-type FileHandlerData = IOFileContext | ProjectTableContext | EmployeeTableContext
+@dataclass
+class SummaryDataContext:
+    '''Data class for managing the summary table.'''
+    emp_name: Optional[str] = None
+    pred_hrs: Optional[float] = None
+    acc_hrs: Optional[float] = None
+    dev: Optional[str] = None
+    proj_id: Optional[t.ProjectId] = None
+    out_ws: Optional[str] = None
+    coord: Optional[str] = None
+    table_items: Optional[SummaryDataTableItems] = field(default_factory=SummaryDataTableItems)
+
+type FileHandlerData = (
+    IOFileContext | ProjectTableContext | EmployeeTableContext | SummaryIOContext | SummaryDataContext
+)
 
 @dataclass
 class EntryContext:

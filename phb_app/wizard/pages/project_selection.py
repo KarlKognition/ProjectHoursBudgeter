@@ -36,11 +36,20 @@ class ProjectSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.PROJECT_TABLE,
             label=QLabel(st.PROJECT_SELECTION_INSTRUCTIONS),
-            table=pu.create_table(self, ie.ProjectIDTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.PROJECT_COLUMN_WIDTHS),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.ProjectIDTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.MultiSelection,
+                col_widths=hm.PROJECT_COLUMN_WIDTHS
+            ),
             buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
         self.proj_ctx = io.EntryContext(self.project_panel, io.ProjectTableContext())
-        pu.setup_page(self, [pu.create_interaction_panel(self.project_panel)], QHBoxLayout())
+        pu.setup_page(
+            page=self,
+            widgets=[pu.create_interaction_panel(self.project_panel)],
+            layout_type=QHBoxLayout()
+        )
 
 #           --- QWizard function overrides ---
 

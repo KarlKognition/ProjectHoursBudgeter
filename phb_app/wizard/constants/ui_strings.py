@@ -65,7 +65,7 @@ PROJECT_SELECTION_INSTRUCTIONS = """
 <p>The project decription is purely to help in the recognition of the wished after project ID. It will not be used in any calculations.</p>
 """
 
-#           --- PROJECT SELECTION PAGE ---
+#           --- EMPLOYEE SELECTION PAGE ---
 
 EMPLOYEE_SELECTION_TITLE = "Employee Selection"
 
@@ -76,6 +76,19 @@ EMPLOYEE_SELECTION_INSTRUCTIONS = """
 <p><em>Coord</em> indicates the cell coordinate in the output budgeting file where the employee's name stands.</p>
 """
 
+#           --- SUMMARY PAGE ---
+
+SUMMARY_TITLE = "Summary"
+
+SUMMARY_SUBTITLE = "Select the employees whose hours will be budgeted."
+
+IO_SUMMARY = "IO Summary."
+
+SUMMARY_INSTRUCTIONS = """
+<p>Check all details before selecting which employee's hours should be recorded.</P>
+<p>Missing hours will be omitted. Red predicted hours imply that hours have already been recorded and thus will not be overwritten. The project ID column displays from where the hours were taken.</p>
+"""
+
 class IORole(StrEnum):
     '''Input or output roles.'''
 
@@ -83,7 +96,8 @@ class IORole(StrEnum):
     OUTPUT = auto()
     PROJECT_TABLE = auto()
     EMPLOYEE_TABLE = auto()
-    SUMMARY_TABLE = auto()
+    SUMMARY_IO_TABLE = auto()
+    SUMMARY_DATA_TABLE = auto()
 
 class SpecialStrings(StrEnum):
     '''Enum for selecting worksheets.'''

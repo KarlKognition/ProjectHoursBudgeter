@@ -33,17 +33,25 @@ class EmployeeSelectionPage(QWizardPage):
         super().__init__()
         self.wb_mgmt = managed_workbooks
         self.wb_ctx: Optional[wm.OutputWorkbookContext] = None
-        print(f"{self.wb_ctx = }")
         pu.set_titles(self, st.PROJECT_SELECTION_TITLE, st.PROJECT_SELECTION_SUBTITLE)
         self.employee_panel = io.IOControls(
             page=self,
             role=st.IORole.EMPLOYEE_TABLE,
             label=QLabel(st.EMPLOYEE_SELECTION_INSTRUCTIONS),
-            table=pu.create_table(self, ie.EmployeeTableHeaders, QTableWidget.SelectionMode.MultiSelection, hm.EMPLOYEE_COLUMN_WIDTHS),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.EmployeeTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.MultiSelection,
+                col_widths=hm.EMPLOYEE_COLUMN_WIDTHS
+            ),
             buttons=[QPushButton(st.ButtonNames.SELECT_ALL, self), QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )
         self.emp_ctx = io.EntryContext(self.employee_panel, io.EmployeeTableContext())
-        pu.setup_page(self, [pu.create_interaction_panel(self.employee_panel)], QHBoxLayout())
+        pu.setup_page(
+            page=self,
+            widgets=[pu.create_interaction_panel(self.employee_panel)],
+            layout_type=QHBoxLayout()
+        )
 
 #           --- QWizard function overrides ---
 

@@ -25,7 +25,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
     QWidget, QLabel, QFileDialog, QVBoxLayout,
-    QTableWidget, QTableWidgetItem
+    QTableWidget, QTableWidgetItem, QHeaderView
 )
 # First party libraries
 import phb_app.data.header_management as hm
@@ -91,14 +91,25 @@ def setup_error_panel(role: st.IORole) -> QWidget:
     em.error_panels[role].setLayout(QVBoxLayout())
     return em.error_panels[role]
 
-def create_table(page: QWizardPage, table_headers: ie.BaseTableHeaders, selection_mode: QTableWidget.SelectionMode, col_widths: hm.ColWidths) -> QTableWidget:
+def create_table(
+    page: QWizardPage,
+    table_headers: ie.BaseTableHeaders,
+    selection_mode: QTableWidget.SelectionMode,
+    col_widths: hm.ColWidths,
+    vertical_headers: bool = False
+    ) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
     table = QTableWidget(0, len(table_headers))
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     table.setSelectionMode(selection_mode)
     table.selectionModel().selectionChanged.connect(lambda selected, deselected: page.completeChanged.emit())
-    table.setHorizontalHeaderLabels(table_headers.cap_members_list())
-    table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+    if vertical_headers:
+        table.setVerticalHeaderLabels(table_headers.cap_members_list())
+        table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    else:
+        table.setHorizontalHeaderLabels(table_headers.cap_members_list())
+        table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
     for header, width in col_widths.items():
         table.setColumnWidth(header, width)
     return table
@@ -112,8 +123,9 @@ def create_interaction_panel(panel: "io.IOControls") -> QWidget:
     layout.addWidget(panel.table)
     buttons_layout = QHBoxLayout()
     # Add all assigned buttons
-    for button in panel.buttons:
-        buttons_layout.addWidget(button)
+    if panel.buttons:
+        for button in panel.buttons:
+            buttons_layout.addWidget(button)
     layout.addLayout(buttons_layout)
     if panel.error_panel:
         layout.addWidget(panel.error_panel)

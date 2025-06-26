@@ -17,54 +17,62 @@ Constructs and manages the summary page.
 '''
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QWizardPage, QLabel, QTableWidget, QPushButton,
-    QVBoxLayout, QTableWidgetItem
-)
-import phb_app.data.workbook_management as wm
+from PyQt6.QtWidgets import QWizardPage, QLabel, QTableWidget, QPushButton, QVBoxLayout, QTableWidgetItem
+#           --- First party libraries ---
 import phb_app.data.header_management as hm
-import phb_app.utils.date_utils as du
-import phb_app.logging.logger as logger
-import phb_app.wizard.constants.ui_strings as st
+import phb_app.data.io_management as io
 import phb_app.data.months_dict as md
+import phb_app.data.workbook_management as wm
+import phb_app.utils.date_utils as du
+import phb_app.utils.page_utils as pu
+import phb_app.logging.logger as logger
+import phb_app.wizard.constants.integer_enums as ie
+import phb_app.wizard.constants.ui_strings as st
 
 class SummaryPage(QWizardPage):
-    '''Page for displaying the summary of results from the actions taken by
-    the background functionality.'''
+    '''Page for displaying the summary of results'''
     def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
-
-        self.setTitle("Summary")
-        self.setSubTitle(
-            "Check all details before selecting which employee's hours should be recorded. "
-            "Missing hours will be omitted. Red predicted hours implies hours have already "
-            "been recorded and thus will not be overwritten. The project ID column displays from "
-            "where the hours were taken."
+        self.wb_mgmt = managed_workbooks
+        pu.set_titles(self, st.SUMMARY_TITLE, st.SUMMARY_SUBTITLE)
+        self.summary_io_panel = io.IOControls(
+            page=self,
+            role=st.IORole.SUMMARY_IO_TABLE,
+            label=QLabel(st.IO_SUMMARY),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.SummaryIOTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.NoSelection,
+                col_widths=hm.SUMMARY_IO_COLUMN_WIDTH,
+                vertical_headers=True
+            ),
+            buttons=None
         )
-        # Headers
-        self.headers = hm.SummaryTableHeaders.cap_members_list()
-        self.wb_out: wm.ManagedOutputWorkbook = None
-
-        ## Init property
-        # To be populated at page init
-        self.selected_projects = []
-        self.managed_workbooks: wm.WorkbookManager
-
-        self.setup_widgets()
-        self.setup_layout()
-        self.setup_connections()
+        self.summary_data_panel = io.IOControls(
+            page=self,
+            role=st.IORole.SUMMARY_DATA_TABLE,
+            label=QLabel(st.SUMMARY_INSTRUCTIONS),
+            table=pu.create_table(
+                page=self,
+                table_headers=ie.SummaryDataTableHeaders,
+                selection_mode=QTableWidget.SelectionMode.MultiSelection,
+                col_widths=hm.SUMMARY_DATA_COLUMN_WIDTHS
+            ),
+            buttons=[QPushButton(st.ButtonNames.SELECT_ALL, self), QPushButton(st.ButtonNames.DESELECT_ALL, self)]
+        )
+        self.sum_io_ctx = io.EntryContext(self.summary_io_panel, io.SummaryIOContext())
+        self.sum_data_ctx = io.EntryContext(self.summary_data_panel, io.SummaryDataContext())
+        pu.setup_page(
+            page=self,
+            widgets=[pu.create_interaction_panel(self.summary_io_panel), pu.create_interaction_panel(self.summary_data_panel)],
+            layout_type=QVBoxLayout())
         self.setFinalPage(True)
 
-    #######################################
-    ### QWizard setup function override ###
-    #######################################
+#           --- QWizard function overrides ---
 
     def initializePage(self) -> None:
         '''Override page initialisation. Setup page on each visit.'''
 
-        # Get workbooks from IOSelection
-        self.managed_workbooks = self.wizard().property(
-            st.QPropName.MANAGED_WORKBOOKS)
         ## Info label text
         # Input names text
         input_names = "".join(
@@ -110,81 +118,6 @@ class SummaryPage(QWizardPage):
         # Get selected projects from the Project Selection page
         self.selected_projects = self.wizard().property(
             st.QPropName.SELECTED_PROJECTS)
-
-    #######################
-    ### Setup functions ###
-    #######################
-
-    def setup_widgets(self) -> None:
-        '''Init all widgets.'''
-
-        ## Summary
-        # Date
-        self.selected_date_label = QLabel()
-        self.selected_date_label.setTextFormat(Qt.TextFormat.RichText)
-        # In
-        self.in_details_label = QLabel()
-        self.in_details_label.setTextFormat(Qt.TextFormat.RichText)
-        # Out
-        self.out_details_label = QLabel()
-        self.out_details_label.setTextFormat(Qt.TextFormat.RichText)
-
-        ## Projects table
-        # Start with 0 rows and 2 columns
-        self.summary_table = QTableWidget(0, len(hm.SummaryTableHeaders))
-        # Allow multiple row selections in the table
-        self.summary_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.summary_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
-        # Adjust the width of each column
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.EMPLOYEE, 250)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.PREDICTED_HOURS, 100)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.ACCUMULATED_HOURS, 120)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.DEVIATION, 160)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.PROJECT_ID, 450)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.OUTPUT_WORKSHEET, 150)
-        self.summary_table.setColumnWidth(hm.SummaryTableHeaders.COORDINATE, 80)
-
-        ## Table selection control buttons
-        # Add deselect all button
-        self.select_employees_button = QPushButton(st.ButtonNames.SELECT_ALL, self)
-        # Add deselect all button
-        self.deselect_employees_button = QPushButton(st.ButtonNames.DESELECT_ALL, self)
-
-    def setup_layout(self) -> None:
-        '''Init layout.'''
-
-        ## Layout types
-        # Main layout
-        main_layout = QVBoxLayout()
-
-        ## Add widgets
-        # To main layout
-        main_layout.addWidget(self.selected_date_label)
-        main_layout.addWidget(self.in_details_label)
-        main_layout.addWidget(self.out_details_label)
-        main_layout.addWidget(self.summary_table)
-        main_layout.addWidget(self.select_employees_button)
-        main_layout.addWidget(self.deselect_employees_button)
-
-        ## Display
-        self.setLayout(main_layout)
-
-    def setup_connections(self):
-        '''Connect buttons to their respective actions.'''
-
-        ## Connect functions
-        # Select all
-        self.select_employees_button.clicked.connect(
-            self.summary_table.selectAll
-        )
-        # Deselect all
-        self.deselect_employees_button.clicked.connect(
-            self.summary_table.clearSelection
-        )
-        # Check isComplete
-        self.summary_table.itemSelectionChanged.connect(
-            self.completeChanged.emit
-        )
 
     ############################
     ### Supporting functions ###
@@ -288,7 +221,7 @@ class SummaryPage(QWizardPage):
     ### QWizard function overrides ###
     ##################################
 
-    def cleanupPage(self):
+    def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''
 
         # Clear the table
@@ -298,13 +231,13 @@ class SummaryPage(QWizardPage):
         out_wb = next(self.managed_workbooks.yield_workbooks_by_type(wm.ManagedOutputWorkbook))
         out_wb.managed_sheet_object.clear_predicted_hours()
 
-    def isComplete(self) -> bool:
+    def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
 
-        return bool(self.summary_table.selectionModel().selectedRows())
+        return bool(self.summary_data_panel.table.selectionModel().selectedRows())
 
-    def validatePage(self) -> bool:
+    def validatePage(self) -> bool: # pylint: disable=invalid-name
         '''Override the page validation.
         Set the property.'''
 

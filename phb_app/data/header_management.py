@@ -18,26 +18,6 @@ import phb_app.wizard.constants.integer_enums as ie
 
 type ColWidths = dict[ie.BaseTableHeaders, int]
 
-class WizardPageIDs(ie.BaseTableHeaders):
-    '''Enumerated pages in order of appearance.'''
-
-    EXPLANATION_PAGE = 0
-    I_O_SELECTION_PAGE = auto()
-    PROJECT_SELECTION_PAGE = auto()
-    EMPLOYEE_SELECTION_PAGE = auto()
-    SUMMARY_PAGE = auto()
-
-class SummaryTableHeaders(ie.BaseTableHeaders):
-    '''Summary table headers in summary selection.'''
-
-    EMPLOYEE = 0
-    PREDICTED_HOURS = auto()
-    ACCUMULATED_HOURS = auto()
-    DEVIATION = auto()
-    PROJECT_ID = auto()
-    OUTPUT_WORKSHEET = auto()
-    COORDINATE = auto()
-
 INPUT_COLUMN_WIDTHS = {
     ie.InputTableHeaders.FILENAME: 250,
     ie.InputTableHeaders.COUNTRY: 150,
@@ -61,6 +41,20 @@ EMPLOYEE_COLUMN_WIDTHS = {
     ie.EmployeeTableHeaders.EMPLOYEE: 450,
     ie.EmployeeTableHeaders.WORKSHEET: 150,
     ie.EmployeeTableHeaders.COORDINATE: 80
+}
+
+SUMMARY_IO_COLUMN_WIDTH = {
+    "DATA": 450
+}
+
+SUMMARY_DATA_COLUMN_WIDTHS = {
+    ie.SummaryDataTableHeaders.EMPLOYEE: 250,
+    ie.SummaryDataTableHeaders.PREDICTED_HOURS: 100,
+    ie.SummaryDataTableHeaders.ACCUMULATED_HOURS: 120,
+    ie.SummaryDataTableHeaders.DEVIATION: 160,
+    ie.SummaryDataTableHeaders.PROJECT_ID: 450,
+    ie.SummaryDataTableHeaders.OUTPUT_WORKSHEET: 150,
+    ie.SummaryDataTableHeaders.COORDINATE: 80
 }
 
 DEFAULT_PADDING = 5
