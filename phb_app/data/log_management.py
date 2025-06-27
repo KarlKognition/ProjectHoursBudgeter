@@ -14,4 +14,4 @@ class FileMetaData:
 class TableStructure:
     '''Encapsulates table-related metadata.'''
     headers: list[str]
-    col_widths: list[int]
+    tab_widths: list[int]

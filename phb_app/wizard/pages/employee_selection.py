@@ -38,11 +38,11 @@ class EmployeeSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.EMPLOYEE_TABLE,
             label=QLabel(st.EMPLOYEE_SELECTION_INSTRUCTIONS),
-            table=pu.create_table(
+            table=pu.create_col_header_table(
                 page=self,
                 table_headers=ie.EmployeeTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.MultiSelection,
-                col_widths=hm.EMPLOYEE_COLUMN_WIDTHS
+                tab_widths=hm.EMPLOYEE_COLUMN_WIDTHS
             ),
             buttons=[QPushButton(st.ButtonNames.SELECT_ALL, self), QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )

@@ -63,10 +63,10 @@ def get_table_structure(table: QTableWidget,
     '''Gets table headers and column widths.'''
 
     headers = st.LogTableHeaders.list_all_values()
-    col_widths = calculate_column_widths(table, headers, max_proj_id_list_len)
+    tab_widths = calculate_table_widths(table, headers, max_proj_id_list_len)
     return lm.TableStructure(
         headers=headers,
-        col_widths=col_widths
+        tab_widths=tab_widths
     )
 
 def get_max_project_id_list_length(employees: list[emp.Employee]) -> int:
@@ -97,12 +97,12 @@ def add_spacings(header: str,
 
     return max(len(header), max_table_item_length) + hm.DEFAULT_PADDING
 
-def calculate_column_widths(table: QTableWidget,
+def calculate_table_widths(table: QTableWidget,
                             headers: list[str],
                             max_proj_id_list_len: int) -> list[int]:
     '''Calculates column widths based on the longest value in each column.'''
 
-    col_widths = []
+    tab_widths = []
     for col, header in enumerate(headers):
         log_headers = st.LogTableHeaders.list_all_values()
         if header not in log_headers:
@@ -112,8 +112,8 @@ def calculate_column_widths(table: QTableWidget,
         else:
             max_table_item_length = get_max_table_item_length(table, col)
             col_width = add_spacings(header, max_table_item_length)
-        col_widths.append(col_width)
-    return col_widths
+        tab_widths.append(col_width)
+    return tab_widths
 
 def format_hours_wrapper(text: str) -> Callable[[Optional[float], Qt.GlobalColor], str]:
     '''Returns a function that formats hours according to the text given.'''
@@ -157,7 +157,7 @@ def format_row(employees: list[emp.Employee],
         deviation = employee.hours.deviation
         row_values = [name, predicted_hours, accumulated_hours, deviation, project_info, coord]
         formatted_row = "".join(
-            str(value).rjust(width) for value, width in zip(row_values, table_structure.col_widths))
+            str(value).rjust(width) for value, width in zip(row_values, table_structure.tab_widths))
         formatted_rows.append(formatted_row)
     return formatted_rows
 
@@ -173,7 +173,7 @@ def write_log_file(file_meta: lm.FileMetaData,
         log_file.write(f"* Input workbook(s): {'\n'.join(file_meta.input_workbooks)}\n")
         log_file.write(f"* Output workbook: {file_meta.output_file_name}\n")
         log_file.write(f"* Output worksheet: {file_meta.output_worksheet_name}\n\n")
-        header_line = "".join(table_structure.headers[col].rjust(table_structure.col_widths[col])
+        header_line = "".join(table_structure.headers[col].rjust(table_structure.tab_widths[col])
                               for col in range(len(table_structure.headers)))
         log_file.write(header_line + "\n")
         log_file.write("-" * len(header_line) + "\n")

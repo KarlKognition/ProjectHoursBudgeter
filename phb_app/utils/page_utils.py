@@ -91,26 +91,36 @@ def setup_error_panel(role: st.IORole) -> QWidget:
     em.error_panels[role].setLayout(QVBoxLayout())
     return em.error_panels[role]
 
-def create_table(
+def create_row_header_table(
     page: QWizardPage,
     table_headers: ie.BaseTableHeaders,
-    selection_mode: QTableWidget.SelectionMode,
-    col_widths: hm.ColWidths,
-    vertical_headers: bool = False
+    selection_mode: QTableWidget.SelectionMode
     ) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
-    table = QTableWidget(0, len(table_headers))
+    table = QTableWidget(len(table_headers), 0)
+    table.setVerticalHeaderLabels(table_headers.cap_members_list())
+    table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+    table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    table.horizontalHeader().setVisible(False)
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     table.setSelectionMode(selection_mode)
     table.selectionModel().selectionChanged.connect(lambda selected, deselected: page.completeChanged.emit())
-    if vertical_headers:
-        table.setVerticalHeaderLabels(table_headers.cap_members_list())
-        table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
-        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-    else:
-        table.setHorizontalHeaderLabels(table_headers.cap_members_list())
-        table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
-    for header, width in col_widths.items():
+    return table
+
+def create_col_header_table(
+    page: QWizardPage,
+    table_headers: ie.BaseTableHeaders,
+    selection_mode: QTableWidget.SelectionMode,
+    tab_widths: hm.TableWidths,
+    ) -> QTableWidget:
+    '''Create a table widget with the given headers and selection mode.'''
+    table = QTableWidget(0, len(table_headers))
+    table.setHorizontalHeaderLabels(table_headers.cap_members_list())
+    table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
+    table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+    table.setSelectionMode(selection_mode)
+    table.selectionModel().selectionChanged.connect(lambda selected, deselected: page.completeChanged.emit())
+    for header, width in tab_widths.items():
         table.setColumnWidth(header, width)
     return table
 
@@ -199,7 +209,19 @@ def _insert_row(panel: "io.IOControls") -> int:
     panel.table.insertRow(row)
     return row
 
-def insert_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row: int, column: ie.InputTableHeaders) -> None:
+def _insert_col(panel: "io.IOControls") -> int:
+    '''Insert a new column in the table.'''
+    col = panel.table.columnCount()
+    panel.table.insertColumn(col)
+    return col
+
+def insert_row_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row: int, column: ie.BaseTableHeaders) -> None:
+    '''Insert given widget item into the table.'''
+    widget_item.setFlags(widget_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+    table.setItem(row, column, widget_item)
+    table.resizeRowToContents(row)
+
+def insert_col_data_widget(table: QTableWidget, widget_item: QTableWidgetItem, row: ie.BaseTableHeaders, column: int) -> None:
     '''Insert given widget item into the table.'''
     widget_item.setFlags(widget_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
     table.setItem(row, column, widget_item)
@@ -284,7 +306,7 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
             wb_mngr.add_workbook(file_ctx.panel.role, wb_ctx)
             file_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             file_ctx.data.table_items.file_name = QTableWidgetItem(file_ctx.data.file_name)
-            insert_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
+            insert_row_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
             file_ctx.configure_row(file_ctx, row, wb_mngr)
             _check_file_validity(file_ctx)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
@@ -323,7 +345,7 @@ def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mn
 
 def populate_io_summary_table(page: QWizardPage, sum_io_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the summary table with IO data.'''
-    row = _insert_row(sum_io_ctx.panel)
+    col = _insert_col(sum_io_ctx.panel)
     in_wb_names = wb_mngr.get_wb_names_list_by_role(st.IORole.INPUTS)
     import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
     sum_io_ctx.data.in_file_names = io.join_str_list('\n', in_wb_names)
@@ -332,7 +354,7 @@ def populate_io_summary_table(page: QWizardPage, sum_io_ctx: "io.EntryContext", 
     date = wb_mngr.get_output_workbook_ctx().managed_sheet.selected_date
     month = du.abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
     sum_io_ctx.data.date = f"{month} {date.year}"
-    sum_io_ctx.configure_row(sum_io_ctx, row)
+    sum_io_ctx.configure_row(sum_io_ctx, col)
     page.completeChanged.emit()
     
 

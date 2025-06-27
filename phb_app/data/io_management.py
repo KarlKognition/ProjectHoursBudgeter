@@ -166,9 +166,9 @@ def _configure_input_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Work
     ws.init_input_worksheet(wb_ctx)
     pu.update_handlers_country_details(ent_ctx.data.country_data, wb_ctx)
     ent_ctx.data.table_items.country = QTableWidgetItem(wb_ctx.locale_data.country)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.country, row, ie.InputTableHeaders.COUNTRY)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.country, row, ie.InputTableHeaders.COUNTRY)
     ent_ctx.data.table_items.sheet_name = QTableWidgetItem(wb_ctx.managed_sheet.selected_sheet.sheet_name)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.sheet_name, row, ie.InputTableHeaders.WORKSHEET)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.sheet_name, row, ie.InputTableHeaders.WORKSHEET)
 
 def _configure_output_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
     '''Configure the output row in the table.'''
@@ -187,46 +187,47 @@ def _configure_project_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Workboo
     '''Configure the project row in the table.'''
     # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
     ent_ctx.data.table_items.project_id = QTableWidgetItem(ent_ctx.data.project_id)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_id, row, ie.ProjectIDTableHeaders.PROJECT_ID)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_id, row, ie.ProjectIDTableHeaders.PROJECT_ID)
     ent_ctx.data.table_items.project_identifiers = QTableWidgetItem(ent_ctx.data.project_identifiers)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.project_identifiers, row, ie.ProjectIDTableHeaders.DESCRIPTION)
     ent_ctx.data.table_items.file_name = QTableWidgetItem(ent_ctx.data.file_name)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
 
 def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
     '''Configure the employee row in the table.'''
     ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.emp_name)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
     ent_ctx.data.table_items.worksheet = QTableWidgetItem(ent_ctx.data.worksheet)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.worksheet, row, ie.EmployeeTableHeaders.WORKSHEET)
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
-def _configure_summary_io_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+def _configure_summary_io_row(ent_ctx: EntryContext, col: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
     '''Configure the summary IO row in the table. There is only one column.'''
     ent_ctx.data.table_items.in_file_names = QTableWidgetItem(ent_ctx.data.in_file_names)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.in_file_names, row, ie.CONST_0)
+    pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.in_file_names, ie.SummaryIOTableHeaders.INPUT_WORKBOOKS, col)
     ent_ctx.data.table_items.out_file_names = QTableWidgetItem(ent_ctx.data.out_file_names)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_file_names, row, ie.CONST_0)
+    pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_file_names, ie.SummaryIOTableHeaders.OUTPUT_WORKBOOK, col)
     ent_ctx.data.table_items.date = QTableWidgetItem(ent_ctx.data.date)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.date, row, ie.CONST_0)
+    pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.date, ie.SummaryIOTableHeaders.SELECTED_DATE, col)
+    ent_ctx.panel.table.resizeColumnsToContents()
 
 def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
     '''Configure the summary data row in the table.'''
     ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
     ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(str(ent_ctx.data.pred_hrs))
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
     ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(str(ent_ctx.data.acc_hrs))
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
     ent_ctx.data.table_items.dev = QTableWidgetItem(ent_ctx.data.dev)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.dev, row, ie.SummaryDataTableHeaders.DEVIATION)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.dev, row, ie.SummaryDataTableHeaders.DEVIATION)
     ent_ctx.data.table_items.proj_id = QTableWidgetItem(ent_ctx.data.proj_id)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.proj_id, row, ie.SummaryDataTableHeaders.PROJECT_ID)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.proj_id, row, ie.SummaryDataTableHeaders.PROJECT_ID)
     ent_ctx.data.table_items.out_ws = QTableWidgetItem(ent_ctx.data.out_ws_name)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_ws, row, ie.SummaryDataTableHeaders.OUTPUT_WORKSHEET)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_ws, row, ie.SummaryDataTableHeaders.OUTPUT_WORKSHEET)
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
-    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.SummaryDataTableHeaders.COORDINATE)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.SummaryDataTableHeaders.COORDINATE)
 
 
 def join_str_list(formatter: str, items: t.StrList) -> str:

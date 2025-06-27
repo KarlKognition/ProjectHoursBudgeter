@@ -38,12 +38,10 @@ class SummaryPage(QWizardPage):
             page=self,
             role=st.IORole.SUMMARY_IO_TABLE,
             label=QLabel(st.IO_SUMMARY),
-            table=pu.create_table(
+            table=pu.create_row_header_table(
                 page=self,
                 table_headers=ie.SummaryIOTableHeaders,
-                selection_mode=QTableWidget.SelectionMode.NoSelection,
-                col_widths=hm.SUMMARY_IO_COLUMN_WIDTH,
-                vertical_headers=True
+                selection_mode=QTableWidget.SelectionMode.NoSelection
             ),
             buttons=None
         )
@@ -51,11 +49,11 @@ class SummaryPage(QWizardPage):
             page=self,
             role=st.IORole.SUMMARY_DATA_TABLE,
             label=QLabel(st.SUMMARY_INSTRUCTIONS),
-            table=pu.create_table(
+            table=pu.create_col_header_table(
                 page=self,
                 table_headers=ie.SummaryDataTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.MultiSelection,
-                col_widths=hm.SUMMARY_DATA_COLUMN_WIDTHS
+                tab_widths=hm.SUMMARY_DATA_COLUMN_WIDTHS
             ),
             buttons=[QPushButton(st.ButtonNames.SELECT_ALL, self), QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )

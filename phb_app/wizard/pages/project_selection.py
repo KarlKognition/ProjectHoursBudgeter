@@ -36,11 +36,11 @@ class ProjectSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.PROJECT_TABLE,
             label=QLabel(st.PROJECT_SELECTION_INSTRUCTIONS),
-            table=pu.create_table(
+            table=pu.create_col_header_table(
                 page=self,
                 table_headers=ie.ProjectIDTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.MultiSelection,
-                col_widths=hm.PROJECT_COLUMN_WIDTHS
+                tab_widths=hm.PROJECT_COLUMN_WIDTHS
             ),
             buttons=[QPushButton(st.ButtonNames.DESELECT_ALL, self)]
         )

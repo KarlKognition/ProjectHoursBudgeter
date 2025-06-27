@@ -52,11 +52,11 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.INPUTS,
             label=QLabel(st.INPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(
+            table=pu.create_col_header_table(
                 page=self,
                 table_headers=ie.InputTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.MultiSelection,
-                col_widths=hm.INPUT_COLUMN_WIDTHS
+                tab_widths=hm.INPUT_COLUMN_WIDTHS
             ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.INPUTS]
@@ -65,11 +65,11 @@ class IOSelectionPage(QWizardPage):
             page=self,
             role=st.IORole.OUTPUT,
             label=QLabel(st.OUTPUT_FILE_INSTRUCTION_TEXT),
-            table=pu.create_table(
+            table=pu.create_col_header_table(
                 page=self,
                 table_headers=ie.OutputTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.SingleSelection,
-                col_widths=hm.OUTPUT_COLUMN_WIDTHS
+                tab_widths=hm.OUTPUT_COLUMN_WIDTHS
             ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.OUTPUT]

@@ -12,11 +12,10 @@ Description
 Provides several data classes for the Project Hours Budgeting Wizard.
 '''
 
-from enum import auto
 #           ---  First party library imports ---
 import phb_app.wizard.constants.integer_enums as ie
 
-type ColWidths = dict[ie.BaseTableHeaders, int]
+type TableWidths = dict[ie.BaseTableHeaders, int]
 
 INPUT_COLUMN_WIDTHS = {
     ie.InputTableHeaders.FILENAME: 250,
@@ -41,10 +40,6 @@ EMPLOYEE_COLUMN_WIDTHS = {
     ie.EmployeeTableHeaders.EMPLOYEE: 450,
     ie.EmployeeTableHeaders.WORKSHEET: 150,
     ie.EmployeeTableHeaders.COORDINATE: 80
-}
-
-SUMMARY_IO_COLUMN_WIDTH = {
-    ie.CONST_0: 450
 }
 
 SUMMARY_DATA_COLUMN_WIDTHS = {
