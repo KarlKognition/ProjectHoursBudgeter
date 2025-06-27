@@ -86,3 +86,8 @@ class SummaryDataTableHeaders(BaseTableHeaders):
     PROJECT_ID = auto()
     OUTPUT_WORKSHEET = auto()
     COORDINATE = auto()
+
+#           --- CONSTANTS ---
+
+CONST_0 = 0
+CONST_1 = 1

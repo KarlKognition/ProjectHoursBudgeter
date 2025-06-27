@@ -80,11 +80,9 @@ class IOSelectionPage(QWizardPage):
             layout_type=QHBoxLayout()
         )
         in_ctx = io.EntryContext(self.input_panel, data=io.IOFileContext(country_data=country_data))
-        # Choose the row configurator for the input context
         io.set_row_configurator(in_ctx)
         pu.connect_buttons(self, in_ctx, wb_mgmt)
         out_ctx = io.EntryContext(self.output_panel, data=io.IOFileContext())
-        # Choose the row configurator for the output context
         io.set_row_configurator(out_ctx)
         pu.connect_buttons(self, out_ctx, wb_mgmt)
 

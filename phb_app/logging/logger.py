@@ -37,7 +37,7 @@ def generate_log_file_name(output_dir: str,
     '''Generates a properly formatted log file name.'''
 
     timestamp = get_time_stamp()
-    month = du.german_abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
+    month = du.abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
     return path.join(output_dir, f"log_output_for_{month}_{date.year}__{timestamp}.txt")
 
 def get_file_data(wb_mng: wm.WorkbookManager) -> lm.FileMetaData:
@@ -168,7 +168,7 @@ def write_log_file(file_meta: lm.FileMetaData,
 
     with open(file_meta.log_file_path, "w", encoding="utf-8") as log_file:
         datetime_now_str = get_time_stamp()
-        month = du.german_abbr_month(file_meta.selected_date.month, md.LOCALIZED_MONTHS_SHORT)
+        month = du.abbr_month(file_meta.selected_date.month, md.LOCALIZED_MONTHS_SHORT)
         log_file.write(f"* Selected date: {month} {file_meta.selected_date.year}; Log created: {datetime_now_str}\n\n")
         log_file.write(f"* Input workbook(s): {'\n'.join(file_meta.input_workbooks)}\n")
         log_file.write(f"* Output workbook: {file_meta.output_file_name}\n")

@@ -1,4 +1,16 @@
-from os import path
+'''
+Module Name
+---------
+PHB Wizard Date Utilities
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+PHB Wizard date utility functions.
+'''
 from datetime import datetime
 from typing import TYPE_CHECKING
 from functools import lru_cache
@@ -10,7 +22,7 @@ if TYPE_CHECKING:
     import phb_app.data.io_management as io
     import phb_app.data.workbook_management as wm
 
-def german_abbr_month(month_number: int, months: dict) -> str:
+def abbr_month(month_number: int, months: dict) -> str:
     '''
     Change a month number to its short name.
     '''

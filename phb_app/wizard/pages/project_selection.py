@@ -56,7 +56,6 @@ class ProjectSelectionPage(QWizardPage):
     def initializePage(self) -> None: # pylint: disable=invalid-name
         '''Override page initialisation. Setup page on each visit.'''
         pro.set_project_ids_each_input_wb(self.wb_mgmt)
-        # Choose the row configurator for the project table
         io.set_row_configurator(self.proj_ctx)
         pu.connect_buttons(self, self.proj_ctx)
         pu.populate_project_table(self, self.proj_ctx, self.wb_mgmt)

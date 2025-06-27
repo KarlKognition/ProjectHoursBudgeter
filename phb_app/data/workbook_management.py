@@ -141,6 +141,10 @@ class WorkbookManager:
         """Yields workbooks by role. An empty list is returned if no workbooks are found."""
         yield from self.workbooks_ctxs.get(role, [])
 
+    def get_wb_names_list_by_role(self, role: st.IORole) -> list[str]:
+        """Returns a list of workbook names by role."""
+        return [ctx.mngd_wb.file_name for ctx in self.workbooks_ctxs.get(role, [])]
+
     def remove_wb_ctx_by_file_name(self, role: st.IORole, name: str) -> None:
         """Removes a workbook context by file name and role."""
         ctx = self.get_workbook_ctx_by_file_name_and_role(role, name)

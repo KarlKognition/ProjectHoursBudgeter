@@ -32,7 +32,7 @@ class EmployeeSelectionPage(QWizardPage):
     def __init__(self, managed_workbooks: wm.WorkbookManager):
         super().__init__()
         self.wb_mgmt = managed_workbooks
-        self.wb_ctx: Optional[wm.OutputWorkbookContext] = None
+        self.out_wb_ctx: Optional[wm.OutputWorkbookContext] = None
         pu.set_titles(self, st.PROJECT_SELECTION_TITLE, st.PROJECT_SELECTION_SUBTITLE)
         self.employee_panel = io.IOControls(
             page=self,
@@ -57,15 +57,13 @@ class EmployeeSelectionPage(QWizardPage):
 
     def initializePage(self) -> None: # pylint: disable=invalid-name
         '''Override page initialisation. Setup page on each visit.'''
-        # Choose the row configurator for the employee table
-        self.wb_ctx = self.wb_mgmt.get_output_workbook_ctx()
+        self.out_wb_ctx = self.wb_mgmt.get_output_workbook_ctx()
         io.set_row_configurator(self.emp_ctx)
         pu.connect_buttons(self, self.emp_ctx)
         pu.populate_employee_table(self, self.emp_ctx, self.wb_mgmt)
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''
-        # Clear the table
         self.employee_panel.table.clear()
         self.employee_panel.table.setRowCount(0)
 
@@ -73,11 +71,11 @@ class EmployeeSelectionPage(QWizardPage):
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
         check = bool(self.employee_panel.table.selectionModel().selectedRows())
-        eu.compute_selected_employees(self.employee_panel.table, self.wb_ctx)
+        eu.compute_selected_employees(self.employee_panel.table, self.out_wb_ctx)
         return check
     
     def validatePage(self) -> bool: # pylint: disable=invalid-name
         '''Override the page validation.'''
-        hu.compute_predicted_hours(self.wb_ctx)
-        hu.compute_hours_for_selected_employees(self.wb_mgmt, self.wb_ctx)
+        hu.compute_predicted_hours(self.out_wb_ctx)
+        hu.compute_hours_for_selected_employees(self.wb_mgmt, self.out_wb_ctx)
         return True

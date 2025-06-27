@@ -23,6 +23,7 @@ import openpyxl.utils as xlutils
 import xlwings as xw
 from openpyxl.worksheet.worksheet import Worksheet
 #           --- First party libraries ---
+import phb_app.data.header_management as hm
 import phb_app.data.workbook_management as wm
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.logging.exceptions as ex
@@ -100,3 +101,14 @@ def compute_selected_employees(table: QTableWidget, wb_ctx: "wm.OutputWorkbookCo
         for row in selected_rows
     ]
     wb_ctx.worksheet_service.set_selected_employees(selected_employees)
+
+def pop_unselected_employees(table: QTableWidget, out_wb_ctx: "wm.OutputWorkbookContext") -> None:
+    """Pop unselected employees from the managed output workbook."""
+    unselected_coords = []
+    for row in range(table.rowCount()):
+        if not table.selectionModel().isRowSelected(row):
+            coord = table.item(row, ie.SummaryDataTableHeaders.COORDINATE).text()
+            unselected_coords.append(coord)
+    # Pop the unselected employees from the selected employees dictionary
+    for coord in unselected_coords:
+        out_wb_ctx.managed_sheet.selected_employees.pop(coord, None)

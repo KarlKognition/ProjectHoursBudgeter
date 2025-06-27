@@ -6,7 +6,11 @@ from pathlib import Path
 from enum import StrEnum, auto
 import git
 
+#           --- GENERIC ---
+
 GUI_TITLE = "Project Hours Budgeting Wizard"
+
+NO_SELECTION = "No selection."
 
 #           --- INTRO PAGE ---
 
@@ -89,6 +93,8 @@ SUMMARY_INSTRUCTIONS = """
 <p>Missing hours will be omitted. Red predicted hours imply that hours have already been recorded and thus will not be overwritten. The project ID column displays from where the hours were taken.</p>
 """
 
+#           --- ENUMS ---
+
 class IORole(StrEnum):
     '''Input or output roles.'''
 
@@ -167,6 +173,8 @@ class CountriesEnum(StrEnum):
     # SPAIN = "Spain"
     # SWEDEN = "Sweden"
     # SWITZERLAND = "Switzerland"
+
+#           --- LIST CONSTANTS ---
 
 NON_NAMES = [
     'Anställds namn\nDatum',

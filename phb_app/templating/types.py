@@ -1,9 +1,9 @@
 """Types"""
 from PyQt6.QtWidgets import QPushButton
 
-type ProjectId = str | int
+type ButtonsList = list[QPushButton]
+type StrList = list[str]
 type CountryName = str
 type ProjectsDict = dict[str, list[str]]
+type ProjectId = str | int
 type ProjectsTup = tuple[str, list[str]]
-type ProjectTuple = tuple[str, list[str]]
-type ButtonsList = list[QPushButton]

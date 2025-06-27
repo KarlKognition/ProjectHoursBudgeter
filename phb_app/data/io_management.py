@@ -77,7 +77,9 @@ class EmployeeTableItems:
 @dataclass
 class SummaryIOTableItems:
     '''Data class for managing the summary IO table items.'''
-    io_sum: Optional[QTableWidgetItem] = None
+    in_file_names: Optional[QTableWidgetItem] = None
+    out_file_names: Optional[QTableWidgetItem] = None
+    date: Optional[QTableWidgetItem] = None
 
 @dataclass
 class SummaryDataTableItems:
@@ -116,7 +118,9 @@ class EmployeeTableContext:
 @dataclass
 class SummaryIOContext:
     '''Data class for managing the summary table.'''
-    io_sum: Optional[str] = None
+    in_file_names: Optional[str] = None
+    out_file_names: Optional[str] = None
+    date: Optional[str] = None
     table_items: Optional[SummaryIOTableItems] = field(default_factory=SummaryIOTableItems)
 
 @dataclass
@@ -127,7 +131,7 @@ class SummaryDataContext:
     acc_hrs: Optional[float] = None
     dev: Optional[str] = None
     proj_id: Optional[t.ProjectId] = None
-    out_ws: Optional[str] = None
+    out_ws_name: Optional[str] = None
     coord: Optional[str] = None
     table_items: Optional[SummaryDataTableItems] = field(default_factory=SummaryDataTableItems)
 
@@ -147,11 +151,13 @@ class EntryContext:
 def set_row_configurator(ent_ctx: EntryContext) -> None:
     '''Initialise the entry handler.'''
     ent_ctx.configure_row = {
-        st.IORole.INPUTS:           _configure_input_file_row,
-        st.IORole.OUTPUT:           _configure_output_file_row,
-        st.IORole.PROJECT_TABLE:    _configure_project_row,
-        st.IORole.EMPLOYEE_TABLE:   _configure_employee_row
-        }.get(ent_ctx.panel.role)
+        st.IORole.INPUTS:               _configure_input_file_row,
+        st.IORole.OUTPUT:               _configure_output_file_row,
+        st.IORole.PROJECT_TABLE:        _configure_project_row,
+        st.IORole.EMPLOYEE_TABLE:       _configure_employee_row,
+        st.IORole.SUMMARY_IO_TABLE:     _configure_summary_io_row,
+        st.IORole.SUMMARY_DATA_TABLE:   _configure_summary_data_row
+    }.get(ent_ctx.panel.role)
 
 def _configure_input_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
     '''Configure the input row in the table.'''
@@ -196,9 +202,44 @@ def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Workbo
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
     pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
-def join_project_identifiers(id_tup: t.ProjectsTup) -> str:
-    '''Public module level. Set the project identifiers.'''
-    return "\n".join(proj_item for proj_item in id_tup[ie.ProjectIDTableHeaders.DESCRIPTION])
+def _configure_summary_io_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+    '''Configure the summary IO row in the table. There is only one column.'''
+    ent_ctx.data.table_items.in_file_names = QTableWidgetItem(ent_ctx.data.in_file_names)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.in_file_names, row, ie.CONST_0)
+    ent_ctx.data.table_items.out_file_names = QTableWidgetItem(ent_ctx.data.out_file_names)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_file_names, row, ie.CONST_0)
+    ent_ctx.data.table_items.date = QTableWidgetItem(ent_ctx.data.date)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.date, row, ie.CONST_0)
+
+def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+    '''Configure the summary data row in the table.'''
+    ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
+    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(str(ent_ctx.data.pred_hrs))
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
+    ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(str(ent_ctx.data.acc_hrs))
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
+    ent_ctx.data.table_items.dev = QTableWidgetItem(ent_ctx.data.dev)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.dev, row, ie.SummaryDataTableHeaders.DEVIATION)
+    ent_ctx.data.table_items.proj_id = QTableWidgetItem(ent_ctx.data.proj_id)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.proj_id, row, ie.SummaryDataTableHeaders.PROJECT_ID)
+    ent_ctx.data.table_items.out_ws = QTableWidgetItem(ent_ctx.data.out_ws_name)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_ws, row, ie.SummaryDataTableHeaders.OUTPUT_WORKSHEET)
+    ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
+    pu.insert_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.SummaryDataTableHeaders.COORDINATE)
+
+
+def join_str_list(formatter: str, items: t.StrList) -> str:
+    '''Public module level. Joins the items into a single string.'''
+    if not items:
+        return st.NO_SELECTION
+    return formatter.join(item for item in items)
+
+def join_found_projects(formatter: str, projects: t.ProjectsTup) -> str:
+    '''Public module level. Joins the projects into a single string.'''
+    if not projects:
+        return st.NO_SELECTION
+    return formatter.join(f"{project_id}: {descriptions}" for project_id, descriptions in projects.items())
 
 def update_current_text(dd: Dropdowns) -> None:
     '''Public module level. Update the current text of the dropdown QComboboxes.'''

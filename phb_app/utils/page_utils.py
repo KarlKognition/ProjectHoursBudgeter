@@ -240,7 +240,7 @@ def create_month_dropdown() -> QComboBox:
     Create a dropdown for selecting a month. The default month is set to the previous month.
     This is the month in which hours are yet to be analysed.
     '''
-    default_month = du.german_abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
+    default_month = du.abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
     return _create_dropdown(list(md.LOCALIZED_MONTHS_SHORT.keys()), default_month)
 
 def setup_dropdowns(table:QTableWidget, row: int, dds: "io.Dropdowns") -> None:
@@ -295,13 +295,13 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
 
 def populate_project_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the selection table with projects, employees or summary,'''
-    for wb_ctx in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
-        for proj_ids in wb_ctx.worksheet_service.yield_project_id_and_desc():
+    for in_wb_ctx in wb_mngr.yield_workbook_ctxs_by_role(st.IORole.INPUTS): # We only need input workbooks here
+        for proj_ids in in_wb_ctx.worksheet_service.yield_project_id_and_desc():
             row = _insert_row(proj_ctx.panel)
             import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
             proj_ctx.data.project_id = proj_ids[ie.ProjectIDTableHeaders.PROJECT_ID]
-            proj_ctx.data.project_identifiers = io.join_project_identifiers(proj_ids)
-            proj_ctx.data.file_name = wb_ctx.mngd_wb.file_name
+            proj_ctx.data.project_identifiers = io.join_str_list('\n', proj_ids[ie.ProjectIDTableHeaders.DESCRIPTION])
+            proj_ctx.data.file_name = in_wb_ctx.mngd_wb.file_name
             proj_ctx.configure_row(proj_ctx, row)
     page.completeChanged.emit()
 
@@ -309,15 +309,49 @@ def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mn
     '''Populate the employee table with employees.'''
     wb_ctx = wb_mngr.get_output_workbook_ctx()
     ws_ctx = wb_ctx.managed_sheet.selected_sheet.sheet_object
-    for col in range(wb_ctx.managed_sheet.employee_range.start_col_idx, wb_ctx.managed_sheet.employee_range.end_col_idx + 1):
-        row = _insert_row(emp_ctx.panel)
+    start_col = wb_ctx.managed_sheet.employee_range.start_col_idx
+    end_col = wb_ctx.managed_sheet.employee_range.end_col_idx + 1
+    for col in range(start_col, end_col):
         cell = ws_ctx.cell(row=wb_ctx.managed_sheet.employee_range.start_row_idx, column=col)
         if cell.value and cell.value not in st.NON_NAMES:
+            row = _insert_row(emp_ctx.panel)
             emp_ctx.data.emp_name = cell.value
             emp_ctx.data.worksheet = wb_ctx.managed_sheet.selected_sheet.sheet_name
             emp_ctx.data.coord = cell.coordinate
             emp_ctx.configure_row(emp_ctx, row)
     page.completeChanged.emit()
+
+def populate_io_summary_table(page: QWizardPage, sum_io_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
+    '''Populate the summary table with IO data.'''
+    row = _insert_row(sum_io_ctx.panel)
+    in_wb_names = wb_mngr.get_wb_names_list_by_role(st.IORole.INPUTS)
+    import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
+    sum_io_ctx.data.in_file_names = io.join_str_list('\n', in_wb_names)
+    out_wb_names = wb_mngr.get_wb_names_list_by_role(st.IORole.OUTPUT)
+    sum_io_ctx.data.out_file_names = io.join_str_list('\n', out_wb_names)
+    date = wb_mngr.get_output_workbook_ctx().managed_sheet.selected_date
+    month = du.abbr_month(date.month, md.LOCALIZED_MONTHS_SHORT)
+    sum_io_ctx.data.date = f"{month} {date.year}"
+    sum_io_ctx.configure_row(sum_io_ctx, row)
+    page.completeChanged.emit()
+    
+
+def populate_summary_data_table(page: QWizardPage, sum_data_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
+    '''Populate the summary data table with the collected data.'''
+    out_wb_ctx = wb_mngr.get_output_workbook_ctx()
+    for emp in out_wb_ctx.worksheet_service.yield_from_selected_employee():
+        row = _insert_row(sum_data_ctx.panel)
+        sum_data_ctx.data.emp_name = emp.name
+        sum_data_ctx.data.pred_hrs = emp.hours.predicted_hours
+        sum_data_ctx.data.acc_hrs = emp.hours.accumulated_hours
+        sum_data_ctx.data.dev = emp.hours.deviation
+        import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
+        sum_data_ctx.data.proj_id = io.join_found_projects('\n', emp.found_projects.items())
+        sum_data_ctx.data.out_ws_name = out_wb_ctx.managed_sheet.selected_sheet.sheet_name
+        sum_data_ctx.data.coord = emp.hours.hours_coord
+        sum_data_ctx.configure_row(sum_data_ctx, row)
+    page.completeChanged.emit()
+
 
 #           --- Exception Styling and Handling ---
 
