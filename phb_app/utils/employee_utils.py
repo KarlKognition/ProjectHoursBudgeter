@@ -23,7 +23,6 @@ import openpyxl.utils as xlutils
 import xlwings as xw
 from openpyxl.worksheet.worksheet import Worksheet
 #           --- First party libraries ---
-import phb_app.data.header_management as hm
 import phb_app.data.workbook_management as wm
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.logging.exceptions as ex

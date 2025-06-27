@@ -74,7 +74,7 @@ class SummaryPage(QWizardPage):
         pu.populate_io_summary_table(self, self.sum_io_ctx, self.wb_mgmt)
         io.set_row_configurator(self.sum_data_ctx)
         pu.connect_buttons(self, self.sum_data_ctx)
-        pu.populate_io_summary_table(self, self.sum_data_ctx, self.wb_mgmt)
+        pu.populate_summary_data_table(self, self.sum_data_ctx, self.wb_mgmt)
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''

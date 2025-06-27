@@ -25,7 +25,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
     QWidget, QLabel, QFileDialog, QVBoxLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView
+    QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy
 )
 # First party libraries
 import phb_app.data.header_management as hm
