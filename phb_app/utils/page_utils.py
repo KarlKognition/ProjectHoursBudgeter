@@ -25,7 +25,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
     QWidget, QLabel, QFileDialog, QVBoxLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy
+    QTableWidget, QTableWidgetItem, QHeaderView
 )
 # First party libraries
 import phb_app.data.header_management as hm
@@ -124,7 +124,7 @@ def create_col_header_table(
         table.setColumnWidth(header, width)
     return table
 
-def create_interaction_panel(panel: "io.IOControls") -> QWidget:
+def create_interaction_panel(panel: "io.IOControls", max_height: Optional[int] = None) -> QWidget:
     '''Set up the table with the given buttons and column widths.'''
     container = QWidget()
     layout = QVBoxLayout()
@@ -140,6 +140,8 @@ def create_interaction_panel(panel: "io.IOControls") -> QWidget:
     if panel.error_panel:
         layout.addWidget(panel.error_panel)
     container.setLayout(layout)
+    if max_height is not None:
+        container.setMaximumHeight(max_height)
     return container
 
 #           --- File Handling ---

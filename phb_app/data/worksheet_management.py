@@ -159,7 +159,7 @@ class OutputWorksheetService:
                     # Show red to get the user's attention in summary
                     employee.hours.pre_hours_colour = Qt.GlobalColor.red
 
-    def clear_predicted_hours(self) -> None:
+    def clear_selected_employees(self) -> None:
         '''Clears the recorded employee names and respective hours.'''
         self.worksheet.selected_employees.clear()
 

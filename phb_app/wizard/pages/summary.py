@@ -61,7 +61,7 @@ class SummaryPage(QWizardPage):
         self.sum_data_ctx = io.EntryContext(self.summary_data_panel, io.SummaryDataContext())
         pu.setup_page(
             page=self,
-            widgets=[pu.create_interaction_panel(self.summary_io_panel), pu.create_interaction_panel(self.summary_data_panel)],
+            widgets=[pu.create_interaction_panel(self.summary_io_panel, 130), pu.create_interaction_panel(self.summary_data_panel)],
             layout_type=QVBoxLayout())
         self.setFinalPage(True)
 
@@ -78,10 +78,11 @@ class SummaryPage(QWizardPage):
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''
-        self.summary_io_panel.table.clear()
-        self.summary_io_panel.table.setRowCount(0)
-        self.summary_data_panel.table.clear()
+        self.summary_io_panel.table.clearContents()
+        self.summary_io_panel.table.setColumnCount(0)
+        self.summary_data_panel.table.clearContents()
         self.summary_data_panel.table.setRowCount(0)
+        self.out_wb_ctx.worksheet_service.clear_selected_employees()
 
     def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.

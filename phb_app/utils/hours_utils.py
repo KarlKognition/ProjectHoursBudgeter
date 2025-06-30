@@ -36,11 +36,11 @@ def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext) -> None:
 
 def compute_hours_for_selected_employees(wbs: wm.WorkbookManager, wb_ctx: wm.OutputWorkbookContext) -> None:
     """Compute the hours for each selected employee in the output workbook."""
-    sum_hours_selected_employee(wbs, wb_ctx)
+    _sum_hours_selected_employee(wbs, wb_ctx)
     for emp in wb_ctx.managed_sheet.selected_employees.values():
         emp.hours.set_deviation()
 
-def sum_hours_selected_employee(wbs: wm.WorkbookManager, out_wb_ctx: wm.OutputWorkbookContext) -> None:
+def _sum_hours_selected_employee(wbs: wm.WorkbookManager, out_wb_ctx: wm.OutputWorkbookContext) -> None:
     '''Sum the hours of each employee by project ID if they are
     found in the given worksheets.'''
     selected_date = out_wb_ctx.managed_sheet.selected_date

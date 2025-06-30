@@ -240,7 +240,7 @@ def join_found_projects(formatter: str, projects: t.ProjectsTup) -> str:
     '''Public module level. Joins the projects into a single string.'''
     if not projects:
         return st.NO_SELECTION
-    return formatter.join(f"{project_id}: {descriptions}" for project_id, descriptions in projects.items())
+    return formatter.join(f"{project_id}: {descriptions}" for project_id, descriptions in projects)
 
 def update_current_text(dd: Dropdowns) -> None:
     '''Public module level. Update the current text of the dropdown QComboboxes.'''

@@ -63,7 +63,7 @@ class ProjectSelectionPage(QWizardPage):
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Override the page cleanup.
         Clear the table if the back button is pressed.'''
-        self.project_panel.table.clear()
+        self.project_panel.table.clearContents()
         self.project_panel.table.setRowCount(0)
 
     def isComplete(self) -> bool: # pylint: disable=invalid-name
