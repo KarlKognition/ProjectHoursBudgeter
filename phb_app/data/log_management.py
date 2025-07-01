@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-@dataclass
+@dataclass(slots=True)
 class FileMetaData:
     '''Encapsulates all necessary log data.'''
     log_file_path: str
@@ -10,7 +10,7 @@ class FileMetaData:
     output_file_name: str
     output_worksheet_name: str
 
-@dataclass
+@dataclass(slots=True)
 class TableStructure:
     '''Encapsulates table-related metadata.'''
     headers: list[str]

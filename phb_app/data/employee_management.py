@@ -1,3 +1,20 @@
+'''
+Package
+-------
+PHB Wizard
+
+Module Name
+---------
+Employee Management
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+Data classes for managing employee names and hours in the given worksheet.
+'''
 from dataclasses import dataclass, field
 from typing import Optional
 from PyQt6.QtCore import Qt
@@ -21,7 +38,7 @@ class EmployeeRowAnchors(yh.YamlHandler):
 
         self.__dict__.update(yaml_data.get(st.YamlEnum.ROW_ANCHORS, {}))
 
-@dataclass(eq=False) # Set to false to allow lru caching of futils.locate_employee_range(...)
+@dataclass(eq=False, slots=True) # Set to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRange:
     '''Data class for the range within which the employee names are located.'''
     start_cell: str = ""
@@ -47,7 +64,7 @@ class EmployeeRange:
         '''Get the row integer of the end cell.'''
         return xlutils.coordinate_to_tuple(self.end_cell)[0]
 
-@dataclass
+@dataclass(slots=True)
 class EmployeeHours:
     '''Data class for managing the predicted and accumulated hours
     per employee.'''
@@ -79,7 +96,7 @@ class EmployeeHours:
             else:
                 self.deviation = "Negligible"
 
-@dataclass()
+@dataclass(slots=True)
 class Employee:
     '''Data class for managing employee name location and related hours
     in the given worksheet. Projects where the employee registered hours

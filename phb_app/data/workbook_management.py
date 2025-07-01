@@ -28,14 +28,14 @@ import phb_app.utils.file_handling_utils as fu
 
 #           --- DATA CONTAINERS ---
 
-@dataclass
+@dataclass(slots=True)
 class ManagedWorkbook:
     """Parent data class for workbook data."""
     file_path: str
     file_name: str
     workbook_object: Workbook
 
-@dataclass
+@dataclass(slots=True)
 class InputWorkbookContext:
     """Context data class for managing an input workbook."""
     mngd_wb: ManagedWorkbook
@@ -43,7 +43,7 @@ class InputWorkbookContext:
     managed_sheet: Optional[ws.InputWorksheetContext] = None
     worksheet_service: Optional[ws.InputWorksheetService] = None
 
-@dataclass
+@dataclass(eq=False, slots=True)
 class OutputWorkbookContext:
     """Context data class for managing an output workbook."""
     mngd_wb: ManagedWorkbook

@@ -18,13 +18,16 @@ in the project hours budgeting wizard.
 '''
 
 from datetime import datetime
+from functools import lru_cache
 from openpyxl.styles import Font
+from PyQt6.QtCore import QModelIndex
 import phb_app.data.workbook_management as wm
 import phb_app.utils.employee_utils as eu
 import phb_app.wizard.constants.ui_strings as st
 
-def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext) -> None:
-    '''Compute the predicted hours for each employee in the output workbook.'''
+@lru_cache(maxsize=1)
+def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext, selected_rows: list[QModelIndex]) -> None:
+    '''Compute the predicted hours for each employee in the output workbook. Selected rows are purely for cacheing purposes.'''
     pre_hours = eu.find_predicted_hours(
         wb_ctx.managed_sheet.selected_employees,
         wb_ctx.managed_sheet.selected_date.row,
@@ -34,8 +37,9 @@ def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext) -> None:
     wb_ctx.worksheet_service.set_predicted_hours(pre_hours)
     wb_ctx.worksheet_service.set_predicted_hours_colour()
 
-def compute_hours_for_selected_employees(wbs: wm.WorkbookManager, wb_ctx: wm.OutputWorkbookContext) -> None:
-    """Compute the hours for each selected employee in the output workbook."""
+@lru_cache(maxsize=1)
+def compute_hours_for_selected_employees(wbs: wm.WorkbookManager, wb_ctx: wm.OutputWorkbookContext, selected_rows: list[QModelIndex]) -> None:
+    """Compute the hours for each selected employee in the output workbook. Selected rows are purely for cacheing purposes."""
     _sum_hours_selected_employee(wbs, wb_ctx)
     for emp in wb_ctx.managed_sheet.selected_employees.values():
         emp.hours.set_deviation()

@@ -1,8 +1,21 @@
+'''
+Module Name
+---------
+PHB Wizard Location Management
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+Data classes for managing the locale data used in the wizard.
+'''
 from dataclasses import dataclass, field
 import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
 
-@dataclass
+@dataclass(slots=True)
 class FilterHeaders:
     '''Data class for worksheet header strings used for filtering.
     These data are received from LocaleData.'''
@@ -12,7 +25,7 @@ class FilterHeaders:
     hours: str
     date: str
 
-@dataclass
+@dataclass(slots=True)
 class FilePatternData:
     '''Parent data class for establishing the Excel file's naming.'''
     # German or external input timesheets or output budget file
@@ -20,7 +33,7 @@ class FilePatternData:
     # Regular expresion to filter for file in open file dialog.
     file_patterns: list[str]
 
-@dataclass
+@dataclass(slots=True)
 class InputLocaleData(FilePatternData):
     '''Child data class for establishing the Excel file's locale details.'''
     country: str # Country name

@@ -28,14 +28,14 @@ if TYPE_CHECKING:
 
 #           --- DATA CONTAINERS ---
 
-@dataclass
+@dataclass(slots=True)
 class SelectedText:
     '''Data class for managing the selected text in the dropdowns.'''
     year: Optional[str] = None
     month: Optional[str] = None
     worksheet: Optional[str] = None
 
-@dataclass
+@dataclass(slots=True)
 class IOControls:
     '''Data class for managing the IO controls.'''
     page: QWizardPage
@@ -45,7 +45,7 @@ class IOControls:
     buttons: t.ButtonsList
     error_panel: Optional[QWidget] = None
 
-@dataclass
+@dataclass(slots=True)
 class Dropdowns:
     '''Data class for managing the dropdowns.'''
     year: QComboBox
@@ -53,35 +53,35 @@ class Dropdowns:
     worksheet: QComboBox
     current_text: SelectedText = field(default_factory=SelectedText)
 
-@dataclass
+@dataclass(slots=True)
 class InputTableItems:
     '''Data class for managing the input table items.'''
     file_name: Optional[QTableWidgetItem] = None
     country: Optional[QTableWidgetItem] = None
     sheet_name: Optional[QTableWidgetItem] = None
 
-@dataclass
+@dataclass(slots=True)
 class ProjectTableItems:
     '''Data class for managing the project table items.'''
     project_id: Optional[QTableWidgetItem] = None
     project_identifiers: Optional[QTableWidgetItem] = None
     file_name: Optional[QTableWidgetItem] = None
 
-@dataclass
+@dataclass(slots=True)
 class EmployeeTableItems:
     '''Data class for managing the employee table items.'''
     employee: Optional[QTableWidgetItem] = None
     worksheet: Optional[QTableWidgetItem] = None
     coord: Optional[QTableWidgetItem] = None
 
-@dataclass
+@dataclass(slots=True)
 class SummaryIOTableItems:
     '''Data class for managing the summary IO table items.'''
     in_file_names: Optional[QTableWidgetItem] = None
     out_file_names: Optional[QTableWidgetItem] = None
     date: Optional[QTableWidgetItem] = None
 
-@dataclass
+@dataclass(slots=True)
 class SummaryDataTableItems:
     '''Data class for managing the summary data table items.'''
     emp_name: Optional[QTableWidgetItem] = None
@@ -92,14 +92,14 @@ class SummaryDataTableItems:
     out_ws: Optional[QTableWidgetItem] = None
     coord: Optional[QTableWidgetItem] = None
 
-@dataclass
+@dataclass(slots=True)
 class IOFileContext:
     '''Data class for managing the data in the table.'''
     file_name: Optional[str] = None
     country_data: Optional[loc.CountryData] = None
     table_items: Optional[InputTableItems] = field(default_factory=InputTableItems)
 
-@dataclass
+@dataclass(slots=True)
 class ProjectTableContext:
     '''Data class for managing the project table.'''
     project_id: Optional[t.ProjectId] = None
@@ -107,7 +107,7 @@ class ProjectTableContext:
     file_name: Optional[str] = None
     table_items: Optional[ProjectTableItems] = field(default_factory=ProjectTableItems)
 
-@dataclass
+@dataclass(slots=True)
 class EmployeeTableContext:
     '''Data class for managing the employee table.'''
     emp_name: Optional[str] = None
@@ -115,7 +115,7 @@ class EmployeeTableContext:
     coord: Optional[str] = None
     table_items: Optional[EmployeeTableItems] = field(default_factory=EmployeeTableItems)
 
-@dataclass
+@dataclass(slots=True)
 class SummaryIOContext:
     '''Data class for managing the summary table.'''
     in_file_names: Optional[str] = None
@@ -123,7 +123,7 @@ class SummaryIOContext:
     date: Optional[str] = None
     table_items: Optional[SummaryIOTableItems] = field(default_factory=SummaryIOTableItems)
 
-@dataclass
+@dataclass(slots=True)
 class SummaryDataContext:
     '''Data class for managing the summary table.'''
     emp_name: Optional[str] = None
@@ -139,7 +139,7 @@ type FileHandlerData = (
     IOFileContext | ProjectTableContext | EmployeeTableContext | SummaryIOContext | SummaryDataContext
 )
 
-@dataclass
+@dataclass(slots=True)
 class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls

@@ -30,13 +30,13 @@ if TYPE_CHECKING:
 
 #           --- DATA CONTAINERS ---
 
-@dataclass
+@dataclass(slots=True)
 class SelectedSheet:
     '''Data class for worksheet names.'''
     sheet_name: str
     sheet_object: Worksheet
 
-@dataclass
+@dataclass(slots=True)
 class InputWorksheetContext:
     '''Data class for input worksheet data.'''
     selected_sheet: Optional[SelectedSheet]
@@ -45,7 +45,7 @@ class InputWorksheetContext:
     selected_project_ids: t.ProjectsDict = field(default_factory=dict)
     indexed_headers: dict[str, int] = field(default_factory=dict)
 
-@dataclass
+@dataclass(slots=True)
 class OutputWorksheetContext:
     '''Data class for output worksheet data.'''
     selected_sheet: Optional[SelectedSheet] = None
@@ -173,7 +173,7 @@ def _create_input_worksheet_context(
     sheet_name: str,
     sheet_object: Worksheet
 ) -> InputWorksheetContext:
-    '''Public module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
+    '''Private module level. Creates an InputWorksheet for the given sheet name and sheet object.'''
     selected = SelectedSheet(sheet_name=sheet_name, sheet_object=sheet_object)
     return InputWorksheetContext(selected_sheet=selected)
 
@@ -186,7 +186,7 @@ def init_output_worksheet(context: "wm.OutputWorkbookContext") -> None:
     context.worksheet_service = service
 
 def _create_output_worksheet_context() -> OutputWorksheetContext:
-    '''Public module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
+    '''Private module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
     return OutputWorksheetContext()
 
 def init_input_worksheet(context: "wm.InputWorkbookContext") -> None:

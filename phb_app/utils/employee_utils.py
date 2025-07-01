@@ -19,6 +19,7 @@ All functions necessary for managing employee data.
 from typing import Iterator
 from functools import lru_cache
 from PyQt6.QtWidgets import QTableWidget
+from PyQt6.QtCore import QModelIndex
 import openpyxl.utils as xlutils
 import xlwings as xw
 from openpyxl.worksheet.worksheet import Worksheet
@@ -89,11 +90,11 @@ def find_predicted_hours(emp_dict: dict[str, emp.Employee], row: int, file_path:
     wb.close()
     return pre_hours
 
-def compute_selected_employees(table: QTableWidget, wb_ctx: "wm.OutputWorkbookContext") -> None:
+@lru_cache(maxsize=1)
+def compute_selected_employees(table: QTableWidget, wb_ctx: "wm.OutputWorkbookContext", selected_rows: list[QModelIndex]) -> None:
     """
     Find selected employees in the table and set them as selected in the managed output workbook.
     """
-    selected_rows = table.selectionModel().selectedRows()
     selected_employees = [
         (table.item(row.row(), ie.EmployeeTableHeaders.COORDINATE).text(),
         table.item(row.row(), ie.EmployeeTableHeaders.EMPLOYEE).text())
