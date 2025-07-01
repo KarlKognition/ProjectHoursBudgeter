@@ -218,9 +218,9 @@ def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wo
     '''Configure the summary data row in the table.'''
     ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
-    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(str(ent_ctx.data.pred_hrs))
+    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(_format_hours(ent_ctx.data.pred_hrs))
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
-    ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(str(ent_ctx.data.acc_hrs))
+    ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(ent_ctx.data.acc_hrs)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
     ent_ctx.data.table_items.dev = QTableWidgetItem(ent_ctx.data.dev)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.dev, row, ie.SummaryDataTableHeaders.DEVIATION)
@@ -231,17 +231,23 @@ def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wo
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.SummaryDataTableHeaders.COORDINATE)
 
+def _format_hours(hours: float, fallback: str) -> str:
+    '''Private module function. Format the hours to two decimal places.'''
+    if hours:
+        return f"{hours:.2f}"
+    else:
+        return fallback
 
 def join_str_list(formatter: str, items: t.StrList) -> str:
     '''Public module function. Joins the items into a single string.'''
     if not items:
-        return st.NO_SELECTION
+        return ""
     return formatter.join(item for item in items)
 
 def join_found_projects(formatter: str, projects: t.ProjectsTup) -> str:
     '''Public module function. Joins the projects into a single string.'''
     if not projects:
-        return st.NO_SELECTION
+        return ""
     return formatter.join(f"{project_id}: {descriptions}" for project_id, descriptions in projects)
 
 def update_current_text(dd: Dropdowns) -> None:
