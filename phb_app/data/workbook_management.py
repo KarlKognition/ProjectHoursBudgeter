@@ -43,6 +43,8 @@ class InputWorkbookContext:
     managed_sheet: Optional[ws.InputWorksheetContext] = None
     worksheet_service: Optional[ws.InputWorksheetService] = None
 
+# Set eq to false to allow lru caching of hours_utils.compute_hours_for_selected_employees(...)
+# and hours_utils.compute_predicted_hours(...)
 @dataclass(eq=False, slots=True)
 class OutputWorkbookContext:
     """Context data class for managing an output workbook."""
@@ -103,6 +105,8 @@ def save_output_workbook(context: OutputWorkbookContext) -> None:
 
 class WorkbookManager:
     """Class for tracking workbooks."""
+
+    __slots_ = ('workbooks_ctxs',)
 
     def __init__(self) -> None:
         self.workbooks_ctxs: dict[st.IORole, list[InputWorkbookContext | OutputWorkbookContext]] = {

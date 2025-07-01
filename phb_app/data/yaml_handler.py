@@ -1,3 +1,20 @@
+'''
+Package
+-------
+Data
+
+Module Name
+---------
+Yaml Handler
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+Abstract class for deserialising yaml files.
+'''
 from os import path
 from abc import ABC, abstractmethod
 import yaml
@@ -5,6 +22,7 @@ import phb_app.wizard.constants.ui_strings as st
 
 class YamlHandler(ABC):
     '''Abstract class for deserialising yaml files.'''
+    __slots__ = ('encoding',)
     CONFIG_PATH = path.join(path.dirname(__file__), "config_data.yaml")
 
     def __init__(self):

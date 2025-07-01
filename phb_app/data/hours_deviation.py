@@ -1,9 +1,26 @@
+'''
+Package
+-------
+Managers
+
+Module Name
+---------
+Hours deviation manager
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+Utility class for managing hours deviation thresholds in the project hours budgeting wizard.
+'''
 from dataclasses import dataclass
 from typing import Optional
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.yaml_handler as yh
 
-@dataclass()
+@dataclass(slots=True)
 class HoursDeviation(yh.YamlHandler):
     '''Data class to define the deviation thresholds for predicted and accumulated hours.'''
     strong_dev: Optional[float] = None
@@ -15,4 +32,7 @@ class HoursDeviation(yh.YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-        self.__dict__.update(yaml_data.get(st.YamlEnum.DEVIATIONS, {}))
+        anchors: Optional[dict[str, str]] = yaml_data.get(st.YamlEnum.DEVIATIONS, {})
+        for key, value in anchors.items():
+            if hasattr(self, key):
+                setattr(self, key, value)

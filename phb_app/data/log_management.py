@@ -1,3 +1,16 @@
+'''
+Module Name
+---------
+PHB Wizard Log Management
+
+Author
+-------
+Karl Goran Antony Zuvela
+
+Description
+-----------
+PHB Wizard logging data management.
+'''
 from dataclasses import dataclass
 from datetime import datetime
 

@@ -14,6 +14,8 @@ PHB Wizard text selection management.
 
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING, Callable
+#           --- Third party libraries ---
+from PyQt6.QtCore import QModelIndex
 from PyQt6.QtWidgets import QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
 #           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
@@ -231,24 +233,32 @@ def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wo
 
 
 def join_str_list(formatter: str, items: t.StrList) -> str:
-    '''Public module level. Joins the items into a single string.'''
+    '''Public module function. Joins the items into a single string.'''
     if not items:
         return st.NO_SELECTION
     return formatter.join(item for item in items)
 
 def join_found_projects(formatter: str, projects: t.ProjectsTup) -> str:
-    '''Public module level. Joins the projects into a single string.'''
+    '''Public module function. Joins the projects into a single string.'''
     if not projects:
         return st.NO_SELECTION
     return formatter.join(f"{project_id}: {descriptions}" for project_id, descriptions in projects)
 
 def update_current_text(dd: Dropdowns) -> None:
-    '''Public module level. Update the current text of the dropdown QComboboxes.'''
+    '''Public module function. Update the current text of the dropdown QComboboxes.'''
     dd.current_text.year = dd.year.currentText()
     dd.current_text.month = dd.month.currentText()
     dd.current_text.worksheet = dd.worksheet.currentText()
 
 def connect_dropdowns(dd: Dropdowns, func: Callable) -> None:
-    '''Public module level. Connect the dropdowns to the given function.'''
+    '''Public module function. Connect the dropdowns to the given function.'''
     for dropdown in (dd.year, dd.month, dd.worksheet):
         dropdown.currentTextChanged.connect(func)
+
+def get_selected_rows(table: QTableWidget) -> list[QModelIndex]:
+    '''Public module function. Get the selected rows from the table.'''
+    return table.selectionModel().selectedRows() if table.selectionModel() else []
+
+def get_selected_row_indices(selected_rows: list[QModelIndex]) -> tuple[int, ...]:
+    '''Public module function. Check if the row selection has changed.'''
+    return tuple(row.row() for row in selected_rows)

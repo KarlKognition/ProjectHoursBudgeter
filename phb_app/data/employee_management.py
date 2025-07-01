@@ -23,7 +23,7 @@ import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.hours_deviation as hd
 
-@dataclass(eq=False) # Set to false to allow lru caching of futils.locate_employee_range(...)
+@dataclass(eq=False, slots=True) # Set eq to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRowAnchors(yh.YamlHandler):
     '''Data class to define the anchor strings of the row containing the employee names.'''
     start_anchor: str = ""
@@ -35,8 +35,10 @@ class EmployeeRowAnchors(yh.YamlHandler):
 
     def _process_yaml(self, yaml_data) -> None:
         '''Processes the yaml data.'''
-
-        self.__dict__.update(yaml_data.get(st.YamlEnum.ROW_ANCHORS, {}))
+        anchors: Optional[dict[str, str]] = yaml_data.get(st.YamlEnum.ROW_ANCHORS, {})
+        for key, value in anchors.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
 @dataclass(eq=False, slots=True) # Set to false to allow lru caching of futils.locate_employee_range(...)
 class EmployeeRange:

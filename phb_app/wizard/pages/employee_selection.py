@@ -74,8 +74,9 @@ class EmployeeSelectionPage(QWizardPage):
     
     def validatePage(self) -> bool: # pylint: disable=invalid-name
         '''Override the page validation.'''
-        selected_rows = self.employee_panel.table.selectionModel().selectedRows()
+        selected_rows = io.get_selected_rows(self.employee_panel.table)
+        row_indices = io.get_selected_row_indices(selected_rows)
         eu.compute_selected_employees(self.employee_panel.table, self.out_wb_ctx, selected_rows)
-        hu.compute_predicted_hours(self.out_wb_ctx, selected_rows)
-        hu.compute_hours_for_selected_employees(self.wb_mgmt, self.out_wb_ctx, selected_rows)
+        hu.compute_predicted_hours(self.out_wb_ctx, row_indices)
+        hu.compute_hours_for_selected_employees(self.wb_mgmt, self.out_wb_ctx, row_indices)
         return True

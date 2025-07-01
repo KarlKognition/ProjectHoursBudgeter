@@ -59,6 +59,8 @@ class OutputWorksheetContext:
 
 class InputWorksheetService:
     '''Service class for managing an input worksheet.'''
+    __slots__ = ('worksheet',)
+
     def __init__(self, worksheet: InputWorksheetContext):
         self.worksheet = worksheet
 
@@ -110,6 +112,8 @@ class InputWorksheetService:
 
 class OutputWorksheetService:
     '''Service class for managing an output worksheet.'''
+    __slots__ = ('worksheet',)
+
     def __init__(self, worksheet: OutputWorksheetContext):
         self.worksheet = worksheet
 

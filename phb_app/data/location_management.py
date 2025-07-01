@@ -44,7 +44,7 @@ class InputLocaleData(FilePatternData):
         '''Init the filter headers from the data received from the country data dataclass.'''
         self.filter_headers = FilterHeaders(**self.filter_headers)
 
-@dataclass
+@dataclass(slots=True)
 class CountryData(yh.YamlHandler):
     '''Data class using the LocaleData data class to deserialise the yaml config file.'''
     countries: list[InputLocaleData] = field(default_factory=list)
