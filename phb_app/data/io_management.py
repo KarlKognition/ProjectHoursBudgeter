@@ -218,7 +218,7 @@ def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wo
     '''Configure the summary data row in the table.'''
     ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
-    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(_format_hours(ent_ctx.data.pred_hrs))
+    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(_format_hours(ent_ctx.data.pred_hrs, st.SpecialStrings.ZERO_HOURS))
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
     ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(ent_ctx.data.acc_hrs)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
