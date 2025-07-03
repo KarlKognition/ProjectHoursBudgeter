@@ -17,7 +17,7 @@ Data classes for managing employee names and hours in the given worksheet.
 '''
 from dataclasses import dataclass, field
 from typing import Optional
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from openpyxl import utils as xlutils
 import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
@@ -71,9 +71,9 @@ class EmployeeHours:
     '''Data class for managing the predicted and accumulated hours
     per employee.'''
     predicted_hours: Optional[float|int] = None
-    pre_hours_colour: Optional[Qt.GlobalColor] = Qt.GlobalColor.black
+    pre_hours_colour: QColor = field(default_factory=lambda: st.DEFAULT_FONT_COLOUR)
     accumulated_hours: Optional[float|int] = None
-    acc_hours_colour: Qt.GlobalColor = Qt.GlobalColor.black
+    acc_hours_colour: QColor = field(default_factory=lambda: st.DEFAULT_FONT_COLOUR)
     hours_coord: Optional[str] = None
     thresholds: hd.HoursDeviation = field(default_factory=hd.HoursDeviation)
     deviation: Optional[str] = None

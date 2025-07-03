@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from dateutil.relativedelta import relativedelta
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QBrush, QPalette, QColor
 from PyQt6.QtWidgets import (
     QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
     QWidget, QLabel, QFileDialog, QVBoxLayout,
@@ -363,7 +363,7 @@ def populate_io_summary_table(page: QWizardPage, sum_io_ctx: "io.EntryContext", 
 def populate_summary_data_table(page: QWizardPage, sum_data_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
     '''Populate the summary data table with the collected data.'''
     out_wb_ctx = wb_mngr.get_output_workbook_ctx()
-    for emp in out_wb_ctx.worksheet_service.yield_from_selected_employee():
+    for emp in out_wb_ctx.worksheet_service.yield_from_selected_employees():
         row = _insert_row(sum_data_ctx.panel)
         sum_data_ctx.data.emp_name = emp.name
         sum_data_ctx.data.pred_hrs = emp.hours.predicted_hours
@@ -373,7 +373,7 @@ def populate_summary_data_table(page: QWizardPage, sum_data_ctx: "io.EntryContex
         sum_data_ctx.data.proj_id = io.join_found_projects('\n', emp.found_projects.items())
         sum_data_ctx.data.out_ws_name = out_wb_ctx.managed_sheet.selected_sheet.sheet_name
         sum_data_ctx.data.coord = emp.hours.hours_coord
-        sum_data_ctx.configure_row(sum_data_ctx, row)
+        sum_data_ctx.configure_row(sum_data_ctx, row, emp.hours)
     page.completeChanged.emit()
 
 
@@ -382,14 +382,14 @@ def populate_summary_data_table(page: QWizardPage, sum_data_ctx: "io.EntryContex
 def _highlight_bad_item(item: QTableWidgetItem) -> None:
     '''Highlight table items causing errors.'''
 
-    item.setBackground(Qt.GlobalColor.red)
-    item.setForeground(Qt.GlobalColor.white)
+    item.setBackground(QColor(Qt.GlobalColor.red))
+    item.setForeground(QColor(Qt.GlobalColor.white))
 
 def _remove_highlighting(item: QTableWidgetItem) -> None:
     '''Removes the highlighting after error correction.'''
 
-    item.setBackground(Qt.GlobalColor.white)
-    item.setForeground(Qt.GlobalColor.black)
+    item.setBackground(st.DEFAULT_BACKGROUND_COLOUR)
+    item.setForeground(st.DEFAULT_FONT_COLOUR)
 
 def _clear_row_error_status(file_ctx: "io.EntryContext", row: int, header: ie.BaseTableHeaders) -> None:
     '''Clear the error status of a row in the table.'''

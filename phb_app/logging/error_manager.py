@@ -14,6 +14,7 @@ Tracks errors for the Project Hours Budgeting Wizard.
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
+from PyQt6.QtGui import QColor
 import phb_app.wizard.constants.ui_strings as st
 
 # UI container for error messages
@@ -54,5 +55,5 @@ def style_error_message_red(label: QLabel) -> None:
     '''Error messages are highlighted red and have white text.'''
 
     palette = label.palette()
-    palette.setColor(label.foregroundRole(), Qt.GlobalColor.red)
+    palette.setColor(label.foregroundRole(), QColor(Qt.GlobalColor.red))
     label.setPalette(palette)

@@ -13,20 +13,36 @@ PHB Wizard text selection management.
 '''
 
 from dataclasses import dataclass, field
-from typing import Optional, TYPE_CHECKING, Callable
+from typing import Optional, TYPE_CHECKING, Callable, Protocol
 #           --- Third party libraries ---
 from PyQt6.QtCore import QModelIndex
 from PyQt6.QtWidgets import QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
 #           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
+import phb_app.data.employee_management as em
 import phb_app.data.location_management as loc
 import phb_app.data.worksheet_management as ws
+import phb_app.utils.hours_utils as hu
 import phb_app.utils.page_utils as pu
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.templating.types as t
 
 if TYPE_CHECKING:
     import phb_app.data.workbook_management as wm
+
+#           --- PROTOCOLS ---
+
+class ConfigRowWithWbMngr(Protocol):
+    """Protocol for a configuration row that requires a workbook manager."""
+    def __call__(self, ent_ctx: "EntryContext", row: int, wb_mngr: "wm.WorkbookManager") -> None: ...
+
+class ConfigRowWithoutWbMngr(Protocol):
+    """Protocol for a configuration row that does not require a workbook manager."""
+    def __call__(self, ent_ctx: "EntryContext", row: int) -> None: ...
+
+class ConfigRowWithEmp(Protocol):
+    """Protocol for a configuration row that requires an employee context."""
+    def __call__(self, ent_ctx: "EntryContext", row: int, emp: em.EmployeeHours) -> None: ...
 
 #           --- DATA CONTAINERS ---
 
@@ -146,7 +162,7 @@ class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     data: Optional[FileHandlerData] = None
-    configure_row: Callable[["EntryContext", int, Optional["wm.WorkbookManager"]], None] = None
+    configure_row: Optional[ConfigRowWithWbMngr | ConfigRowWithoutWbMngr | ConfigRowWithEmp] = None
 
 #           --- MODULE SERVICE FUNCTIONS ---
 
@@ -185,7 +201,7 @@ def _configure_output_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wor
         ent_ctx.panel.page.completeChanged.emit()
     connect_dropdowns(dropdowns, connection_wrapper)
 
-def _configure_project_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+def _configure_project_row(ent_ctx: EntryContext, row: int) -> None:
     '''Configure the project row in the table.'''
     # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
     ent_ctx.data.table_items.project_id = QTableWidgetItem(ent_ctx.data.project_id)
@@ -195,7 +211,7 @@ def _configure_project_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Workboo
     ent_ctx.data.table_items.file_name = QTableWidgetItem(ent_ctx.data.file_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
 
-def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+def _configure_employee_row(ent_ctx: EntryContext, row: int) -> None:
     '''Configure the employee row in the table.'''
     ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
@@ -204,7 +220,7 @@ def _configure_employee_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Workbo
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
-def _configure_summary_io_row(ent_ctx: EntryContext, col: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+def _configure_summary_io_row(ent_ctx: EntryContext, col: int) -> None:
     '''Configure the summary IO row in the table. There is only one column.'''
     ent_ctx.data.table_items.in_file_names = QTableWidgetItem(ent_ctx.data.in_file_names)
     pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.in_file_names, ie.SummaryIOTableHeaders.INPUT_WORKBOOKS, col)
@@ -214,13 +230,15 @@ def _configure_summary_io_row(ent_ctx: EntryContext, col: int, wb_mngr: "wm.Work
     pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.date, ie.SummaryIOTableHeaders.SELECTED_DATE, col)
     ent_ctx.panel.table.resizeColumnsToContents()
 
-def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager" = None) -> None: # pylint: disable=unused-argument
+def _configure_summary_data_row(ent_ctx: EntryContext, row: int, hours: em.EmployeeHours) -> None:
     '''Configure the summary data row in the table.'''
     ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)
-    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(_format_hours(ent_ctx.data.pred_hrs, st.SpecialStrings.ZERO_HOURS))
+    ent_ctx.data.table_items.pred_hrs = QTableWidgetItem(hu.format_summary_data_row_hours(ent_ctx.data.pred_hrs, st.SpecialStrings.ZERO_HOURS))
+    ent_ctx.data.table_items.pred_hrs.setForeground(hours.pre_hours_colour)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.pred_hrs, row, ie.SummaryDataTableHeaders.PREDICTED_HOURS)
-    ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(ent_ctx.data.acc_hrs)
+    ent_ctx.data.table_items.acc_hrs = QTableWidgetItem(hu.format_summary_data_row_hours(ent_ctx.data.acc_hrs, st.SpecialStrings.MISSING))
+    ent_ctx.data.table_items.acc_hrs.setForeground(hours.acc_hours_colour)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.acc_hrs, row, ie.SummaryDataTableHeaders.ACCUMULATED_HOURS)
     ent_ctx.data.table_items.dev = QTableWidgetItem(ent_ctx.data.dev)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.dev, row, ie.SummaryDataTableHeaders.DEVIATION)
@@ -230,13 +248,6 @@ def _configure_summary_data_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Wo
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.out_ws, row, ie.SummaryDataTableHeaders.OUTPUT_WORKSHEET)
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.SummaryDataTableHeaders.COORDINATE)
-
-def _format_hours(hours: float, fallback: str) -> str:
-    '''Private module function. Format the hours to two decimal places.'''
-    if hours:
-        return f"{hours:.2f}"
-    else:
-        return fallback
 
 def join_str_list(formatter: str, items: t.StrList) -> str:
     '''Public module function. Joins the items into a single string.'''

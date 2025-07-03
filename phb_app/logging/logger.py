@@ -20,6 +20,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTableWidget
 # First party library imports
 import phb_app.utils.date_utils as du
+import phb_app.utils.hours_utils as hu
 import phb_app.data.months_dict as md
 import phb_app.data.workbook_management as wm
 import phb_app.data.log_management as lm
@@ -115,19 +116,6 @@ def calculate_table_widths(table: QTableWidget,
         tab_widths.append(col_width)
     return tab_widths
 
-def format_hours_wrapper(text: str) -> Callable[[Optional[float], Qt.GlobalColor], str]:
-    '''Returns a function that formats hours according to the text given.'''
-
-    def format_hours(hours: Optional[float],
-                     colour: Qt.GlobalColor) -> str:
-        '''The function to be returned with the correct formatting procedure.'''
-
-        if hours is None:
-            return text
-        formatted = f"{hours:.2f}"
-        return f"*{formatted}*" if colour == Qt.GlobalColor.red else formatted
-    return format_hours
-
 def get_employee_data(wb_mng: wm.WorkbookManager) -> list[emp.Employee]:
     '''Gets employee names, project IDs and coordinates from the summary table.'''
 
@@ -137,27 +125,19 @@ def get_employee_data(wb_mng: wm.WorkbookManager) -> list[emp.Employee]:
 def format_row(employees: list[emp.Employee],
                table_structure: lm.TableStructure) -> list[str]:
     '''Formats a single row of table data with correct spacing.'''
-
-    # Create two functions which deal with "None" hours and "missing" employees
-    format_predicted_hours = format_hours_wrapper(st.SpecialStrings.ZERO_HOURS)
-    format_accumulated_hours = format_hours_wrapper(st.SpecialStrings.MISSING)
     formatted_rows = []
     # For each employee, get the name, predicted hours, accumulated hours, project IDs,
     # then put in a row value list and format the spacing of each list element using
     # the table structure
     for employee in employees:
         name = employee.name
-        predicted_hours = format_predicted_hours(
-            employee.hours.predicted_hours, employee.hours.pre_hours_colour)
-        accumulated_hours = format_accumulated_hours(
-            employee.hours.accumulated_hours, employee.hours.acc_hours_colour)
-        project_info = ", ".join(
-            f"{proj_id}" for proj_id in employee.found_projects.keys()) if employee.found_projects else " "
+        predicted_hours = hu.format_log_row_hours(employee.hours.predicted_hours, st.SpecialStrings.ZERO_HOURS, employee.hours.pre_hours_colour)
+        accumulated_hours = hu.format_log_row_hours(employee.hours.accumulated_hours, st.SpecialStrings.MISSING, employee.hours.acc_hours_colour)
+        project_info = ", ".join(f"{proj_id}" for proj_id in employee.found_projects.keys()) if employee.found_projects else " "
         coord = employee.hours.hours_coord
         deviation = employee.hours.deviation
         row_values = [name, predicted_hours, accumulated_hours, deviation, project_info, coord]
-        formatted_row = "".join(
-            str(value).rjust(width) for value, width in zip(row_values, table_structure.tab_widths))
+        formatted_row = "".join(str(value).rjust(width) for value, width in zip(row_values, table_structure.tab_widths))
         formatted_rows.append(formatted_row)
     return formatted_rows
 

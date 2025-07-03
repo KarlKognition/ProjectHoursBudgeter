@@ -5,12 +5,25 @@ String constants. English.
 from pathlib import Path
 from enum import StrEnum, auto
 import git
+from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtWidgets import QApplication
 
 #           --- GENERIC ---
 
 GUI_TITLE = "Project Hours Budgeting Wizard"
 
 NO_SELECTION = "No selection."
+
+DEFAULT_FONT_COLOUR = QColor()
+
+DEFAULT_BACKGROUND_COLOUR = QColor()
+
+def set_app_default_font_theme(app: QApplication) -> None:
+    """Sets white or black based on the app's background colour."""
+    global DEFAULT_FONT_COLOUR # pylint: disable=global-statement
+    global DEFAULT_BACKGROUND_COLOUR # pylint: disable=global-statement
+    DEFAULT_FONT_COLOUR = app.palette().color(QPalette.ColorRole.Text)
+    DEFAULT_BACKGROUND_COLOUR = app.palette().color(QPalette.ColorRole.Base)
 
 #           --- INTRO PAGE ---
 
@@ -104,6 +117,7 @@ class IORole(StrEnum):
     EMPLOYEE_TABLE = auto()
     SUMMARY_IO_TABLE = auto()
     SUMMARY_DATA_TABLE = auto()
+    LOG = auto()
 
 class SpecialStrings(StrEnum):
     '''Enum for selecting worksheets.'''

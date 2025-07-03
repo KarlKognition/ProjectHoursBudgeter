@@ -16,16 +16,22 @@ Description
 Utility functions the the calculation of hours of each employee
 in the project hours budgeting wizard.
 '''
-
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from functools import lru_cache
 from openpyxl.styles import Font
-import phb_app.data.workbook_management as wm
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
+#           --- First party libraries ---
+import phb_app.data.employee_management as em
 import phb_app.utils.employee_utils as eu
 import phb_app.wizard.constants.ui_strings as st
 
+if TYPE_CHECKING:
+    import phb_app.data.workbook_management as wm
+
 @lru_cache(maxsize=1)
-def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext, row_indices: tuple[int, ...]) -> None:
+def compute_predicted_hours(wb_ctx: "wm.OutputWorkbookContext", row_indices: tuple[int, ...]) -> None:
     '''Compute the predicted hours for each employee in the output workbook. Selected rows are purely for cacheing purposes.'''
     pre_hours = eu.find_predicted_hours(
         wb_ctx.managed_sheet.selected_employees,
@@ -37,18 +43,17 @@ def compute_predicted_hours(wb_ctx: wm.OutputWorkbookContext, row_indices: tuple
     wb_ctx.worksheet_service.set_predicted_hours_colour()
 
 @lru_cache(maxsize=1)
-def compute_hours_for_selected_employees(wbs: wm.WorkbookManager, wb_ctx: wm.OutputWorkbookContext, row_indices: tuple[int, ...]) -> None:
+def compute_hours_for_selected_employees(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext", row_indices: tuple[int, ...]) -> None:
     """Compute the hours for each selected employee in the output workbook. Selected rows are purely for cacheing purposes."""
-    _sum_hours_selected_employee(wbs, wb_ctx)
-    for emp in wb_ctx.managed_sheet.selected_employees.values():
+    for emp in out_wb_ctx.worksheet_service.yield_from_selected_employees():
+        _sum_hours_selected_employee(wbs, out_wb_ctx, emp)
         emp.hours.set_deviation()
 
-def _sum_hours_selected_employee(wbs: wm.WorkbookManager, out_wb_ctx: wm.OutputWorkbookContext) -> None:
+def _sum_hours_selected_employee(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext", sel_emp: em.Employee) -> None:
     '''Sum the hours of each employee by project ID if they are
     found in the given worksheets.'''
     selected_date = out_wb_ctx.managed_sheet.selected_date
     # Get the selected employee objects
-    sel_emps = out_wb_ctx.managed_sheet.selected_employees.values()
     for in_wb in wbs.yield_workbook_ctxs_by_role(st.IORole.INPUTS):
         # Get the localised filter headings from the managed input workbook
         employee_name_col = in_wb.managed_sheet.indexed_headers.get(in_wb.locale_data.filter_headers.name)
@@ -77,19 +82,31 @@ def _sum_hours_selected_employee(wbs: wm.WorkbookManager, out_wb_ctx: wm.OutputW
                 proj_id_val not in proj_id_dict.keys()):
                 continue
             # Get the first employee with the matching name
-            emp = next((e for e in sel_emps if e.name == employee_name_val), None)
-            if emp:
+            if employee_name_val == sel_emp.name:
                 # Match found!
-                if proj_id_val not in emp.found_projects:
-                    emp.found_projects[proj_id_val] = proj_id_dict[proj_id_val]
-                if emp.hours.accumulated_hours is None:
+                if proj_id_val not in sel_emp.found_projects:
+                    sel_emp.found_projects[proj_id_val] = proj_id_dict[proj_id_val]
+                if sel_emp.hours.accumulated_hours is None:
                     # Init recorded hours to 0 if the selected employee is found
                     # in the search for the first time
-                    emp.hours.accumulated_hours = 0
+                    sel_emp.hours.accumulated_hours = 0
                 # Accumulate found hours
-                emp.hours.accumulated_hours += hours_val
+                sel_emp.hours.accumulated_hours += hours_val
 
-def write_hours_to_output_file(output_file: wm.OutputWorkbookContext) -> None:
+def format_summary_data_row_hours(hours: Optional[float], text: str) -> str:
+    '''Formats hours for the summary data table.'''
+    if not hours:
+        return text
+    return f"{hours:.2f}"
+
+def format_log_row_hours(hours: Optional[float], text: str, colour: QColor) -> str:
+    '''Formats hours for the summary data table.'''
+    if hours is None:
+        return text
+    formatted = f"{hours:.2f}"
+    return f"*{formatted}*" if colour == QColor(Qt.GlobalColor.red) else formatted
+
+def write_hours_to_output_file(output_file: "wm.OutputWorkbookContext") -> None:
     '''Write recorded hours to output budgeting file.'''
     emp_dict = output_file.managed_sheet.selected_employees
     date_row = output_file.managed_sheet.selected_date.row

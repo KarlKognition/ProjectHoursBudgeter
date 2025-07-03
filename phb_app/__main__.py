@@ -26,11 +26,13 @@ from PyQt6.QtWidgets import QApplication
 import phb_app.data.location_management as loc
 import phb_app.data.workbook_management as wm
 import phb_app.wizard.phb_wizard_gui as wg
+import phb_app.wizard.constants.ui_strings as st
 
 def main():
     '''Main entry point to program.'''
 
     app = QApplication(sys.argv)
+    st.set_app_default_font_theme(app)
     window = wg.PHBWizard(loc.CountryData(), wm.WorkbookManager())
     window.show()
     sys.exit(app.exec())

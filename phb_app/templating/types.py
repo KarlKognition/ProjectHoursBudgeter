@@ -1,4 +1,4 @@
-"""Types"""
+"""Generic types"""
 from PyQt6.QtWidgets import QPushButton
 
 type ButtonsList = list[QPushButton]

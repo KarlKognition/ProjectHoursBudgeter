@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Iterator, TYPE_CHECKING
 from openpyxl.worksheet.worksheet import Worksheet
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 #           --- First party libraries ---
 import phb_app.data.selected_date as sd
 import phb_app.data.employee_management as emp
@@ -146,7 +147,7 @@ class OutputWorksheetService:
 
     def set_predicted_hours_colour(self) -> None:
         '''Set the color formatting of the employee's predicted hours.'''
-        for employee in self.yield_from_selected_employee():
+        for employee in self.yield_from_selected_employees():
             if employee.hours.hours_coord:
                 # Check each employee's predicted hours colour
                 sheet_obj = self.worksheet.selected_sheet.sheet_object
@@ -161,13 +162,13 @@ class OutputWorksheetService:
                 ):
                     # Default (black): Already recorded.
                     # Show red to get the user's attention in summary
-                    employee.hours.pre_hours_colour = Qt.GlobalColor.red
+                    employee.hours.pre_hours_colour = QColor(Qt.GlobalColor.red)
 
     def clear_selected_employees(self) -> None:
         '''Clears the recorded employee names and respective hours.'''
         self.worksheet.selected_employees.clear()
 
-    def yield_from_selected_employee(self) -> Iterator[emp.Employee]:
+    def yield_from_selected_employees(self) -> Iterator[emp.Employee]:
         '''Yields from the selected employees.'''
         yield from self.worksheet.selected_employees.values()
 
