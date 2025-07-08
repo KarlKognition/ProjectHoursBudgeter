@@ -43,8 +43,7 @@ class InputWorkbookContext:
     managed_sheet: Optional[ws.InputWorksheetContext] = None
     worksheet_service: Optional[ws.InputWorksheetService] = None
 
-# Set eq to false to allow lru caching of hours_utils.compute_hours_for_selected_employees(...)
-# and hours_utils.compute_predicted_hours(...)
+# Set eq to false to allow lru caching of hours_utils.compute_predicted_hours(...)
 @dataclass(eq=False, slots=True)
 class OutputWorkbookContext:
     """Context data class for managing an output workbook."""

@@ -23,7 +23,7 @@ import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.hours_deviation as hd
 
-@dataclass(eq=False, slots=True) # Set eq to false to allow lru caching of futils.locate_employee_range(...)
+@dataclass(eq=False, slots=True) # Set eq to false to allow lru caching of file_handling_utils.locate_employee_range(...)
 class EmployeeRowAnchors(yh.YamlHandler):
     '''Data class to define the anchor strings of the row containing the employee names.'''
     start_anchor: str = ""
@@ -40,7 +40,7 @@ class EmployeeRowAnchors(yh.YamlHandler):
             if hasattr(self, key):
                 setattr(self, key, value)
 
-@dataclass(eq=False, slots=True) # Set to false to allow lru caching of futils.locate_employee_range(...)
+@dataclass(eq=False, slots=True) # Set eq to false to allow lru caching of file_handling_utils.locate_employee_range(...)
 class EmployeeRange:
     '''Data class for the range within which the employee names are located.'''
     start_cell: str = ""
