@@ -256,7 +256,7 @@ def create_year_dropdown() -> QComboBox:
     Create a dropdown for selecting a year. The default year ist he current year unless it is December,
     then due to the default month being last month, the default year is set to the previous year.
     '''
-    default_year = str((datetime.now() + relativedelta(months=-1)).year)
+    default_year = str((datetime.now() + relativedelta(months=-ie.CONST_1)).year)
     return _create_dropdown([str(year) for year in range(2020, datetime.now().year + 3)], default_year)
 
 def create_month_dropdown() -> QComboBox:
@@ -264,7 +264,7 @@ def create_month_dropdown() -> QComboBox:
     Create a dropdown for selecting a month. The default month is set to the previous month.
     This is the month in which hours are yet to be analysed.
     '''
-    default_month = du.abbr_month((datetime.now() + relativedelta(months=-1)).month, md.LOCALIZED_MONTHS_SHORT)
+    default_month = du.abbr_month((datetime.now() + relativedelta(months=-ie.CONST_1)).month, md.LOCALIZED_MONTHS_SHORT)
     return _create_dropdown(list(md.LOCALIZED_MONTHS_SHORT.keys()), default_month)
 
 def setup_dropdowns(table:QTableWidget, row: int, dds: "io.Dropdowns") -> None:
@@ -334,7 +334,7 @@ def populate_employee_table(page: QWizardPage, emp_ctx: "io.EntryContext", wb_mn
     wb_ctx = wb_mngr.get_output_workbook_ctx()
     ws_ctx = wb_ctx.managed_sheet.selected_sheet.sheet_object
     start_col = wb_ctx.managed_sheet.employee_range.start_col_idx
-    end_col = wb_ctx.managed_sheet.employee_range.end_col_idx + 1
+    end_col = wb_ctx.managed_sheet.employee_range.end_col_idx + ie.CONST_1
     for col in range(start_col, end_col):
         cell = ws_ctx.cell(row=wb_ctx.managed_sheet.employee_range.start_row_idx, column=col)
         if cell.value and cell.value not in st.NON_NAMES:
@@ -402,11 +402,19 @@ def get_combo_box(panel: "io.IOControls", row: int, col: int) -> Optional[QCombo
     '''Get the combo box from the table.'''
     return panel.table.cellWidget(row, col) if panel.table.cellWidget(row, col) else None
 
+def clean_up_table(table: QTableWidget, clear_cols: bool = False) -> None:
+    '''Clean up the table.'''
+    table.clearContents()
+    if clear_cols:
+        table.setColumnCount(0)
+    else:
+        table.setRowCount(0)
+
 def _in_selection_complete(panel: "io.IOControls") -> bool:
     '''Check if both tables have at least one row selected
     and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
     return (
-        panel.table.rowCount() >= 1
+        panel.table.rowCount() >= ie.CONST_1
         and not panel.error_panel.findChildren(QLabel)
     )
 
@@ -415,7 +423,7 @@ def _out_selection_complete(panel: "io.IOControls") -> bool:
     and no error messages are displayed. Errors are added as QLabel widgets. No QLable, no error.'''
     out_item = get_combo_box(panel, ie.OutputFile.FIRST_ENTRY, ie.OutputTableHeaders.WORKSHEET)
     return (
-        panel.table.rowCount() == 1
+        panel.table.rowCount() == ie.CONST_1
         and out_item is not None
         and out_item.currentText() != st.SpecialStrings.SELECT_WORKSHEET
         and not panel.error_panel.findChildren(QLabel)
@@ -425,11 +433,18 @@ def _table_selection_complete(panel: "io.IOControls") -> bool:
     '''Check if the table has at least one row selected. There is only one panel in this case.'''
     return bool(panel.table.selectionModel().selectedRows())
 
+def _io_summary_table_complete(panel: "io.IOControls") -> bool:
+    '''Check if the table has the minimum number of rows.'''
+    return panel.table.rowCount() >= ie.IO_SUMMARY_ROW_COUNT
+
 def check_completion(panel: "io.IOControls") -> bool:
     '''Return the appropriate isComplete function based on the page type.'''
     page_checker = {
         st.IORole.INPUTS: _in_selection_complete,
         st.IORole.OUTPUT: _out_selection_complete,
-        st.IORole.PROJECT_TABLE: _table_selection_complete
+        st.IORole.PROJECT_TABLE: _table_selection_complete,
+        st.IORole.EMPLOYEE_TABLE: _table_selection_complete,
+        st.IORole.SUMMARY_IO_TABLE: _io_summary_table_complete,
+        st.IORole.SUMMARY_DATA_TABLE: _table_selection_complete
     }
     return page_checker.get(panel.role, False)(panel)

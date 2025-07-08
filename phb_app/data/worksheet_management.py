@@ -54,7 +54,7 @@ class OutputWorksheetContext:
     selected_date: sd.SelectedDate = field(default_factory=sd.SelectedDate)
     employee_row_anchors: emp.EmployeeRowAnchors = field(default_factory=emp.EmployeeRowAnchors)
     employee_range: emp.EmployeeRange = field(default_factory=emp.EmployeeRange)
-    selected_employees: dict[str, emp.Employee] = field(default_factory=dict)
+    selected_employees: dict[t.CellCoord, emp.Employee] = field(default_factory=dict)
 
 #           --- SERVICE CLASSES ---
 

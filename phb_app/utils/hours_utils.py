@@ -30,17 +30,21 @@ import phb_app.wizard.constants.ui_strings as st
 if TYPE_CHECKING:
     import phb_app.data.workbook_management as wm
 
-@lru_cache(maxsize=1)
-def compute_predicted_hours(wb_ctx: "wm.OutputWorkbookContext", row_indices: tuple[int, ...]) -> None:
+def compute_predicted_hours(out_wb_ctx: "wm.OutputWorkbookContext") -> None:
     '''Compute the predicted hours for each employee in the output workbook. Selected rows are purely for cacheing purposes.'''
+    coords = tuple(out_wb_ctx.managed_sheet.selected_employees.keys())
     pre_hours = eu.find_predicted_hours(
-        wb_ctx.managed_sheet.selected_employees,
-        wb_ctx.managed_sheet.selected_date.row,
-        wb_ctx.mngd_wb.file_path,
-        wb_ctx.managed_sheet.selected_sheet.sheet_name
+        coords,
+        out_wb_ctx.managed_sheet.selected_date.row,
+        out_wb_ctx.mngd_wb.file_path,
+        out_wb_ctx.managed_sheet.selected_sheet.sheet_name
     )
-    wb_ctx.worksheet_service.set_predicted_hours(pre_hours)
-    wb_ctx.worksheet_service.set_predicted_hours_colour()
+    eu.set_employee_hours(
+        out_wb_ctx.managed_sheet.selected_employees,
+        out_wb_ctx.managed_sheet.selected_date.row
+    )
+    out_wb_ctx.worksheet_service.set_predicted_hours(pre_hours)
+    out_wb_ctx.worksheet_service.set_predicted_hours_colour()
 
 @lru_cache(maxsize=1)
 def compute_hours_for_selected_employees(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext", row_indices: tuple[int, ...]) -> None:

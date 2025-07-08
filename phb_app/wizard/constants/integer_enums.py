@@ -91,3 +91,4 @@ class SummaryDataTableHeaders(BaseTableHeaders):
 
 CONST_0 = 0
 CONST_1 = 1
+IO_SUMMARY_ROW_COUNT = 3

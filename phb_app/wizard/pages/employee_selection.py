@@ -64,19 +64,18 @@ class EmployeeSelectionPage(QWizardPage):
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''
-        self.employee_panel.table.clearContents()
-        self.employee_panel.table.setRowCount(0)
+        pu.clean_up_table(self.employee_panel.table)
 
     def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
-        return bool(self.employee_panel.table.selectionModel().selectedRows())
+        return pu.check_completion(self.employee_panel)
     
     def validatePage(self) -> bool: # pylint: disable=invalid-name
         '''Override the page validation.'''
         selected_rows = io.get_selected_rows(self.employee_panel.table)
         row_indices = io.get_selected_row_indices(selected_rows)
         eu.compute_selected_employees(self.employee_panel.table, self.out_wb_ctx, selected_rows)
-        hu.compute_predicted_hours(self.out_wb_ctx, row_indices)
+        hu.compute_predicted_hours(self.out_wb_ctx)
         hu.compute_hours_for_selected_employees(self.wb_mgmt, self.out_wb_ctx, row_indices)
         return True

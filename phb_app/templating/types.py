@@ -1,6 +1,7 @@
 """Generic types"""
 from PyQt6.QtWidgets import QPushButton
 
+type CellCoord = str
 type ButtonsList = list[QPushButton]
 type StrList = list[str]
 type CountryName = str

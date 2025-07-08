@@ -29,6 +29,7 @@ import phb_app.data.workbook_management as wm
 import phb_app.wizard.constants.integer_enums as ie
 import phb_app.logging.exceptions as ex
 import phb_app.data.employee_management as emp
+import phb_app.templating.types as t
 
 # Cache the function results
 # Only cache one result to minimise memory use
@@ -62,7 +63,7 @@ def set_employee_range(sheet_obj: Worksheet, emp_range: emp.EmployeeRange, ancho
         if start_anchor_temp and not end_anchor_temp:
             raise ex.MissingEmployeeRow(anchors.end_anchor)
 
-def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
+def yield_hours_coord(coord: t.CellCoord, row: int) -> Iterator[str]:
     '''
     Yields the coordinate for where the hours are located per employee
     for the given date (row).
@@ -70,7 +71,8 @@ def yield_hours_coord(coord: str, row: int) -> Iterator[str]:
     # The first item ([0] -> col) in the tuple from `coordinate_from_string` is used
     yield f"{str(xlutils.cell.coordinate_from_string(coord)[0])}{str(row)}"
 
-def find_predicted_hours(emp_dict: dict[str, emp.Employee], row: int, file_path: str, sheet_name: str) -> dict[str, int]:
+@lru_cache(maxsize=1)
+def find_predicted_hours(emp_coords: tuple[t.CellCoord, ...], row: int, file_path: str, sheet_name: str) -> dict[str, int]:
     '''
     Goes through all given coordinates of a worksheet, computes
     any formulae and returns the hours by employee name coordinate.
@@ -81,26 +83,27 @@ def find_predicted_hours(emp_dict: dict[str, emp.Employee], row: int, file_path:
     sheet = wb.sheets[sheet_name]
     # Prepare a dictionary of coord:hours
     pre_hours = {}
-    for emp_coord, employee in emp_dict.items():
+    for emp_coord in emp_coords:
         # Create a coordinate from the date's row and employee's column
         hours_coord = next(yield_hours_coord(emp_coord, row))
         # Save the computed value
         pre_hours[emp_coord] = sheet.range(hours_coord).value
-        # Save the hours coordinate
-        employee.hours.hours_coord = hours_coord
     wb.close()
     return pre_hours
 
-def compute_selected_employees(table: QTableWidget, wb_ctx: "wm.OutputWorkbookContext", selected_rows: list[QModelIndex]) -> None:
-    """
-    Find selected employees in the table and set them as selected in the managed output workbook.
-    """
+def set_employee_hours(coord_emps: dict[t.CellCoord, emp.Employee], row: int) -> None:
+    """Save the coordinate of the hours for each employee."""
+    for coord, empl in coord_emps.items():
+        empl.hours.hours_coord = next(yield_hours_coord(coord, row))
+
+def compute_selected_employees(table: QTableWidget, out_wb_ctx: "wm.OutputWorkbookContext", selected_rows: list[QModelIndex]) -> None:
+    """Find selected employees in the table and set them as selected in the managed output workbook."""
     selected_employees = [
         (table.item(row.row(), ie.EmployeeTableHeaders.COORDINATE).text(),
-        table.item(row.row(), ie.EmployeeTableHeaders.EMPLOYEE).text())
+         table.item(row.row(), ie.EmployeeTableHeaders.EMPLOYEE).text())
         for row in selected_rows
     ]
-    wb_ctx.worksheet_service.set_selected_employees(selected_employees)
+    out_wb_ctx.worksheet_service.set_selected_employees(selected_employees)
 
 def pop_unselected_employees(table: QTableWidget, out_wb_ctx: "wm.OutputWorkbookContext") -> None:
     """Pop unselected employees from the managed output workbook."""

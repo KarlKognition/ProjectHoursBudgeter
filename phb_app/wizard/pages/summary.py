@@ -78,17 +78,15 @@ class SummaryPage(QWizardPage):
 
     def cleanupPage(self) -> None: # pylint: disable=invalid-name
         '''Clean up if the back button is pressed.'''
-        self.summary_io_panel.table.clearContents()
-        self.summary_io_panel.table.setColumnCount(0)
-        self.summary_data_panel.table.clearContents()
-        self.summary_data_panel.table.setRowCount(0)
+        pu.clean_up_table(self.summary_io_panel.table, clear_cols=True)
+        pu.clean_up_table(self.summary_data_panel.table)
         self.out_wb_ctx.worksheet_service.clear_selected_employees()
 
     def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.
         Check if the table has at least one project ID selected.'''
 
-        return bool(self.summary_data_panel.table.selectionModel().selectedRows())
+        return pu.check_completion(self.summary_io_panel) and pu.check_completion(self.summary_data_panel)
 
     def validatePage(self) -> bool: # pylint: disable=invalid-name
         '''Override the page validation.'''
