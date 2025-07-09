@@ -1,7 +1,7 @@
 '''
 String constants. English.
 '''
-
+import sys
 from pathlib import Path
 from enum import StrEnum, auto
 import git
@@ -49,8 +49,14 @@ IMAGE_LOAD_FAIL = "Failed to load image."
 
 def find_git_root():
     '''Find the root of the project.'''
-    repo = git.Repo(Path(__file__).resolve(), search_parent_directories=True)
-    return Path(repo.working_tree_dir)
+    try:
+        repo = git.Repo(Path(__file__).resolve(), search_parent_directories=True)
+        return Path(repo.working_tree_dir)
+    except Exception:
+        if getattr(sys, 'frozen', False):
+            # Running as a PyInstaller bundle
+            return Path(sys._MEIPASS)
+            
 
 APP_ROOT = find_git_root() / "phb_app"
 IMAGES_DIR = APP_ROOT / "images"

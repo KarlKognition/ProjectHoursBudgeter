@@ -1,4 +1,6 @@
 *.pyc
+*.spec
+build/
 .vscode/settings.json
 phb_app/RUN_pipreqs___NOT_TO_GIT.py
 phb_app/old_requirements.txt
