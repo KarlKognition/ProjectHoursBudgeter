@@ -26,7 +26,6 @@ errors: dict[IdRoleKey, dict[Exception, QLabel]] = {}
 
 def add_error(uuid: UUID, file_role: st.IORole, error: Exception) -> None:
     '''Add the error per file.'''
-
     key = (uuid, file_role)
     if key not in errors:
         errors[key] = {}
@@ -43,8 +42,8 @@ def add_error(uuid: UUID, file_role: st.IORole, error: Exception) -> None:
 
 def remove_error(uuid: UUID, file_role: st.IORole) -> None:
     '''Remove the error and label per file.'''
-
     key = (uuid, file_role)
+    print(f"{uuid=}")
     if key in errors:
         for label in errors[key].values():
             # Remove the message and file name from tracking
@@ -52,11 +51,10 @@ def remove_error(uuid: UUID, file_role: st.IORole) -> None:
             # Remove the associated label
             label.deleteLater()
         # If no error for this role, remove entry
-        del errors[key]
+        del errors[key]    
 
 def style_error_message_red(label: QLabel) -> None:
     '''Error messages are highlighted red and have white text.'''
-
     palette = label.palette()
     palette.setColor(label.foregroundRole(), QColor(Qt.GlobalColor.red))
     label.setPalette(palette)

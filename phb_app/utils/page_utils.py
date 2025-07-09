@@ -399,7 +399,7 @@ def _remove_highlighting(item: QTableWidgetItem) -> None:
 
 def _clear_row_error_status(file_ctx: "io.EntryContext", row: int, header: ie.BaseTableHeaders) -> None:
     '''Clear the error status of a row in the table.'''
-    em.remove_error(file_ctx.data.file_name, file_ctx.panel.role)
+    em.remove_error(file_ctx.data.uuid, file_ctx.panel.role)
     _remove_highlighting(file_ctx.panel.table.item(row, header))
 
 #           --- QWizard function overrides ---
