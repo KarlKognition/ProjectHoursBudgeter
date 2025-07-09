@@ -43,7 +43,6 @@ def add_error(uuid: UUID, file_role: st.IORole, error: Exception) -> None:
 def remove_error(uuid: UUID, file_role: st.IORole) -> None:
     '''Remove the error and label per file.'''
     key = (uuid, file_role)
-    print(f"{uuid=}")
     if key in errors:
         for label in errors[key].values():
             # Remove the message and file name from tracking
