@@ -50,6 +50,7 @@ def compute_accumulated_hours_for_selected_employees(wbs: "wm.WorkbookManager", 
     """Compute the hours for each selected employee in the output workbook. Selected rows are purely for cacheing purposes."""
     for emp in out_wb_ctx.worksheet_service.yield_from_selected_employees():
         _sum_hours_selected_employee(wbs, out_wb_ctx, emp)
+        _format_accumulated_hours(emp)
         emp.hours.set_deviation()
 
 def _sum_hours_selected_employee(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext", sel_emp: em.Employee) -> None:
@@ -95,6 +96,11 @@ def _sum_hours_selected_employee(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.Outp
                     sel_emp.hours.accumulated_hours = 0
                 # Accumulate found hours
                 sel_emp.hours.accumulated_hours += hours_val
+
+def _format_accumulated_hours(emp: em.Employee) -> None:
+    '''Format the accumulated hours.'''
+    if emp.hours.accumulated_hours is None or emp.hours.accumulated_hours == 0.0:
+        emp.hours.acc_hours_colour = QColor(Qt.GlobalColor.red)
 
 def format_summary_data_row_hours(hours: Optional[float], text: str) -> str:
     '''Formats hours for the summary data table.'''
