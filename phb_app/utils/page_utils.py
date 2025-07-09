@@ -18,10 +18,11 @@ All functions necessary for setting up the wizard pages.
 ## Imports
 # Standard libraries
 from datetime import datetime
+from uuid import UUID
 from typing import Optional, TYPE_CHECKING
 from dateutil.relativedelta import relativedelta
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QBrush, QPalette, QColor
+from PyQt6.QtGui import QPixmap, QColor
 from PyQt6.QtWidgets import (
     QWizardPage, QBoxLayout, QHBoxLayout, QComboBox,
     QWidget, QLabel, QFileDialog, QVBoxLayout,
@@ -112,10 +113,14 @@ def create_col_header_table(
     table_headers: ie.BaseTableHeaders,
     selection_mode: QTableWidget.SelectionMode,
     tab_widths: hm.TableWidths,
+    invisible_headers: Optional[list[ie.BaseTableHeaders]] = None
     ) -> QTableWidget:
     '''Create a table widget with the given headers and selection mode.'''
     table = QTableWidget(0, len(table_headers))
     table.setHorizontalHeaderLabels(table_headers.cap_members_list())
+    if invisible_headers:
+        for header in invisible_headers:
+            table.setColumnHidden(header, True)
     table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft)
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     table.setSelectionMode(selection_mode)
@@ -168,13 +173,13 @@ def _remove_selected_file(page: QWizardPage, wb_mngr: "wm.WorkbookManager", file
     # Search for selected rows in reverse so that the row numbering
     # doesn't change with each deletion.
     for row in sorted([item.row() for item in selected_items], reverse=True):
-        file_name = file_ctx.panel.table.item(row, ie.InputTableHeaders.FILENAME).text()
+        uuid = UUID(file_ctx.panel.table.item(row, ie.InputTableHeaders.UNIQUE_ID).text())
         # Remove the workbook context
-        wb_mngr.remove_wb_ctx_by_file_name(file_ctx.panel.role, file_name)
+        wb_mngr.remove_wb_ctx_by_uuid(file_ctx.panel.role, uuid)
         # Remove selected rows
         file_ctx.panel.table.removeRow(row)
         # Remove any associated error
-        em.remove_error(file_name, file_ctx.panel.role)
+        em.remove_error(uuid, file_ctx.panel.role)
         # Update UI
         page.completeChanged.emit()
 
@@ -198,12 +203,12 @@ def connect_buttons(page: QWizardPage, ent_ctx: "io.EntryContext", wb_mngr: Opti
 def _check_file_validity(file_ctx: "io.EntryContext") -> None:
     '''Check if the file is valid and highlight errors if necessary.'''
     file_exists = fu.is_file_already_in_table(file_ctx.data.file_name, ie.InputTableHeaders.FILENAME, file_ctx.panel.table)
+    if file_exists:
+        _highlight_bad_item(file_ctx.data.table_items.file_name)
+        raise ex.FileAlreadySelected(file_ctx.data.file_name)
     if file_ctx.panel.table == st.IORole.OUTPUT and file_ctx.panel.table.rowCount() >= 2:
         _highlight_bad_item(file_ctx.data.table_items.file_name)
         raise ex.TooManyOutputFilesSelected()
-    if file_exists:
-        _highlight_bad_item(file_ctx.data.table_items)
-        raise ex.FileAlreadySelected(file_ctx.data.table_items.file_name)
 
 def _insert_row(panel: "io.IOControls") -> int:
     '''Insert a new row in the table.'''
@@ -280,7 +285,7 @@ def _handle_selection_error(row: int, file_ctx: "io.EntryContext", error: Except
         st.IORole.OUTPUT: ie.OutputTableHeaders.FILENAME
     }
     _highlight_bad_item(file_ctx.panel.table.item(row, col[file_ctx.panel.role]))
-    em.add_error(file_ctx.data.file_name, file_ctx.panel.role, error)
+    em.add_error(file_ctx.data.uuid, file_ctx.panel.role, error)
 
 def handle_dropdown_selection(file_ctx: "io.EntryContext", wb_ctx: "wm.OutputWorkbookContext", row: int, dropdowns: "io.Dropdowns") -> None:
     '''Handle dropdown selection and update the selected sheet accordingly.'''
@@ -304,12 +309,13 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
     for file_path in files:
         try:
             wb_ctx = wm.create_wb_context_by_role(file_path, file_ctx.panel.role)
-            row = _insert_row(file_ctx.panel)
             wb_mngr.add_workbook(file_ctx.panel.role, wb_ctx)
+            row = _insert_row(file_ctx.panel)
             file_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             file_ctx.data.table_items.file_name = QTableWidgetItem(file_ctx.data.file_name)
             insert_row_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
-            file_ctx.configure_row(file_ctx, row, wb_mngr)
+            file_ctx.data.uuid = wb_ctx.mngd_wb.uuid
+            file_ctx.configure_row(file_ctx, row, wb_ctx)
             _check_file_validity(file_ctx)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,

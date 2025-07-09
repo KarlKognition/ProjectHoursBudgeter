@@ -194,20 +194,20 @@ def _create_output_worksheet_context() -> OutputWorksheetContext:
     '''Private module level. Creates an empty OutputWorksheet, ready for sheet selection in the UI.'''
     return OutputWorksheetContext()
 
-def init_input_worksheet(context: "wm.InputWorkbookContext") -> None:
+def init_input_worksheet(in_wb_ctx: "wm.InputWorkbookContext") -> None:
     """Public module level. Init input worksheet."""
-    sheetnames = context.mngd_wb.workbook_object.sheetnames
+    sheetnames = in_wb_ctx.mngd_wb.workbook_object.sheetnames
     # If there is only one sheet, use that;
     # otherwise, use the locale data's expected sheet name.
     sheet_name = (
         sheetnames[0]
         if len(sheetnames) <= 1
-        else context.locale_data.exp_sheet_name
+        else in_wb_ctx.locale_data.exp_sheet_name
     )
-    sheet_obj = context.mngd_wb.workbook_object[sheet_name]
+    sheet_obj = in_wb_ctx.mngd_wb.workbook_object[sheet_name]
     managed_sheet = _create_input_worksheet_context(sheet_name, sheet_obj)
     service = InputWorksheetService(worksheet=managed_sheet)
-    service.set_sheet_names(context.mngd_wb.workbook_object.sheetnames)
-    context.managed_sheet = managed_sheet
-    context.worksheet_service = service
+    service.set_sheet_names(in_wb_ctx.mngd_wb.workbook_object.sheetnames)
+    in_wb_ctx.managed_sheet = managed_sheet
+    in_wb_ctx.worksheet_service = service
     service.index_headers()

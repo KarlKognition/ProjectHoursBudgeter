@@ -11,20 +11,23 @@ Description
 -----------
 Tracks errors for the Project Hours Budgeting Wizard.
 '''
-
+from uuid import UUID
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
 from PyQt6.QtGui import QColor
 import phb_app.wizard.constants.ui_strings as st
 
+type IdRoleKey = tuple[UUID, st.IORole]
+
+
 # UI container for error messages
 error_panels: dict[st.IORole, QWidget] = {}
-errors: dict[tuple[str, str], dict[str, QLabel]] = {}
+errors: dict[IdRoleKey, dict[Exception, QLabel]] = {}
 
-def add_error(file_name:str, file_role: st.IORole, error: Exception) -> None:
+def add_error(uuid: UUID, file_role: st.IORole, error: Exception) -> None:
     '''Add the error per file.'''
 
-    key = (file_name, file_role)
+    key = (uuid, file_role)
     if key not in errors:
         errors[key] = {}
     # Set the error message in a label
@@ -38,10 +41,10 @@ def add_error(file_name:str, file_role: st.IORole, error: Exception) -> None:
     # Track the label
     errors[key][str(error)] = label
 
-def remove_error(file_name: str, file_role: st.IORole) -> None:
+def remove_error(uuid: UUID, file_role: st.IORole) -> None:
     '''Remove the error and label per file.'''
 
-    key = (file_name, file_role)
+    key = (uuid, file_role)
     if key in errors:
         for label in errors[key].values():
             # Remove the message and file name from tracking

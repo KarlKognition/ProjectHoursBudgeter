@@ -45,6 +45,7 @@ class IOSelectionPage(QWizardPage):
         ) -> None:
 
         super().__init__()
+        self.wb_mgmt = wb_mgmt
         pu.setup_error_panel(st.IORole.INPUTS)
         pu.setup_error_panel(st.IORole.OUTPUT)
         pu.set_titles(self, st.IO_FILE_TITLE, st.IO_FILE_SUBTITLE)
@@ -56,7 +57,8 @@ class IOSelectionPage(QWizardPage):
                 page=self,
                 table_headers=ie.InputTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.MultiSelection,
-                tab_widths=hm.INPUT_COLUMN_WIDTHS
+                tab_widths=hm.INPUT_COLUMN_WIDTHS,
+                invisible_headers=[ie.InputTableHeaders.UNIQUE_ID]
             ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.INPUTS]
@@ -69,7 +71,8 @@ class IOSelectionPage(QWizardPage):
                 page=self,
                 table_headers=ie.OutputTableHeaders,
                 selection_mode=QTableWidget.SelectionMode.SingleSelection,
-                tab_widths=hm.OUTPUT_COLUMN_WIDTHS
+                tab_widths=hm.OUTPUT_COLUMN_WIDTHS,
+                invisible_headers=[ie.OutputTableHeaders.UNIQUE_ID]
             ),
             buttons=[QPushButton(st.ButtonNames.ADD, self), QPushButton(st.ButtonNames.REMOVE, self)],
             error_panel=em.error_panels[st.IORole.OUTPUT]

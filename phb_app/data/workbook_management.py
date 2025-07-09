@@ -17,6 +17,7 @@ Provides workbook management.
 """
 from os import path
 from typing import Optional, Iterator
+from uuid import UUID, uuid4
 from dataclasses import dataclass
 from openpyxl import Workbook
 # First party libraries
@@ -33,6 +34,7 @@ class ManagedWorkbook:
     """Parent data class for workbook data."""
     file_path: str
     file_name: str
+    uuid: UUID
     workbook_object: Workbook
 
 @dataclass(slots=True)
@@ -56,8 +58,9 @@ class OutputWorkbookContext:
 def _create_managed_workbook_from_file(file_path: str, writable: bool = False) -> ManagedWorkbook:
     """Private module level. Creates a ManagedWorkbook instance from a file path, loading the workbook object."""
     file_name = path.basename(file_path)
+    uuid = uuid4()
     workbook_object = fu.try_load_workbook(file_path, file_name, writable=writable)
-    return ManagedWorkbook(file_path, file_name, workbook_object)
+    return ManagedWorkbook(file_path, file_name, uuid, workbook_object)
 
 def _create_input_context(file_path: str) -> InputWorkbookContext:
     """Private module level. Creates an InputWorkbookContext for the given file path."""
@@ -119,23 +122,23 @@ class WorkbookManager:
         ctx: InputWorkbookContext | OutputWorkbookContext
     ) -> None:
         """Adds a workbook context to the manager by role."""
-        wb_ctx = self.get_workbook_ctx_by_file_name_and_role(role, ctx.mngd_wb.file_name)
+        wb_ctx = self.get_workbook_ctx_by_role_and_uuid(role, ctx.mngd_wb.uuid)
+        self.workbooks_ctxs[role].append(ctx)
         if wb_ctx:
             raise ex.WorkbookAlreadyTracked(ctx.mngd_wb.file_name)
-        self.workbooks_ctxs[role].append(ctx)
 
     def get_output_workbook_ctx(self) -> OutputWorkbookContext | None:
         """Retrieves the first output workbook context."""
         output_list = self.workbooks_ctxs.get(st.IORole.OUTPUT, [])
         return output_list[0] if output_list else None
 
-    def get_workbook_ctx_by_file_name_and_role(
+    def get_workbook_ctx_by_role_and_uuid(
         self,
         role: st.IORole,
-        name: str
+        uuid: UUID
     ) -> InputWorkbookContext | OutputWorkbookContext | None:
         """Retrieves the first workbook context by file name and role."""
-        return next((ctx for ctx in self.workbooks_ctxs[role] if ctx.mngd_wb.file_name == name), None)
+        return next((ctx for ctx in self.workbooks_ctxs[role] if ctx.mngd_wb.uuid == uuid), None)
 
     def yield_workbook_ctxs_by_role(
         self,
@@ -148,9 +151,9 @@ class WorkbookManager:
         """Returns a list of workbook names by role."""
         return [ctx.mngd_wb.file_name for ctx in self.workbooks_ctxs.get(role, [])]
 
-    def remove_wb_ctx_by_file_name(self, role: st.IORole, name: str) -> None:
+    def remove_wb_ctx_by_uuid(self, role: st.IORole, uuid: UUID) -> None:
         """Removes a workbook context by file name and role."""
-        ctx = self.get_workbook_ctx_by_file_name_and_role(role, name)
+        ctx = self.get_workbook_ctx_by_role_and_uuid(role, uuid)
         if ctx:
             self.workbooks_ctxs[role].remove(ctx)
             del ctx

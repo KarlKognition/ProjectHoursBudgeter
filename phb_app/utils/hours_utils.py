@@ -46,7 +46,7 @@ def compute_predicted_hours(out_wb_ctx: "wm.OutputWorkbookContext") -> None:
     out_wb_ctx.worksheet_service.set_predicted_hours(pre_hours)
     out_wb_ctx.worksheet_service.set_predicted_hours_colour()
 
-def compute_accumulated_hours_for_selected_employees(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext", row_indices: tuple[int, ...]) -> None:
+def compute_accumulated_hours_for_selected_employees(wbs: "wm.WorkbookManager", out_wb_ctx: "wm.OutputWorkbookContext") -> None:
     """Compute the hours for each selected employee in the output workbook. Selected rows are purely for cacheing purposes."""
     for emp in out_wb_ctx.worksheet_service.yield_from_selected_employees():
         _sum_hours_selected_employee(wbs, out_wb_ctx, emp)

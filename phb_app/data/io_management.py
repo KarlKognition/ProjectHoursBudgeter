@@ -11,9 +11,9 @@ Description
 -----------
 PHB Wizard text selection management.
 '''
-
+from uuid import UUID
 from dataclasses import dataclass, field
-from typing import Optional, TYPE_CHECKING, Callable, Protocol
+from typing import Optional, TYPE_CHECKING, Callable, Protocol, Union
 #           --- Third party libraries ---
 from PyQt6.QtCore import QModelIndex
 from PyQt6.QtWidgets import QWidget, QTableWidget, QComboBox, QLabel, QWizardPage, QTableWidgetItem
@@ -32,17 +32,13 @@ if TYPE_CHECKING:
 
 #           --- PROTOCOLS ---
 
-class ConfigRowWithWbMngr(Protocol):
-    """Protocol for a configuration row that requires a workbook manager."""
-    def __call__(self, ent_ctx: "EntryContext", row: int, wb_mngr: "wm.WorkbookManager") -> None: ...
-
-class ConfigRowWithoutWbMngr(Protocol):
+class ConfigRowWithEntCtx(Protocol):
     """Protocol for a configuration row that does not require a workbook manager."""
     def __call__(self, ent_ctx: "EntryContext", row: int) -> None: ...
 
-class ConfigRowWithEmp(Protocol):
+class ConfigRowWithEntCtxEmpHrs(Protocol):
     """Protocol for a configuration row that requires an employee context."""
-    def __call__(self, ent_ctx: "EntryContext", row: int, emp: em.EmployeeHours) -> None: ...
+    def __call__(self, ent_ctx: "EntryContext", row: int, emp_hrs: em.EmployeeHours) -> None: ...
 
 #           --- DATA CONTAINERS ---
 
@@ -77,6 +73,7 @@ class InputTableItems:
     file_name: Optional[QTableWidgetItem] = None
     country: Optional[QTableWidgetItem] = None
     sheet_name: Optional[QTableWidgetItem] = None
+    uuid: Optional[QTableWidgetItem] = None
 
 @dataclass(slots=True)
 class ProjectTableItems:
@@ -115,6 +112,7 @@ class IOFileContext:
     '''Data class for managing the data in the table.'''
     file_name: Optional[str] = None
     country_data: Optional[loc.CountryData] = None
+    uuid: Optional[UUID] = None
     table_items: Optional[InputTableItems] = field(default_factory=InputTableItems)
 
 @dataclass(slots=True)
@@ -162,7 +160,7 @@ class EntryContext:
     '''Data class for managing the file dialog.'''
     panel: IOControls
     data: Optional[FileHandlerData] = None
-    configure_row: Optional[ConfigRowWithWbMngr | ConfigRowWithoutWbMngr | ConfigRowWithEmp] = None
+    configure_row: Optional[ConfigRowWithEntCtx | ConfigRowWithEntCtxEmpHrs] = None
 
 #           --- MODULE SERVICE FUNCTIONS ---
 
@@ -177,9 +175,12 @@ def set_row_configurator(ent_ctx: EntryContext) -> None:
         st.IORole.SUMMARY_DATA_TABLE:   _configure_summary_data_row
     }.get(ent_ctx.panel.role)
 
-def _configure_input_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
+def _configure_input_file_row(
+        ent_ctx: EntryContext,
+        row: int,
+        wb_ctx: Union["wm.InputWorkbookContext", "wm.OutputWorkbookContext"]
+) -> None:
     '''Configure the input row in the table.'''
-    wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(ent_ctx.panel.role, ent_ctx.data.file_name)
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     ws.init_input_worksheet(wb_ctx)
     pu.update_handlers_country_details(ent_ctx.data.country_data, wb_ctx)
@@ -187,14 +188,21 @@ def _configure_input_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.Work
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.country, row, ie.InputTableHeaders.COUNTRY)
     ent_ctx.data.table_items.sheet_name = QTableWidgetItem(wb_ctx.managed_sheet.selected_sheet.sheet_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.sheet_name, row, ie.InputTableHeaders.WORKSHEET)
+    ent_ctx.data.table_items.uuid = QTableWidgetItem(str(wb_ctx.mngd_wb.uuid))
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.uuid, row, ie.InputTableHeaders.UNIQUE_ID)
 
-def _configure_output_file_row(ent_ctx: EntryContext, row: int, wb_mngr: "wm.WorkbookManager") -> None:
+def _configure_output_file_row(
+        ent_ctx: EntryContext,
+        row: int,
+        wb_ctx: Union["wm.InputWorkbookContext", "wm.OutputWorkbookContext"]
+) -> None:
     '''Configure the output row in the table.'''
-    wb_ctx = wb_mngr.get_workbook_ctx_by_file_name_and_role(ent_ctx.panel.role, ent_ctx.data.file_name)
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     ws.init_output_worksheet(wb_ctx)
     dropdowns = Dropdowns(pu.create_year_dropdown(), pu.create_month_dropdown(), pu.create_worksheet_dropdown(wb_ctx))
     pu.setup_dropdowns(ent_ctx.panel.table, row, dropdowns)
+    ent_ctx.data.table_items.uuid = QTableWidgetItem(str(wb_ctx.mngd_wb.uuid))
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.uuid, row, ie.InputTableHeaders.UNIQUE_ID)
     def connection_wrapper() -> None:
         '''Connect functionality to the dropdowns.'''
         pu.handle_dropdown_selection(ent_ctx, wb_ctx, row, dropdowns)

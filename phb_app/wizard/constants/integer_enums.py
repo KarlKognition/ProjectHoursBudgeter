@@ -41,6 +41,7 @@ class InputTableHeaders(BaseTableHeaders):
     FILENAME = 0
     COUNTRY = auto()
     WORKSHEET = auto()
+    UNIQUE_ID = auto()
 
 class OutputTableHeaders(BaseTableHeaders):
     '''Output table headers in IOSelection.'''
@@ -49,6 +50,7 @@ class OutputTableHeaders(BaseTableHeaders):
     WORKSHEET = auto()
     MONTH = auto()
     YEAR = auto()
+    UNIQUE_ID = auto()
 
 class OutputFile(BaseTableHeaders):
     '''Enum for table rows or columns.'''
