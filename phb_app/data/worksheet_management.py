@@ -15,8 +15,10 @@ Description
 -----------
 Provides worksheet management.
 '''
+#           --- Standard libraries ---
 from dataclasses import dataclass, field
 from typing import Optional, Iterator, TYPE_CHECKING
+#           --- Third party libraries ---
 from openpyxl.worksheet.worksheet import Worksheet
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor

@@ -11,12 +11,10 @@ Description
 -----------
 Constructs and manages the stages of the GUI.
 '''
-
-## Imports
-# Third party libraries
+#           --- Third party libraries ---
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QWizard
-# First party libraries
+#           --- First party libraries ---
 import phb_app.wizard.pages.employee_selection as ems
 import phb_app.wizard.pages.io_selection as iosp
 import phb_app.wizard.pages.project_selection as ps

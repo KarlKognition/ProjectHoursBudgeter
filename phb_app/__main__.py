@@ -16,13 +16,11 @@ Description
 -----------
 The main entry point to the Project Hours Budgeting Wizard.
 '''
-
-## Imports
-# Standard libraries
+#           --- Standard libraries ---
 import sys
-# Third party libraries
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QApplication
-# First party libraries
+#           --- First party libraries ---
 import phb_app.data.location_management as loc
 import phb_app.data.workbook_management as wm
 import phb_app.wizard.phb_wizard_gui as wg

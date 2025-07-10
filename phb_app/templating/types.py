@@ -1,4 +1,5 @@
 """Generic types"""
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QPushButton
 
 type CellCoord = str

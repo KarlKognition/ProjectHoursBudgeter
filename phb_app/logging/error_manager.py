@@ -11,10 +11,13 @@ Description
 -----------
 Tracks errors for the Project Hours Budgeting Wizard.
 '''
+#           --- Standard libraries ---
 from uuid import UUID
+#           --- Third party libraries ---
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLabel
 from PyQt6.QtGui import QColor
+#           --- First party libraries ---``
 import phb_app.wizard.constants.ui_strings as st
 
 type IdRoleKey = tuple[UUID, st.IORole]

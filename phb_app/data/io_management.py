@@ -11,6 +11,7 @@ Description
 -----------
 PHB Wizard text selection management.
 '''
+#           --- Standard libraries ---
 from uuid import UUID
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING, Callable, Protocol, Union
@@ -35,6 +36,10 @@ if TYPE_CHECKING:
 class ConfigRowWithEntCtx(Protocol):
     """Protocol for a configuration row that does not require a workbook manager."""
     def __call__(self, ent_ctx: "EntryContext", row: int) -> None: ...
+
+class ConfigRowWithEntCtxWbCtx(Protocol):
+    """Protocol for a configuration row that does not require a workbook manager."""
+    def __call__(self, ent_ctx: "EntryContext", row: int, wb_ctx: Union["wm.InputWorkbookContext", "wm.OutputWorkbookContext"]) -> None: ...
 
 class ConfigRowWithEntCtxEmpHrs(Protocol):
     """Protocol for a configuration row that requires an employee context."""
@@ -165,7 +170,7 @@ class EntryContext:
 #           --- MODULE SERVICE FUNCTIONS ---
 
 def set_row_configurator(ent_ctx: EntryContext) -> None:
-    '''Initialise the entry handler.'''
+    '''Initialise the entry context row configurator.'''
     ent_ctx.configure_row = {
         st.IORole.INPUTS:               _configure_input_file_row,
         st.IORole.OUTPUT:               _configure_output_file_row,
@@ -175,11 +180,21 @@ def set_row_configurator(ent_ctx: EntryContext) -> None:
         st.IORole.SUMMARY_DATA_TABLE:   _configure_summary_data_row
     }.get(ent_ctx.panel.role)
 
+def configure_error_row(
+        ent_ctx: EntryContext,
+        row: int
+    ) -> None:
+    '''Configure the error row in the table.'''
+    ent_ctx.data.table_items.file_name = QTableWidgetItem(ent_ctx.data.file_name)
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
+    ent_ctx.data.table_items.uuid = QTableWidgetItem(str(ent_ctx.data.uuid))
+    pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.uuid, row, ie.InputTableHeaders.UNIQUE_ID)
+
 def _configure_input_file_row(
         ent_ctx: EntryContext,
         row: int,
         wb_ctx: Union["wm.InputWorkbookContext", "wm.OutputWorkbookContext"]
-) -> None:
+    ) -> None:
     '''Configure the input row in the table.'''
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     ws.init_input_worksheet(wb_ctx)
@@ -195,7 +210,7 @@ def _configure_output_file_row(
         ent_ctx: EntryContext,
         row: int,
         wb_ctx: Union["wm.InputWorkbookContext", "wm.OutputWorkbookContext"]
-) -> None:
+    ) -> None:
     '''Configure the output row in the table.'''
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     ws.init_output_worksheet(wb_ctx)
@@ -209,7 +224,10 @@ def _configure_output_file_row(
         ent_ctx.panel.page.completeChanged.emit()
     connect_dropdowns(dropdowns, connection_wrapper)
 
-def _configure_project_row(ent_ctx: EntryContext, row: int) -> None:
+def _configure_project_row(
+        ent_ctx: EntryContext,
+        row: int
+    ) -> None:
     '''Configure the project row in the table.'''
     # Only input workbooks have project IDs, so we can safely assume the role is INPUTS
     ent_ctx.data.table_items.project_id = QTableWidgetItem(ent_ctx.data.project_id)
@@ -219,7 +237,10 @@ def _configure_project_row(ent_ctx: EntryContext, row: int) -> None:
     ent_ctx.data.table_items.file_name = QTableWidgetItem(ent_ctx.data.file_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.file_name, row, ie.ProjectIDTableHeaders.FILENAME)
 
-def _configure_employee_row(ent_ctx: EntryContext, row: int) -> None:
+def _configure_employee_row(
+        ent_ctx: EntryContext,
+        row: int
+    ) -> None:
     '''Configure the employee row in the table.'''
     ent_ctx.data.table_items.employee = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.employee, row, ie.EmployeeTableHeaders.EMPLOYEE)
@@ -228,7 +249,10 @@ def _configure_employee_row(ent_ctx: EntryContext, row: int) -> None:
     ent_ctx.data.table_items.coord = QTableWidgetItem(ent_ctx.data.coord)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.coord, row, ie.EmployeeTableHeaders.COORDINATE)
 
-def _configure_summary_io_row(ent_ctx: EntryContext, col: int) -> None:
+def _configure_summary_io_row(
+        ent_ctx: EntryContext,
+        col: int
+    ) -> None:
     '''Configure the summary IO row in the table. There is only one column.'''
     ent_ctx.data.table_items.in_file_names = QTableWidgetItem(ent_ctx.data.in_file_names)
     pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.in_file_names, ie.SummaryIOTableHeaders.INPUT_WORKBOOKS, col)
@@ -238,7 +262,11 @@ def _configure_summary_io_row(ent_ctx: EntryContext, col: int) -> None:
     pu.insert_col_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.date, ie.SummaryIOTableHeaders.SELECTED_DATE, col)
     ent_ctx.panel.table.resizeColumnsToContents()
 
-def _configure_summary_data_row(ent_ctx: EntryContext, row: int, hours: em.EmployeeHours) -> None:
+def _configure_summary_data_row(
+        ent_ctx: EntryContext,
+        row: int,
+        hours: em.EmployeeHours
+    ) -> None:
     '''Configure the summary data row in the table.'''
     ent_ctx.data.table_items.emp_name = QTableWidgetItem(ent_ctx.data.emp_name)
     pu.insert_row_data_widget(ent_ctx.panel.table, ent_ctx.data.table_items.emp_name, row, ie.SummaryDataTableHeaders.EMPLOYEE)

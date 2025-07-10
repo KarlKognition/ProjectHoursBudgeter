@@ -15,8 +15,10 @@ Description
 -----------
 Utility class for managing hours deviation thresholds in the project hours budgeting wizard.
 '''
+#           --- Standard libraries ---
 from dataclasses import dataclass
 from typing import Optional
+#           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.yaml_handler as yh
 

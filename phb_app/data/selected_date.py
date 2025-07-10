@@ -1,3 +1,5 @@
+"""Selected Date Data Class"""
+#           --- Standard libraries ---
 from dataclasses import dataclass
 from typing import Optional
 

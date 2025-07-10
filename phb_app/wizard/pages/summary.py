@@ -15,7 +15,9 @@ Description
 -----------
 Constructs and manages the summary page.
 '''
+#           --- Standard libraries ---
 from typing import Optional
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QWizardPage, QLabel, QTableWidget, QPushButton, QVBoxLayout
 #           --- First party libraries ---
 import phb_app.data.header_management as hm

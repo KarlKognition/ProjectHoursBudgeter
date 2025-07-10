@@ -15,7 +15,7 @@ Description
 -----------
 Constructs and manages the employee selection page.
 '''
-
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QWizardPage, QLabel, QTableWidget, QPushButton, QHBoxLayout
 # First party libraries
 import phb_app.data.header_management as hm

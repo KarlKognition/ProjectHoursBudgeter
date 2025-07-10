@@ -11,14 +11,12 @@ Description
 -----------
 Logs wizard summary results.
 '''
-
-## Imports
+#           --- Standard libraries ---
 from os import path
 from datetime import datetime
-from typing import Optional, Callable
-from PyQt6.QtCore import Qt
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QTableWidget
-# First party library imports
+#           --- First party libraries ---
 import phb_app.utils.date_utils as du
 import phb_app.utils.hours_utils as hu
 import phb_app.data.months_dict as md

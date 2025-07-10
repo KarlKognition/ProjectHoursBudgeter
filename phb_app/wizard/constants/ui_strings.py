@@ -1,9 +1,11 @@
 '''
 String constants. English.
 '''
+#           --- Standard libraries ---
 import sys
 from pathlib import Path
 from enum import StrEnum, auto
+#           --- Third party libraries ---
 import git
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtWidgets import QApplication

@@ -15,12 +15,14 @@ Description
 -----------
 Provides workbook management.
 """
+#           --- Standard libraries ---
 from os import path
 from typing import Optional, Iterator
 from uuid import UUID, uuid4
 from dataclasses import dataclass
+#           --- Third party libraries ---
 from openpyxl import Workbook
-# First party libraries
+#           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.location_management as loc
 import phb_app.logging.exceptions as ex
@@ -55,10 +57,18 @@ class OutputWorkbookContext:
 
 #           --- MODULE FACTORY FUNCTIONS ---
 
+def get_file_name_from_path(file_path: str) -> str:
+    """Public module level. Returns the file name from a file path."""
+    return path.basename(file_path)
+
+def set_uuid() -> UUID:
+    """Public module level. Returns a new UUID."""
+    return uuid4()
+
 def _create_managed_workbook_from_file(file_path: str, writable: bool = False) -> ManagedWorkbook:
     """Private module level. Creates a ManagedWorkbook instance from a file path, loading the workbook object."""
-    file_name = path.basename(file_path)
-    uuid = uuid4()
+    file_name = get_file_name_from_path(file_path)
+    uuid = set_uuid()
     workbook_object = fu.try_load_workbook(file_path, file_name, writable=writable)
     return ManagedWorkbook(file_path, file_name, uuid, workbook_object)
 

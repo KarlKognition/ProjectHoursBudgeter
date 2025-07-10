@@ -15,10 +15,13 @@ Description
 -----------
 Data classes for managing employee names and hours in the given worksheet.
 '''
+#           --- Standard libraries ---
 from dataclasses import dataclass, field
 from typing import Optional
+#           --- Third party libraries ---
 from PyQt6.QtGui import QColor
 from openpyxl import utils as xlutils
+#           --- First party libraries ---
 import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
 import phb_app.data.hours_deviation as hd

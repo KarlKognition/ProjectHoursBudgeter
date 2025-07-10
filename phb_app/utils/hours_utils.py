@@ -16,9 +16,10 @@ Description
 Utility functions the the calculation of hours of each employee
 in the project hours budgeting wizard.
 '''
+#           --- Standard libraries ---
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
-from functools import lru_cache
+#           --- Third party libraries ---
 from openpyxl.styles import Font
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor

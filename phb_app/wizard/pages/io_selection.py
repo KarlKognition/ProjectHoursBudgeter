@@ -15,12 +15,12 @@ Description
 -----------
 Constructs and manages the Input-Output selection page.
 '''
-# Third party libaries
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import (
     QWizardPage, QHBoxLayout, QPushButton,
     QTableWidget, QLabel
 )
-# First party libraries
+#           --- First party libraries ---
 import phb_app.data.header_management as hm
 import phb_app.data.io_management as io
 import phb_app.data.location_management as loc
@@ -88,6 +88,8 @@ class IOSelectionPage(QWizardPage):
         out_ctx = io.EntryContext(self.output_panel, data=io.IOFileContext())
         io.set_row_configurator(out_ctx)
         pu.connect_buttons(self, out_ctx, wb_mgmt)
+
+#           --- QWizard function overrides ---
 
     def isComplete(self) -> bool: # pylint: disable=invalid-name
         '''Override the page completion.

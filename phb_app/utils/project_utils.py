@@ -16,8 +16,9 @@ Description
 Provides utility functions for the management
 of employees in the project hours budgeting wizard.
 '''
-
+#           --- Standard libraries ---
 from typing import TYPE_CHECKING
+#           --- Third party libraries ---
 from PyQt6.QtWidgets import QTableWidget
 from PyQt6.QtCore import QModelIndex
 #           --- First party libraries ---

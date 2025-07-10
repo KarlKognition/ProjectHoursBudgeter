@@ -15,7 +15,7 @@ Description
 -----------
 All functions necessary for managing employee data.
 '''
-
+#           --- Standard libraries ---
 from typing import Iterator
 from functools import lru_cache
 #          --- Third party libraries ---

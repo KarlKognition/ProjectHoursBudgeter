@@ -15,9 +15,12 @@ Description
 -----------
 Abstract class for deserialising yaml files.
 '''
+#           --- Standard libraries ---
 from os import path
 from abc import ABC, abstractmethod
+#           --- Third party libraries ---
 import yaml
+#           --- First party libraries ---
 import phb_app.wizard.constants.ui_strings as st
 
 class YamlHandler(ABC):

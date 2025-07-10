@@ -11,10 +11,13 @@ Description
 -----------
 PHB Wizard date utility functions.
 '''
+#           --- Standard libraries ---
 from datetime import datetime
 from typing import TYPE_CHECKING
 from functools import lru_cache
+#           --- Third party libraries ---
 import xlwings as xw
+#           --- First party libraries ---
 import phb_app.data.months_dict as md
 import phb_app.logging.exceptions as ex
 

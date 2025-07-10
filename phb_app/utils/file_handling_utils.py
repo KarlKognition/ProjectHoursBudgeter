@@ -15,15 +15,14 @@ Description
 -----------
 Provides file handling utility functions in the project hours budgeting wizard.
 '''
-
+#           --- Standard libraries ---
 import zipfile
+#           --- Third party libraries ---``
 from openpyxl import load_workbook
+from openpyxl.utils.exceptions import ReadOnlyWorkbookException, InvalidFileException
 from openpyxl.workbook import Workbook
-from openpyxl.utils.exceptions import (
-    ReadOnlyWorkbookException,
-    InvalidFileException
-)
 from PyQt6.QtWidgets import QTableWidget
+#           --- First party libraries ---
 import phb_app.data.location_management as loc
 import phb_app.logging.exceptions as ex
 import phb_app.wizard.constants.ui_strings as st

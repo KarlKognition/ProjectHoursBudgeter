@@ -1,4 +1,3 @@
-!!REFACTOR IN PROGRESS!!
 Only the explanation and IO Selection pages are currently working. Running through a python terminal is currently fine. I am currently unsure if the run batch file does its job. Do not use the test batch file. It will not run any of the tests.
 
 Python 3 should be installed to be able to run or test this script.

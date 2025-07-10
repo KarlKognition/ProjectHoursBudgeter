@@ -11,7 +11,9 @@ Description
 -----------
 Data classes for managing the locale data used in the wizard.
 '''
+#           --- Standard libraries ---
 from dataclasses import dataclass, field
+#           --- First party libraries ---
 import phb_app.data.yaml_handler as yh
 import phb_app.wizard.constants.ui_strings as st
 

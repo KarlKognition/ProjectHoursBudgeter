@@ -11,6 +11,7 @@ Description
 -----------
 PHB Wizard integer enums.
 '''
+#           --- Standard libraries ---
 from enum import IntEnum, auto
 
 class BaseTableHeaders(IntEnum):

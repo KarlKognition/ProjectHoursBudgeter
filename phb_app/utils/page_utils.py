@@ -15,12 +15,14 @@ Description
 -----------
 All functions necessary for setting up the wizard pages.
 '''
-## Imports
-# Standard libraries
+#           --- Standard libraries ---
 from datetime import datetime
-from uuid import UUID
 from typing import Optional, TYPE_CHECKING
+from uuid import UUID
+import zipfile
+#           --- Third party libraries ---
 from dateutil.relativedelta import relativedelta
+from openpyxl.utils.exceptions import ReadOnlyWorkbookException, InvalidFileException
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QColor
 from PyQt6.QtWidgets import (
@@ -28,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QFileDialog, QVBoxLayout,
     QTableWidget, QTableWidgetItem, QHeaderView
 )
-# First party libraries
+#           --- First party libraries ---
 import phb_app.data.header_management as hm
 import phb_app.data.location_management as loc
 import phb_app.data.months_dict as md
@@ -278,6 +280,11 @@ def setup_dropdowns(table:QTableWidget, row: int, dds: "io.Dropdowns") -> None:
     table.setCellWidget(row, ie.OutputTableHeaders.MONTH, dds.month)
     table.setCellWidget(row, ie.OutputTableHeaders.YEAR, dds.year)
 
+def _handle_load_file_error(row: int, file_ctx: "io.EntryContext", error: Exception) -> None:
+    '''Handle errors during file selection and update the UI accordingly.'''
+    _highlight_bad_item(file_ctx.panel.table.item(row, ie.OutputTableHeaders.FILENAME))
+    em.add_error(file_ctx.data.uuid, file_ctx.panel.role, error)
+
 def _handle_selection_error(row: int, file_ctx: "io.EntryContext", error: Exception) -> None:
     '''Handle errors during selection and update the UI accordingly.'''
     col: dict[st.IORole, ie.InputTableHeaders] = {
@@ -308,9 +315,9 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
     import phb_app.data.workbook_management as wm # pylint: disable=import-outside-toplevel
     for file_path in files:
         try:
+            row = _insert_row(file_ctx.panel)
             wb_ctx = wm.create_wb_context_by_role(file_path, file_ctx.panel.role)
             wb_mngr.add_workbook(file_ctx.panel.role, wb_ctx)
-            row = _insert_row(file_ctx.panel)
             file_ctx.data.file_name = wb_ctx.mngd_wb.file_name
             file_ctx.data.table_items.file_name = QTableWidgetItem(file_ctx.data.file_name)
             insert_row_data_widget(file_ctx.panel.table, file_ctx.data.table_items.file_name, row, ie.InputTableHeaders.FILENAME)
@@ -319,8 +326,16 @@ def _populate_file_table(page: QWizardPage, wb_mngr: "wm.WorkbookManager", files
             _check_file_validity(file_ctx)
         except (ex.FileAlreadySelected, ex.TooManyOutputFilesSelected, ex.CountryIdentifiersNotInFilename,
                 ex.IncorrectWorksheetSelected, ex.BudgetingDatesNotFound, ex.WorkbookAlreadyTracked,
-                ex.WorkbookLoadError, KeyError, ValueError) as exc:
+                KeyError, ValueError) as exc:
             _handle_selection_error(row, file_ctx, exc)
+        except (ReadOnlyWorkbookException, InvalidFileException, ex.WorkbookLoadError,
+                FileNotFoundError, PermissionError, zipfile.BadZipFile,
+                ) as exc:
+            file_ctx.data.file_name = wm.get_file_name_from_path(file_path)
+            file_ctx.data.uuid = wm.set_uuid()
+            import phb_app.data.io_management as io # pylint: disable=import-outside-toplevel
+            io.configure_error_row(file_ctx, row)
+            _handle_load_file_error(row, file_ctx, exc)
     page.completeChanged.emit()
 
 def populate_project_table(page: QWizardPage, proj_ctx: "io.EntryContext", wb_mngr: "wm.WorkbookManager") -> None:
