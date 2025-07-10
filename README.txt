@@ -1,27 +1,18 @@
-Only the explanation and IO Selection pages are currently working. Running through a python terminal is currently fine. I am currently unsure if the run batch file does its job. Do not use the test batch file. It will not run any of the tests.
+Executable distribution available in /dist/
+Built on Python 3.13.2. For further requirements, see /phb_app/requirements.txt.
 
-Python 3 should be installed to be able to run or test this script.
-
-RUNNING:
-To use the hours budgeting script, use the RUN batch file.
-This ensures you have the correct python packages installed.
-
-TESTING:
-To test, use the TEST batch file. These tests have become obsolete from version 1 to version 2 of the software. Version 1 is not available in this repo.
-
-REQUIREMENTS AND DEFINITIONS:
+DEFINITIONS:
 DEF: "Accumulated hours" in the hours budgeting file, which may be so mentioned in the log files, is data which is formatted with default/black colour and are the hours calculated from the SAP extract file.
-REQ: The employee names in the budgeting file must be copied directly from the SAP extract table. DO NOT type in the names yourself and do not remove diacritics or hyphenation.
-REQ: The row of employee names in the budgeting file must be located between the cells containing the data exactly as displayed below in between the ---, including new lines:
-(start cell, first column)
----
-MA Name
-Startdatum
----
-(end cell)
----
-Anzahl
-MA
----
-These have been chosen due to their presence in all budgeting files.
 DEF: Planned/predicted hours are those with font colour "White, background 1, darker 35%" (Weiß, Hintergrund 1, dunkler 35%). This definition is important for the logging of compared planned to recorded hours.
+
+REQUIREMENTS:
+REQ: The employee names in the budgeting file must be copied directly from the SAP extract table. DO NOT type in the names yourself and do not remove diacritics or hyphenation.
+REQ: The row of employee names in the budgeting file must be located between the cells containing the data exactly as displayed below, including new lines, excluding indents:
+(start cell, first column)
+    Anställds namn
+    Datum
+(end cell)
+    Antal
+    anställda
+REQ: All budgeting files must contain these above mentioned cells and positioned similarly.
+REQ: The contents of these above mentioned cells may be changed 
