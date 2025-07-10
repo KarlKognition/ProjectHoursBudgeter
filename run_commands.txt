@@ -1,3 +1,6 @@
 DEVELOPING:
 cd "d:\SW Development\Python\ProjectHoursBudgeter"
 .venv\Scripts\activate
+
+DISTRIBUTION:
+pyinstaller --onefile --windowed phb_app\__main__.py --add-data "phb_app\data\config_data.yaml;phb_app\data" --add-data "phb_app\images\budget_watermark.jpg;phb_app\images" --exclude-module phb_app.testing
